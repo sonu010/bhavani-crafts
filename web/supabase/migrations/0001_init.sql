@@ -250,18 +250,33 @@ CREATE TRIGGER products_set_updated_at
 -- │ 8. Smoke insert (rolled back) — fails the migration loudly   │
 -- │    if anything above is structurally broken                  │
 -- ╰──────────────────────────────────────────────────────────────╯
+-- NB: slugs MUST match ^[a-z0-9][a-z0-9-]{0,79}$ (CHECK constraint above).
+-- The smoke values below are deliberately ugly + sortable last (zzz prefix)
+-- so they're easy to spot if they ever leak (they shouldn't — the DELETEs
+-- below clean them up before this transaction commits).
 DO $$
 DECLARE
   cat_id uuid;
 BEGIN
   INSERT INTO public.categories (slug, name)
-  VALUES ('__smoke_test__', 'Smoke test')
+  VALUES ('zzz-migration-smoke-cat', 'Migration smoke (transient)')
   RETURNING id INTO cat_id;
 
   INSERT INTO public.products (sku, slug, name, category_id)
-  VALUES ('__SMOKE__', '__smoke_test__', 'Smoke product', cat_id);
+  VALUES (
+    'ZZZ-MIGRATION-SMOKE',
+    'zzz-migration-smoke-prod',
+    'Migration smoke (transient)',
+    cat_id
+  );
 
   -- Roll back the smoke rows so the schema lands clean.
-  DELETE FROM public.products WHERE sku = '__SMOKE__';
-  DELETE FROM public.categories WHERE slug = '__smoke_test__';
+  DELETE FROM public.products WHERE sku = 'ZZZ-MIGRATION-SMOKE';
+  DELETE FROM public.categories WHERE slug = 'zzz-migration-smoke-cat';
+
+  -- Hard-assert there's nothing residual (defense in depth).
+  IF EXISTS (SELECT 1 FROM public.categories WHERE slug LIKE 'zzz-migration-smoke%')
+     OR EXISTS (SELECT 1 FROM public.products WHERE sku LIKE 'ZZZ-MIGRATION-SMOKE%') THEN
+    RAISE EXCEPTION 'Smoke cleanup left residue — investigate before continuing';
+  END IF;
 END $$;
