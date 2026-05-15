@@ -2,7 +2,7 @@
 id: P0-T08
 phase: 0
 title: Create Supabase project + wire env
-status: not_started
+status: done
 depends_on: [P0-T04]
 estimate_hours: 0.5
 owner: shared
@@ -98,5 +98,6 @@ pnpm dlx supabase status
 
 # Notes for next agent
 
-- The owner provided credentials at <timestamp>; document the project ref here.
-- (filled in when status → done)
+**Done 2026-05-15.** Owner provided credentials for project ref `lyycugadkxjtevmugqol` (Supabase URL `https://lyycugadkxjtevmugqol.supabase.co`). Saved to `web/.env.local` (gitignored, verified by `git check-ignore`). Template at `web/.env.example` (committed).
+
+**Deferred:** `supabase login` + `supabase link --project-ref lyycugadkxjtevmugqol` not yet run. These are interactive and were not needed for P0-T09's connectivity test (which used the URL+keys directly from `.env.local`). Link the CLI when starting P1-T01 (first migration push).

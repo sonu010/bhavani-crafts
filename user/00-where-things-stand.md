@@ -19,28 +19,35 @@ You said "do not deploy yet" — exactly right. Vercel's GitHub integration auto
 - Get Vercel **preview** deploys for the rebuild branch (separate URL, not bhavanicrafts.in or the production URL).
 - Decide together when the rebuild is ready to merge into `main` and replace the prototype.
 
-## Git layout note (we will revisit)
+## Git layout (resolved → Option B, 2026-05-15)
 
-The git repo currently lives **inside** `web/`. The AI's `claude/` working-memory folder lives at the **project root** — outside the repo. That means right now `claude/` is **not** tracked in git.
+The git repo now lives at the **project root**. It tracks the full layout: `web/`, `claude/`, `user/`, `scripts/`, `docs/`, `assets/`, `extracted_ideas/`, and a root `.gitignore`. The legacy prototype is preserved on `origin/main` (untouched) and at the `pre-rebuild` tag.
 
-Two options to fix this, both fine, decide later:
+### What this means for you
 
-| Option | What it means | When to pick |
-|---|---|---|
-| **A. Move `claude/` into `web/claude/`** | The AI rewrites internal paths so the folder lives inside the repo. Quick, no Vercel config change. | If we want the rebuild to ship sooner and revisit repo layout later. |
-| **B. Move git up to project root** | The repo tracks everything (`web/`, `claude/`, `data/`, `scripts/`, `docs/`). Cleaner long-term. Vercel needs a one-line config change ("Root Directory" → `web`). | If we want the cleaner structure from the start. |
-
-Both are reversible. **For this turn, the AI is working with `claude/` outside the repo** — that's fine, since we're not pushing anything to GitHub yet. Decision can wait until just before the first push.
+- **One repo, one source of truth.** Clone the repo → get everything (plan + code + ops docs + scrapers + design refs).
+- **Vercel config note (apply when we ship the rebuild):** Vercel's "Root Directory" project setting must change from the repo root to `web/` so it builds the Next.js app, not the project root. This is a one-line change in the Vercel dashboard. We'll do it together when the rebuild is ready to merge into `main`. Until then, Vercel keeps deploying `main` (the legacy prototype, where Next.js was at the repo root in the old shape) — that's still fine because `main` is untouched.
+- **GitHub repo will see new top-level paths** the first time we push the rebuild branch — `claude/`, `user/`, `assets/`, etc. all show up. This is expected.
 
 ## What's in the repo on `rebuild-v2` right now
 
-Identical to `main` — the legacy prototype. The AI will gut this on `rebuild-v2` and replace it with the fresh Next.js app, one commit at a time. `main` stays as the prototype until you say "ship it."
+The first commit on `rebuild-v2` (sha `838c7a3`) contains the new project layout:
 
-## What's NOT in the repo
+- `web/` — fresh Next.js 16.2.6 + React 19.2.4 + Tailwind v4 scaffold with P0-T05 deps installed
+- `claude/` — AI working memory (plan index, architecture, ADRs, runbooks, 100+ task files)
+- `user/` — these owner-facing instructions
+- `scripts/` — the Just Kraft inventory scraper
+- `docs/`, `assets/`, `extracted_ideas/` — references
+- `.gitignore` — root safety net
 
-- `claude/` — AI's working memory (see above)
-- `user/` — this folder, your instructions (also at project root)
-- `data/justkraft-inventory/*` — scraped Just Kraft catalog (8,509 products); used as a dev seed only, never deployed publicly
-- `scripts/scrape-justkraft-inventory.mjs` — the scraper
+Compared to `origin/main`, `rebuild-v2` is a **divergent** history (different first commit). That's intentional — main keeps its old shape for Vercel; rebuild-v2 has the new shape.
 
-None of these contain secrets. We can decide to track them after we settle the layout question.
+## What's NOT committed (intentionally gitignored)
+
+- `web/.env.local` — your Supabase credentials (local only)
+- `web/.env.example` — IS committed (placeholder template)
+- `data/justkraft-inventory/*.json | *.csv | *.checkpoint.json` — 36 MB of Just Kraft scraped seed. Stays on your machine; obtained out-of-band by any future developer
+- `stitch_bhavani_creator_studio.zip` — 7.5 MB original design export blob (`extracted_ideas/` already contains the unpacked structured version, which IS tracked)
+- `web/node_modules/`, `web/.next/`, `*.tsbuildinfo`, `.DS_Store`, IDE config
+- `claude/.local/` — AI scratch space
+- `.claude/` (Anthropic Claude Code tooling state, distinct from `claude/`)

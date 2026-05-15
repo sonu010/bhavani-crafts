@@ -2,7 +2,7 @@
 id: P0-T07
 phase: 0
 title: Write design tokens (CSS vars + Tailwind theme)
-status: not_started
+status: done
 depends_on: [P0-T06]
 estimate_hours: 2
 owner: ai
@@ -123,4 +123,34 @@ None (Tailwind + shadcn already installed).
 
 # Notes for next agent
 
-(filled in when status → done)
+**Done 2026-05-15.** Wrote `src/app/globals.css` end-to-end with:
+- shadcn-semantic vars (`--primary`, `--accent`, `--ring`, etc.) mapped onto Bhavani palette tokens
+- Bhavani palette tokens (`--color-cream-50`, `--color-teal-800`, `--color-clay-600`, etc.) directly Tailwind-accessible (`bg-clay-600`, `text-bark-900`, etc.)
+- Radius scale `--radius-sm: 6px / --radius-md: 12px / --radius-lg: 24px` (the locked 6/12/24, not 4/8/16)
+- Single warm `--shadow-soft` token
+- `body { font-family: var(--font-body) }` so Manrope renders by default
+
+`src/app/layout.tsx` loads Newsreader (display, italic), Manrope (body), and JetBrains Mono via `next/font/google` and exposes them as `--font-display`, `--font-body`, `--font-mono`.
+
+`src/app/page.tsx` is now a Bhavani-branded placeholder (replaces the Next default with the zinc/black colors). The real editorial homepage lands in P3-T02..P3-T09 — do not polish this placeholder.
+
+**`/design` palette gallery** created at `src/app/(dev)/design/page.tsx`. Gated by `(dev)/layout.tsx` which calls `notFound()` when `NODE_ENV === 'production'`. Run `pnpm dev` and open http://localhost:3000/design to see:
+- Every color swatch with hex + token name
+- Type scale (Display / H1 / H2 / H3 / Body / Caption / Mono)
+- All button variants in idle + disabled states
+- Badge variants + custom moss/saffron/brick pills
+- Input + label patterns
+- Card examples
+- Focus state demo (tab through the bottom section)
+
+**Deferred from the original task spec:**
+- Generating full 50→900 ladders for every color via OKLCH — wrote only the stops actually used (50/100/200/500/600/700/800/900 per brand color, 100..900 per neutral). Add more stops when components actually need them; no point pre-rolling unused tokens.
+- Appending a rendered swatch matrix to `claude/architecture/design-system.md`'s Appendix — the live `/design` route IS that audit. If we ever need a static markdown version (e.g. for a stakeholder review without running the app), generate it from the palette array in `page.tsx`.
+
+**Dark mode:** not shipped. The `.dark` block in `globals.css` mirrors the light theme for safety (so if a stray `.dark` class lands somewhere, it doesn't render a broken half-dark UI). A real dark mode is a future ADR.
+
+Verified locally:
+- `tsc --noEmit` clean
+- `eslint src/` clean
+- `next dev` renders `/`, `/design`, `/api/health` correctly
+- HTML head includes all three font-variable classNames

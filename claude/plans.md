@@ -32,10 +32,10 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ⏸️ [P0-T03: Extract reusable bits from web-legacy](tasks/phase-0-setup/P0-T03-extract-reusable-bits.md) — deferred: pull when needed (cart store in P3-T21)
 - ✅ [P0-T04: Scaffold fresh Next.js app at web/](tasks/phase-0-setup/P0-T04-scaffold-next-app.md) — Next 16.2.6 + React 19.2.4 + Tailwind v4
 - ✅ [P0-T05: Install core dependencies](tasks/phase-0-setup/P0-T05-install-core-deps.md) — runtime + dev/test deps in
-- ⬜ [P0-T06: Install shadcn/ui primitives](tasks/phase-0-setup/P0-T06-install-shadcn.md) — depends P0-T05
-- ⬜ [P0-T07: Write design tokens (CSS vars + Tailwind theme)](tasks/phase-0-setup/P0-T07-write-design-tokens.md) — depends P0-T06
-- ⬜ [P0-T08: Create Supabase project + wire env](tasks/phase-0-setup/P0-T08-create-supabase-project.md) — depends P0-T04
-- ⬜ [P0-T09: Wire Supabase clients (browser/server/admin)](tasks/phase-0-setup/P0-T09-wire-env-and-clients.md) — depends P0-T08
+- ✅ [P0-T06: Install shadcn/ui primitives](tasks/phase-0-setup/P0-T06-install-shadcn.md) — 17 components installed
+- ✅ [P0-T07: Write design tokens (CSS vars + Tailwind theme)](tasks/phase-0-setup/P0-T07-write-design-tokens.md) — Bhavani palette + Newsreader/Manrope/JetBrains Mono + `/design` gallery
+- ✅ [P0-T08: Create Supabase project + wire env](tasks/phase-0-setup/P0-T08-create-supabase-project.md) — project `lyycugadkxjtevmugqol`, env wired locally
+- ✅ [P0-T09: Wire Supabase clients (browser/server/admin)](tasks/phase-0-setup/P0-T09-wire-env-and-clients.md) — health check returns `connected`
 - ⬜ [P0-T10: Git init + GitHub + Vercel link](tasks/phase-0-setup/P0-T10-git-and-vercel.md) — depends P0-T07, P0-T09
 - ⬜ [P0-T11: Set security headers in next.config](tasks/phase-0-setup/P0-T11-set-security-headers.md) — depends P0-T10
 

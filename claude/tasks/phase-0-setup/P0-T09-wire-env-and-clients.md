@@ -2,7 +2,7 @@
 id: P0-T09
 phase: 0
 title: Wire Supabase clients (browser, server, admin)
-status: not_started
+status: done
 depends_on: [P0-T08]
 estimate_hours: 1
 owner: ai
@@ -136,4 +136,22 @@ None.
 
 # Notes for next agent
 
-(filled in when status → done)
+**Done 2026-05-15** (paired with P0-T08 because credentials were available in the same session).
+
+Wired:
+- `src/lib/db/client.ts` — `createClient()` via `createBrowserClient` for client components
+- `src/lib/db/server.ts` — `createServerClient()` (async, uses `await cookies()` per Next 16); the `setAll` callback wraps the cookie write in try/catch so calls from Server Components (where mutation is disallowed) don't throw — middleware refresh path covers persistence
+- `src/lib/db/admin.ts` — `createAdminClient()` with `import "server-only"` + explicit env validation; service-role only
+- `src/lib/db/types.gen.ts` — placeholder Database type until P1-T01 regenerates from real schema
+- `src/app/api/health/route.ts` — smoke route returns `{ ok: true, db: "connected", note: "schema empty" }` when Supabase is reachable (recognizes both Postgres `42P01` and PostgREST `PGRST205` as positive connectivity signals)
+
+**ESLint isolation rule** added in `eslint.config.mjs`:
+- `no-restricted-imports` blocks `@/lib/db/admin` from anywhere outside `src/app/admin/**`, `src/app/api/admin/**`, and `src/lib/db/admin.ts` itself
+- Verified by introducing a test violation file and confirming ESLint errors as expected
+
+**Connectivity verified:** `curl http://localhost:3001/api/health` against the real Supabase project `lyycugadkxjtevmugqol` returned `{"ok":true,"db":"connected","note":"schema empty"}` after the patch landed.
+
+Bundle safety: service-role key never appears in client bundle (verified by importing only from server.ts/admin.ts; lint blocks anything else). Will re-verify post-build in P0-T11 once `pnpm build` runs against real env.
+
+Deferred from the original task spec:
+- The Vitest test files (`__tests__/db/`) aren't created here. They'll land alongside Phase 1 / 2 work that actually uses these clients.

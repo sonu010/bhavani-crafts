@@ -1,26 +1,217 @@
-@import "tailwindcss";
+/* Bhavani Crafts — design tokens
+ * Source of truth: claude/architecture/design-system.md
+ * Anti-AI rule: no slate/zinc, no pure black/white in custom UI tokens.
+ *
+ * Color roles (locked v2.1):
+ *   cream    = canvas background
+ *   bark     = body text + headings
+ *   stone    = muted text + captions
+ *   husk     = hairlines + dividers + zebra striping
+ *   teal     = primary CTAs + interactive states + focus rings
+ *   clay     = brand accents + decorative display type (never buttons)
+ *   saffron  = highlight only (badges, sale tags)
+ *   moss     = success (in-stock pills)
+ *   brick    = danger (out-of-stock, destructive)
+ */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* shadcn-semantic ↔ Bhavani-palette mapping */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Bhavani palette — directly available as bg-clay-600, text-teal-800, etc. */
+  --color-cream-50: #FAF5EE;
+  --color-cream-100: #F6EFE2;
+  --color-paper-0: #FFFCF6;
+
+  --color-husk-100: #F0E8D6;
+  --color-husk-200: #E6DCC9;
+  --color-husk-300: #D4C5A3;
+  --color-husk-400: #B8A584;
+
+  --color-stone-400: #897F70;
+  --color-stone-500: #6E665B;
+  --color-stone-600: #54493D;
+
+  --color-bark-700: #3A322B;
+  --color-bark-800: #2A2421;
+  --color-bark-900: #1C1815;
+
+  --color-teal-50:  #E6EEEC;
+  --color-teal-100: #C2D6D2;
+  --color-teal-200: #94B7B0;
+  --color-teal-500: #2E6862;
+  --color-teal-700: #285A55;
+  --color-teal-800: #1F4E4A;
+  --color-teal-900: #163834;
+
+  --color-clay-50:  #F9EAE0;
+  --color-clay-100: #F3D7BF;
+  --color-clay-200: #E6B68F;
+  --color-clay-500: #C9612E;
+  --color-clay-600: #B8552E;
+  --color-clay-700: #9A4423;
+  --color-clay-800: #7D381D;
+
+  --color-saffron-100: #FAE7C2;
+  --color-saffron-300: #E8C273;
+  --color-saffron-500: #D8A24A;
+  --color-saffron-700: #A77728;
+
+  --color-moss-100: #DEE7DD;
+  --color-moss-500: #6F8E70;
+  --color-moss-600: #5A7A5C;
+  --color-moss-800: #3C5440;
+
+  --color-brick-100: #F2D3D1;
+  --color-brick-500: #C84641;
+  --color-brick-600: #B8312E;
+  --color-brick-800: #7C201F;
+
+  /* Typography — loaded via next/font in app/layout.tsx */
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* Radius scale (locked 6/12/24, not 4/8/16) */
+  --radius-sm: calc(var(--radius) * 0.5);  /*  6px when radius=12px */
+  --radius-md: var(--radius);              /* 12px */
+  --radius-lg: calc(var(--radius) * 2);    /* 24px */
+  --radius-xl: calc(var(--radius) * 3);    /* 36px */
+  --radius-2xl: calc(var(--radius) * 4);   /* 48px */
+
+  /* Single warm shadow — never use Tailwind's default cold grays */
+  --shadow-soft: 0 1px 2px rgba(28, 24, 21, 0.06), 0 4px 12px rgba(28, 24, 21, 0.04);
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Bhavani light theme (the only theme we ship in MVP) */
+  --background: var(--color-cream-50);
+  --foreground: var(--color-bark-900);
+  --card: var(--color-paper-0);
+  --card-foreground: var(--color-bark-900);
+  --popover: var(--color-paper-0);
+  --popover-foreground: var(--color-bark-900);
+  --primary: var(--color-teal-800);
+  --primary-foreground: var(--color-cream-50);
+  --secondary: var(--color-husk-100);
+  --secondary-foreground: var(--color-bark-900);
+  --muted: var(--color-husk-100);
+  --muted-foreground: var(--color-stone-500);
+  --accent: var(--color-husk-200);
+  --accent-foreground: var(--color-bark-900);
+  --destructive: var(--color-brick-600);
+  --destructive-foreground: var(--color-cream-50);
+  --border: var(--color-husk-200);
+  --input: var(--color-husk-200);
+  --ring: var(--color-teal-800);
+  --chart-1: var(--color-teal-800);
+  --chart-2: var(--color-clay-600);
+  --chart-3: var(--color-moss-600);
+  --chart-4: var(--color-saffron-500);
+  --chart-5: var(--color-stone-500);
+  --radius: 0.75rem;  /* 12px — the medium of our 6/12/24 scale */
+  --sidebar: var(--color-paper-0);
+  --sidebar-foreground: var(--color-bark-900);
+  --sidebar-primary: var(--color-teal-800);
+  --sidebar-primary-foreground: var(--color-cream-50);
+  --sidebar-accent: var(--color-husk-100);
+  --sidebar-accent-foreground: var(--color-bark-900);
+  --sidebar-border: var(--color-husk-200);
+  --sidebar-ring: var(--color-teal-800);
+}
+
+/*
+ * Dark mode is NOT shipped in MVP.
+ * If `.dark` is ever applied, fall back to the same warm light theme rather
+ * than serve a half-baked dark variant. A real dark theme is a future ADR.
+ */
+.dark {
+  --background: var(--color-cream-50);
+  --foreground: var(--color-bark-900);
+  --card: var(--color-paper-0);
+  --card-foreground: var(--color-bark-900);
+  --popover: var(--color-paper-0);
+  --popover-foreground: var(--color-bark-900);
+  --primary: var(--color-teal-800);
+  --primary-foreground: var(--color-cream-50);
+  --secondary: var(--color-husk-100);
+  --secondary-foreground: var(--color-bark-900);
+  --muted: var(--color-husk-100);
+  --muted-foreground: var(--color-stone-500);
+  --accent: var(--color-husk-200);
+  --accent-foreground: var(--color-bark-900);
+  --destructive: var(--color-brick-600);
+  --destructive-foreground: var(--color-cream-50);
+  --border: var(--color-husk-200);
+  --input: var(--color-husk-200);
+  --ring: var(--color-teal-800);
+  --chart-1: var(--color-teal-800);
+  --chart-2: var(--color-clay-600);
+  --chart-3: var(--color-moss-600);
+  --chart-4: var(--color-saffron-500);
+  --chart-5: var(--color-stone-500);
+  --sidebar: var(--color-paper-0);
+  --sidebar-foreground: var(--color-bark-900);
+  --sidebar-primary: var(--color-teal-800);
+  --sidebar-primary-foreground: var(--color-cream-50);
+  --sidebar-accent: var(--color-husk-100);
+  --sidebar-accent-foreground: var(--color-bark-900);
+  --sidebar-border: var(--color-husk-200);
+  --sidebar-ring: var(--color-teal-800);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    font-family: var(--font-body), system-ui, sans-serif;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Tabular figures for prices, SKUs, numeric metadata in JetBrains Mono */
+  .font-mono,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }

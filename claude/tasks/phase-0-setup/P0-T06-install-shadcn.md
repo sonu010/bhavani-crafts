@@ -2,7 +2,7 @@
 id: P0-T06
 phase: 0
 title: Install shadcn/ui primitives
-status: not_started
+status: done
 depends_on: [P0-T05]
 estimate_hours: 0.5
 owner: ai
@@ -64,4 +64,10 @@ shadcn pulls in: `@radix-ui/react-*` for each component, `class-variance-authori
 
 # Notes for next agent
 
-(filled in when status → done)
+**Done 2026-05-15.** `pnpm dlx shadcn@latest init --defaults --yes` created `components.json` + `src/lib/utils.ts` + `button.tsx` and updated `globals.css` (it added `@import "tw-animate-css"` and a full `@theme inline { ... }` block of shadcn-semantic CSS variable mappings — kept and built on top of in P0-T07).
+
+Then `shadcn add card input label badge dialog sheet tabs separator dropdown-menu select textarea checkbox table sonner skeleton scroll-area --yes` added 16 more components.
+
+**One delta from the task spec:** `pagination` was not added — shadcn no longer ships a separate `pagination` component in the registry. We'll build cursor pagination as a project-specific component in P2-T07 / P3-T12 instead.
+
+shadcn default palette (zinc/neutral) is replaced wholesale by P0-T07.
