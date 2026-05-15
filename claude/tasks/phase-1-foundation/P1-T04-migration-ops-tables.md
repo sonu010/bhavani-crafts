@@ -2,7 +2,7 @@
 id: P1-T04
 phase: 1
 title: Migration — ops tables + publish-state trigger
-status: in_progress
+status: done
 depends_on: [P1-T01]
 estimate_hours: 1.5
 owner: ai
