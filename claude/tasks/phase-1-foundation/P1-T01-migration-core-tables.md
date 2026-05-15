@@ -2,7 +2,7 @@
 id: P1-T01
 phase: 1
 title: Migration — core tables (profiles, categories, products)
-status: in_progress
+status: done
 depends_on: [P0-T09]
 estimate_hours: 2
 owner: ai
@@ -67,9 +67,23 @@ SQL
 
 None.
 
-# Notes for next agent (in-progress)
+# Notes for next agent
 
-**2026-05-15 — migration SQL written and committed; awaiting owner application.**
+**2026-05-15 — DONE.** Migration applied to live Supabase project `lyycugadkxjtevmugqol` via `supabase db push` (Path B in `user/07`).
+
+**Two iterations needed to land cleanly:**
+1. First attempt failed: `is_admin()` referenced `public.profiles` before the table existed. Postgres validates `LANGUAGE sql` function bodies at CREATE time. Fix: reordered the migration to define helper functions in two phases (set_updated_at first, then table, then is_admin).
+2. Second attempt failed: smoke-block test data used `__smoke_test__` which violates the slug regex it was meant to verify. Fix: replaced with `zzz-migration-smoke-{cat,prod}` and added a `RAISE EXCEPTION` residue assertion.
+3. Third attempt: succeeded.
+
+**Verified post-apply against live Supabase REST API (service-role):**
+- `profiles`, `categories`, `products` all return HTTP 200 with `content-range: */0` (table exists, 0 rows)
+- No smoke residue (`zzz-migration-smoke-*` query returns `[]`)
+- The anon-keyed `categories` query at the start of P1-T01 also returned `[]` (proving the table exists; RLS isn't enabled yet so anon can read)
+
+**Lesson learned (logged for future migrations):** validate every migration against a real Postgres locally before pushing. Going forward I'll spin up either `supabase start` (local stack via Docker) or a throwaway Postgres container, run the migration, verify, then push. Two failed iterations on the owner is two too many.
+
+**Reminder: RLS NOT enabled yet.** All three tables are world-readable+writable via anon key right now. That's by design — RLS lands in 0006 (P1-T06) after the rest of the schema is in place. Don't insert any real data via the anon client before then.
 
 `web/supabase/migrations/0001_init.sql` contains:
 - 4 enums (profile_role, stock_status, product_source, review_status)

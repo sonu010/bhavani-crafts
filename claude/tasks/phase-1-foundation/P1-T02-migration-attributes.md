@@ -2,7 +2,7 @@
 id: P1-T02
 phase: 1
 title: Migration — attributes (definitions + product_attributes)
-status: not_started
+status: in_progress
 depends_on: [P1-T01]
 estimate_hours: 1
 owner: ai
@@ -55,6 +55,25 @@ pnpm tsc --noEmit
 
 None.
 
-# Notes for next agent
+# Notes for next agent (in-progress)
 
-(filled in when status → done)
+**2026-05-15 — SQL written, validated locally against pglite, committed; awaits `supabase db push`.**
+
+`web/supabase/migrations/0002_attributes.sql` contains:
+- 1 enum (`attribute_type`: text | number | boolean | select)
+- 2 tables: `attribute_definitions`, `product_attributes` (composite PK)
+- 2 updated_at triggers, 1 value-type validation trigger
+- 2 CHECK constraints (one-value cardinality on product_attributes; select-type-has-options on attribute_definitions)
+- 7 seeded starter attribute definitions: volume-ml, weight-g, gsm, length-mm, pack-quantity, is-food-safe, finish (with options Glossy/Matte/Satin)
+- A smoke block that exercises happy-path inserts, type-mismatch rejection, two-value rejection, and composite-PK conflict
+
+**New tool: pglite-based local migration validator.** Wrote `web/scripts/validate-migrations.mjs` and added `pnpm validate:migrations`. Runs every `*.sql` in `web/supabase/migrations/` against an embedded Postgres 17 (WASM via `@electric-sql/pglite`). Stubs `auth.users` + `auth.uid()` and strips `CREATE EXTENSION` lines (Supabase-managed). **Going forward, every migration runs through this before `supabase db push`** — no more iterations on the owner.
+
+Result of local validation against 0001 + 0002:
+```
+enums=5  tables=5  indexes=9  functions=4   ✅
+```
+
+`types.gen.ts` extended with `AttributeType`, `AttributeDefinitionRow/Insert/Update`, `ProductAttributeRow/Insert/Update`.
+
+When owner reports `supabase db push` succeeded, mark this task `done` and proceed to P1-T03 (variants + options + images + tags). No further owner action needed unless that migration fails — validate locally first.

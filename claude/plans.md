@@ -43,8 +43,8 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 
 ## Phase 1 — Data foundation   (aggressive 2 days · realistic 3–4 days)
 
-- 🟡 [P1-T01: Migration — core tables (profiles, categories, products)](tasks/phase-1-foundation/P1-T01-migration-core-tables.md) — SQL written + committed; awaits owner application (see `user/07`)
-- ⬜ [P1-T02: Migration — attributes (definitions + product_attributes)](tasks/phase-1-foundation/P1-T02-migration-attributes.md) — depends P1-T01
+- ✅ [P1-T01: Migration — core tables (profiles, categories, products)](tasks/phase-1-foundation/P1-T01-migration-core-tables.md) — applied to live Supabase
+- 🟡 [P1-T02: Migration — attributes (definitions + product_attributes)](tasks/phase-1-foundation/P1-T02-migration-attributes.md) — SQL written + validated locally; awaits `supabase db push`
 - ⬜ [P1-T03: Migration — variants + options model](tasks/phase-1-foundation/P1-T03-migration-variants-options.md) — depends P1-T01
 - ⬜ [P1-T04: Migration — ops tables (audit_logs, jobs, imports, ai_generations)](tasks/phase-1-foundation/P1-T04-migration-ops-tables.md) — depends P1-T01
 - ⬜ [P1-T05: Migration — search (synonyms, search_logs, FTS + trigram)](tasks/phase-1-foundation/P1-T05-migration-search.md) — depends P1-T01

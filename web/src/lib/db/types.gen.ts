@@ -39,6 +39,8 @@ export type ReviewStatus =
   | "published"
   | "archived";
 
+export type AttributeType = "text" | "number" | "boolean" | "select";
+
 // ─── Table row shapes ────────────────────────────────────────────────────
 export interface ProfileRow {
   id: string;
@@ -150,6 +152,52 @@ export type ProductInsert = {
 };
 export type ProductUpdate = Partial<ProductInsert>;
 
+export interface AttributeDefinitionRow {
+  id: string;
+  slug: string;
+  name: string;
+  type: AttributeType;
+  unit: string | null;
+  applies_to_category_id: string | null;
+  options_json: Json | null;
+  is_filterable: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductAttributeRow {
+  product_id: string;
+  attribute_id: string;
+  value_text: string | null;
+  value_number: number | null;
+  value_boolean: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AttributeDefinitionInsert = {
+  id?: string;
+  slug: string;
+  name: string;
+  type: AttributeType;
+  unit?: string | null;
+  applies_to_category_id?: string | null;
+  options_json?: Json | null;
+  is_filterable?: boolean;
+  sort_order?: number;
+};
+export type AttributeDefinitionUpdate = Partial<AttributeDefinitionInsert>;
+
+export type ProductAttributeInsert = {
+  product_id: string;
+  attribute_id: string;
+  value_text?: string | null;
+  value_number?: number | null;
+  value_boolean?: boolean | null;
+};
+export type ProductAttributeUpdate = Partial<ProductAttributeInsert>;
+
 // ─── Database type wrapper used by Supabase client ───────────────────────
 export interface Database {
   public: {
@@ -169,6 +217,16 @@ export interface Database {
         Insert: ProductInsert;
         Update: ProductUpdate;
       };
+      attribute_definitions: {
+        Row: AttributeDefinitionRow;
+        Insert: AttributeDefinitionInsert;
+        Update: AttributeDefinitionUpdate;
+      };
+      product_attributes: {
+        Row: ProductAttributeRow;
+        Insert: ProductAttributeInsert;
+        Update: ProductAttributeUpdate;
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -179,6 +237,7 @@ export interface Database {
       stock_status: StockStatus;
       product_source: ProductSource;
       review_status: ReviewStatus;
+      attribute_type: AttributeType;
     };
     CompositeTypes: Record<string, never>;
   };
