@@ -8,11 +8,14 @@ import type { NextConfig } from "next";
 // Allow images from:
 //   - Supabase Storage of our project (`<ref>.supabase.co`)
 //   - Just Kraft seed CDN (dev only; rehosted before launch in P4-T11)
-// Hostname pulled from env so changes don't need a code edit.
+// Hostname pulled from env. Missing env is a deploy-blocker — fail fast.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseHostname = supabaseUrl
-  ? new URL(supabaseUrl).hostname
-  : undefined;
+if (!supabaseUrl) {
+  throw new Error(
+    "NEXT_PUBLIC_SUPABASE_URL is required. Set it in web/.env.local or the Vercel project's env vars.",
+  );
+}
+const supabaseHostname = new URL(supabaseUrl).hostname;
 
 /**
  * Content Security Policy.
@@ -63,21 +66,17 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       // Just Kraft seed CDN — dev only; never serves on production (RLS
-      // license_status gate). Tracked so /api/health and dev previews can render.
+      // license_status gate). Tracked so dev previews + admin can render.
       {
         protocol: "https",
         hostname: "djl2kq23xfhqi.cloudfront.net",
       },
       // Supabase Storage public URLs for product images.
-      ...(supabaseHostname
-        ? [
-            {
-              protocol: "https" as const,
-              hostname: supabaseHostname,
-              pathname: "/storage/v1/object/public/**",
-            },
-          ]
-        : []),
+      {
+        protocol: "https",
+        hostname: supabaseHostname,
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 

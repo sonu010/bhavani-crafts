@@ -1,5 +1,7 @@
 # AI workflow — rules for AI-assisted coding + AI features
 
+> **Project-wide rules in `engineering-principles.md` supersede this file.** Read those first. This file covers AI-specific operational mechanics (task status, frontmatter, the ai_generations table). Where the two conflict on style or trade-offs, principles wins.
+
 This file has two parts:
 
 - **Part A: Rules for AI agents writing code in this repo.** Read before doing any task.

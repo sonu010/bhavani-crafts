@@ -24,13 +24,21 @@ export async function createServerClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
+          // Structurally required, NOT a defensive fallback (see
+          // claude/architecture/engineering-principles.md §"No fallback logic"
+          // — exception 2). Next 16 disallows cookie mutation from a Server
+          // Component, and there is no API to detect Server-Component-vs-
+          // Server-Action context before the call. The try/catch is the
+          // documented @supabase/ssr pattern. Refresh-token persistence is
+          // handled by the auth middleware (when wired in P2-T04), so a
+          // dropped write from a Server Component is recovered on the next
+          // request, not silently lost.
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // Called from a Server Component — Next 16 disallows mutation here.
-            // The middleware refresh path handles cookie persistence in that case.
+            /* see comment above */
           }
         },
       },
