@@ -1,0 +1,221 @@
+export type Category = "resin" | "paints" | "paper" | "wood" | "diy" | "school";
+
+export type Product = {
+  id: string;
+  name: string;
+  category: Category;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  badge?: string;
+  description: string;
+  rating: number;
+  reviews: number;
+  inStock: boolean;
+  tags: string[];
+};
+
+export const CATEGORIES: { id: Category; label: string; description: string; image: string; icon: string }[] = [
+  { 
+    id: "resin", 
+    label: "Resin Art", 
+    description: "Epoxy resins, hardeners, and unique silicone molds.",
+    image: "https://images.unsplash.com/photo-1635350736475-c8cef4b21906?w=800&q=80",
+    icon: "💧"
+  },
+  { 
+    id: "paints", 
+    label: "Art Stationery", 
+    description: "Paints, brushes, canvases, and artist essentials.",
+    image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
+    icon: "🎨"
+  },
+  { 
+    id: "diy", 
+    label: "Project Kits", 
+    description: "All-in-one curated kits for specific craft projects.",
+    image: "https://images.unsplash.com/photo-1520004434532-6684162097ec?w=800&q=80",
+    icon: "✨"
+  },
+  { 
+    id: "wood", 
+    label: "MDF & Wood", 
+    description: "Laser-cut MDF bases, trays, and natural wood slices.",
+    image: "https://images.unsplash.com/photo-1594911772125-07fc7a2d8d9f?w=800&q=80",
+    icon: "🪵"
+  },
+  { 
+    id: "paper", 
+    label: "Paper Crafts", 
+    description: "Patterned papers, quilling strips, and decoupage.",
+    image: "https://images.unsplash.com/photo-1586075010633-2470acfd8e8b?w=800&q=80",
+    icon: "📄"
+  },
+  { 
+    id: "school", 
+    label: "School Supplies", 
+    description: "Stationery and materials for educational projects.",
+    image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=800&q=80",
+    icon: "🎒"
+  },
+];
+
+export const PRODUCTS: Product[] = [
+  { 
+    id: "e1a9c6a1-3b4c-4d8e-8a2b-7c1d2e3f4a5b", 
+    name: "Silicone Coaster Mold Set", 
+    category: "resin", 
+    price: 349, 
+    originalPrice: 449, 
+    image: "https://images.unsplash.com/photo-1635350736475-c8cef4b21906?w=800&q=80", 
+    badge: "Bestseller", 
+    description: "Set of 6 premium silicone molds for resin coasters. Food-safe, flexible, easy release.", 
+    rating: 4.8, 
+    reviews: 124, 
+    inStock: true, 
+    tags: ["resin", "mold", "coaster"] 
+  },
+  { 
+    id: "f2b8d7a2-4c5d-5e9f-9b3c-8d2e3f4g5b6c", 
+    name: "Acrylic Color Starter Pack", 
+    category: "paints", 
+    price: 299, 
+    originalPrice: 399, 
+    image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80", 
+    badge: "New", 
+    description: "24 vibrant acrylic colors in 12ml tubes. Lightfast and water-mixable, perfect for beginners.", 
+    rating: 4.6, 
+    reviews: 89, 
+    inStock: true, 
+    tags: ["paint", "acrylic", "beginner"] 
+  },
+  { 
+    id: "a3c9e8b3-5d6e-6f0a-0c4d-9e3f4g5h6c7d", 
+    name: "Premium Pattern Paper Bundle", 
+    category: "paper", 
+    price: 219, 
+    image: "https://images.unsplash.com/photo-1586075010633-2470acfd8e8b?w=800&q=80", 
+    badge: "New", 
+    description: "100 sheets of premium patterned paper in 20 designs. Acid-free, 120gsm.", 
+    rating: 4.5, 
+    reviews: 62, 
+    inStock: true, 
+    tags: ["paper", "pattern", "scrapbook"] 
+  },
+  { 
+    id: "b4d0f9c4-6e7f-7a1b-1d5e-0f4g5h6i7d8e", 
+    name: "MDF Tray Blanks Pack", 
+    category: "wood", 
+    price: 189, 
+    image: "https://images.unsplash.com/photo-1594911772125-07fc7a2d8d9f?w=800&q=80", 
+    badge: "New", 
+    description: "Pack of 3 unfinished MDF serving trays ready to paint, decoupage, or resin pour.", 
+    rating: 4.7, 
+    reviews: 48, 
+    inStock: true, 
+    tags: ["wood", "mdf", "tray", "decoupage"] 
+  },
+  { 
+    id: "c5e1a0d5-7f8a-8b2c-2e6f-1g5h6i7j8e9f", 
+    name: "Ocean Resin Pigment Set", 
+    category: "resin", 
+    price: 399, 
+    image: "https://images.unsplash.com/photo-1599406560960-5f50f0119e7a?w=800&q=80", 
+    badge: "Trending", 
+    description: "10 ocean-themed mica pigment powders — aqua, navy, pearl, and sand. Works with all epoxy.", 
+    rating: 4.9, 
+    reviews: 203, 
+    inStock: true, 
+    tags: ["resin", "pigment", "mica", "ocean"] 
+  },
+  { 
+    id: "d6f2b1e6-8a9b-9c3d-3f7g-2h6i7j8k9f0a", 
+    name: "Quilling Paper Strips", 
+    category: "paper", 
+    price: 99, 
+    image: "https://images.unsplash.com/photo-1605722243979-fe0be8158232?w=800&q=80", 
+    description: "500 strips in 30 colors, 3mm and 5mm widths. Acid-free and colorfast.", 
+    rating: 4.4, 
+    reviews: 77, 
+    inStock: true, 
+    tags: ["paper", "quilling", "strips"] 
+  },
+  { 
+    id: "e7a3c2f7-9b0c-0d4e-4g8h-3i7j8k9l0a1b", 
+    name: "Detail Brush Set (12pc)", 
+    category: "paints", 
+    price: 149, 
+    image: "https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=800&q=80", 
+    description: "12 nylon-hair detail brushes for fine line work, miniatures, and resin art.", 
+    rating: 4.3, 
+    reviews: 55, 
+    inStock: true, 
+    tags: ["brush", "paint", "detail"] 
+  },
+  { 
+    id: "f8b4d3a8-0c1d-1e5f-5h9i-4j8k9l0m1b2c", 
+    name: "Kids Festival Craft Kit", 
+    category: "diy", 
+    price: 259, 
+    image: "https://images.unsplash.com/photo-1520004434532-6684162097ec?w=800&q=80", 
+    badge: "Popular", 
+    description: "Everything for a 2-hour festival craft session: foam, glitter glue, stickers, and project card.", 
+    rating: 4.8, 
+    reviews: 142, 
+    inStock: true, 
+    tags: ["diy", "kids", "festival", "kit"] 
+  },
+  { 
+    id: "a9c5e4b9-1d2e-2f6a-6i0j-5k9l0m1n2c3d", 
+    name: "Wood Slice Decor Pack", 
+    category: "wood", 
+    price: 175, 
+    image: "https://images.unsplash.com/photo-1516594798947-e65505dbb29d?w=800&q=80", 
+    description: "10 natural birch wood slices, sanded smooth. Perfect for painting, burning, and ornaments.", 
+    rating: 4.6, 
+    reviews: 38, 
+    inStock: true, 
+    tags: ["wood", "slice", "natural", "decor"] 
+  },
+  { 
+    id: "b0d6f5c0-2e3f-3a7b-7j1k-6l0m1n2o3d4e", 
+    name: "Candle Making Starter Box", 
+    category: "diy", 
+    price: 499, 
+    originalPrice: 649, 
+    image: "https://images.unsplash.com/photo-1602873422634-118671407358?w=800&q=80", 
+    badge: "Best Value", 
+    description: "Complete candle making kit: soy wax, wicks, fragrance oils, dye chips, and 4 glass jars.", 
+    rating: 4.9, 
+    reviews: 97, 
+    inStock: true, 
+    tags: ["diy", "candle", "soy", "fragrance"] 
+  },
+  { 
+    id: "c1e7a6d1-3f4a-4b8c-8k2l-7m1n2o3p4e5f", 
+    name: "Glitter Sheets Combo", 
+    category: "school", 
+    price: 129, 
+    image: "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=800&q=80", 
+    description: "30 self-adhesive glitter foam sheets in 15 colors. Easy-cut, non-shed formula.", 
+    rating: 4.2, 
+    reviews: 66, 
+    inStock: true, 
+    tags: ["school", "glitter", "foam", "sheets"] 
+  },
+  { 
+    id: "d2f8b7e2-4a5b-5c9d-9l3m-8n2o3p4q5f6g", 
+    name: "Canvas Board Set 8x10", 
+    category: "paints", 
+    price: 199, 
+    image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=800&q=80", 
+    description: "6 primed cotton canvas boards, triple-gessoed, ready for acrylic or oil paint.", 
+    rating: 4.5, 
+    reviews: 84, 
+    inStock: true, 
+    tags: ["canvas", "paint", "acrylic", "oil"] 
+  },
+];
+
+export const NEW_ARRIVALS = PRODUCTS.filter((p) => p.badge === "New" || ["e1a9c6a1-3b4c-4d8e-8a2b-7c1d2e3f4a5b", "f2b8d7a2-4c5d-5e9f-9b3c-8d2e3f4g5b6c", "a3c9e8b3-5d6e-6f0a-0c4d-9e3f4g5h6c7d", "b4d0f9c4-6e7f-7a1b-1d5e-0f4g5h6i7d8e"].includes(p.id));
+export const FEATURED = PRODUCTS.filter((p) => ["c5e1a0d5-7f8a-8b2c-2e6f-1g5h6i7j8e9f", "d6f2b1e6-8a9b-9c3d-3f7g-2h6i7j8k9f0a", "e7a3c2f7-9b0c-0d4e-4g8h-3i7j8k9l0a1b", "f8b4d3a8-0c1d-1e5f-5h9i-4j8k9l0m1b2c", "a9c5e4b9-1d2e-2f6a-6i0j-5k9l0m1n2c3d", "b0d6f5c0-2e3f-3a7b-7j1k-6l0m1n2o3d4e"].includes(p.id));

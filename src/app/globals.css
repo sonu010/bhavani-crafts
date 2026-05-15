@@ -1,26 +1,104 @@
 @import "tailwindcss";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-newsreader);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--on-tertiary);
+  
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-surface-variant: var(--surface-variant);
+  
+  --color-muted: var(--surface-container);
+  --color-muted-foreground: var(--on-surface-variant);
+  
+  --color-accent: var(--secondary-container);
+  --color-accent-foreground: var(--on-secondary-container);
+  
+  --color-border: var(--outline-variant);
+  --color-input: var(--outline-variant);
+  --color-ring: var(--surface-tint);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  
+  --shadow-tactile: 0 4px 6px -1px rgba(54, 102, 100, 0.05), 0 2px 4px -1px rgba(54, 102, 100, 0.03);
+  --shadow-soft-extrusion: inset 1px 1px 2px rgba(255,255,255,0.7), 4px 4px 10px rgba(135, 115, 109, 0.12);
+  --shadow-tactile-inset: inset 2px 2px 5px rgba(135,115,109,0.1), inset -1px -1px 2px rgba(255,255,255,0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Artisanal Modernity — Copper brown & Deep Teal palette */
+  --background: #fbf9f4;
+  --foreground: #1b1c19;
+  
+  --primary: #c26d55; /* Fixed Copper Brown matching the zip designs */
+  --on-primary: #ffffff;
+  --primary-container: #fdfcfb;
+  
+  --secondary: #366664; /* Deep Teal */
+  --on-secondary: #ffffff;
+  --secondary-container: #baece9;
+  --on-secondary-container: #3d6c6a;
+  
+  --tertiary: #635f40; /* Sage */
+  --on-tertiary: #ffffff;
+  
+  --surface: #fbf9f4;
+  --on-surface: #1b1c19;
+  --surface-variant: #e4e2dd;
+  --on-surface-variant: #54433e;
+  
+  --surface-container: #f0eee9;
+  --outline: #87736d;
+  --outline-variant: #dac1bb;
+  --surface-tint: #c26d55;
+
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-on-surface font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-medium tracking-tight;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .tactile-card {
+    @apply bg-surface rounded-xl shadow-tactile transition-all hover:shadow-soft-extrusion;
+  }
+  
+  .soft-extrusion {
+    @apply shadow-soft-extrusion;
+  }
+
+  .tactile-inset {
+    @apply shadow-tactile-inset;
+  }
 }
