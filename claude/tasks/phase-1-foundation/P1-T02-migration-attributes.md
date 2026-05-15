@@ -2,7 +2,7 @@
 id: P1-T02
 phase: 1
 title: Migration — attributes (definitions + product_attributes)
-status: in_progress
+status: done
 depends_on: [P1-T01]
 estimate_hours: 1
 owner: ai

@@ -2,7 +2,7 @@
 id: P1-T04
 phase: 1
 title: Migration — ops tables + publish-state trigger
-status: not_started
+status: in_progress
 depends_on: [P1-T01]
 estimate_hours: 1.5
 owner: ai
@@ -72,6 +72,24 @@ pnpm test --run triggers/publish-state
 
 None.
 
-# Notes for next agent
+# Notes for next agent (in-progress)
 
-(filled in when status → done)
+**2026-05-15 — SQL written, validated locally, committed, pushed; awaits `supabase db push`.**
+
+`web/supabase/migrations/0004_ops_tables.sql` contains:
+- 4 enums: `job_status`, `import_action`, `ai_task_type`, `ai_generation_status`
+- 6 tables: `audit_logs`, `background_jobs`, `job_events`, `import_runs`, `import_run_rows`, `ai_generations`
+- 1 trigger function: `public.enforce_publish_state()`
+- 1 trigger: `products_publish_state_consistency` (BEFORE INSERT/UPDATE on products)
+- Smoke block exercising both trigger rejection directions + valid state transitions through draft → ready_to_publish → published → archived
+
+**Note: `background_jobs` deliberately has NO `updated_at` column.** Workers update specific columns (status, progress, checkpoint, finished_at) directly. Initial draft had a fake "no-op trigger for symmetry" using a WHEN(FALSE) clause; that's invalid SQL syntax (`WHEN` requires a preceding `CREATE TRIGGER ... AFTER ...`). Removed; replaced with a comment.
+
+Local pglite chain result after 0004:
+```
+enums=11 tables=18 indexes=28 functions=5
+```
+
+`types.gen.ts` extended with 4 new enum types + 6 new table Row/Insert/Update typings.
+
+Move to `done` once owner reports `supabase db push` succeeded and verify via REST probe (insert an audit_logs row via service-role, confirm round-trips).

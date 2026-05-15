@@ -4,50 +4,54 @@ Last updated: 2026-05-15
 
 ## Counts
 
-- ✅ Done: 10 (P0-T01..T02, P0-T04..T09, P0-T11, P1-T01)
-- 🟡 In progress: 2 (P0-T10 Vercel side · P1-T02 apply side)
+- ✅ Done: 11 (P0-T01..T02, P0-T04..T09, P0-T11, P1-T01, P1-T02)
+- 🟡 In progress: 3 (P0-T10 Vercel · P1-T03 + P1-T04 apply side)
 - 🚧 Blocked: 0
 - ⏸️ Deferred: 1 (P0-T03)
-- ⬜ Not started: 82
+- ⬜ Not started: 80
 
 ## Currently in progress
 
-- **P0-T10** — Git + GitHub done. Vercel side awaits owner (Root Directory → `web`, env vars). See `user/06`.
-- **P1-T02** — Migration `0002_attributes.sql` written + validated locally; awaits `supabase db push`.
+- **P0-T10** — Vercel Root Directory + env vars await owner action. See `user/06`.
+- **P1-T03 + P1-T04** — both SQL files written, validated locally via pglite, committed, pushed to `rebuild-v2`. Single `supabase db push` from web/ will apply both.
 
 ## Last 5 completed
 
-1. **P1-T01** — Core tables (profiles, categories, products) applied to live Supabase via Path B (2026-05-15)
-2. **P0-T11** — Security headers + image remotePatterns (2026-05-15)
-3. **P0-T09** — Wire Supabase clients (2026-05-15)
-4. **P0-T08** — Create Supabase project + wire env (2026-05-15)
-5. **P0-T07** — Design tokens + `/design` gallery (2026-05-15)
+1. **P1-T02** — Attributes migration applied (2026-05-15) — 7 seeded attribute definitions visible via REST probe
+2. **P1-T01** — Core tables applied (2026-05-15)
+3. **P0-T11** — Security headers (2026-05-15)
+4. **P0-T09** — Supabase clients wired (2026-05-15)
+5. **P0-T08** — Supabase project + env (2026-05-15)
 
-## New tooling this session
+## Validator harness status
 
-**`pnpm validate:migrations`** — runs every `web/supabase/migrations/*.sql` against pglite (embedded Postgres 17 WASM) before push. Stubs `auth.users` + `auth.uid()`, strips Supabase-managed extension lines. Lives at `web/scripts/validate-migrations.mjs`. Will be added to CI in a later task.
-
-Result on 0001 + 0002:
+`pnpm validate:migrations` (web/) — runs all 4 migrations through pglite. Current result:
 ```
-enums=5  tables=5  indexes=9  functions=4   ✅
+✅ 0001_init.sql              core tables (profiles, categories, products)
+✅ 0002_attributes.sql        attribute_definitions, product_attributes
+✅ 0003_variants_images_tags  product_images, product_options, product_option_values,
+                              product_variants, variant_option_values, tags, product_tags
+✅ 0004_ops_tables.sql        audit_logs, background_jobs, job_events, import_runs,
+                              import_run_rows, ai_generations + publish-state trigger
+
+▶ Resulting schema: enums=11 tables=18 indexes=28 functions=5
 ```
 
 ## Awaiting owner action
 
 1. **Vercel:** Root Directory → `web`, add 3 env vars, redeploy. (`user/06`)
-2. **Supabase:** apply `0002_attributes.sql` via `pnpm dlx supabase@latest db push` from `web/`.
+2. **Supabase:** `cd web && pnpm dlx supabase@latest db push` — applies BOTH 0003 + 0004 in one command.
 
-## Next 3 to work (after P1-T02 closes)
+## Next 3 to work (after P1-T03/T04 close)
 
-1. **P1-T03** — Migration 0003: variants + options + images (with license tracking) + tags
-2. **P1-T04** — Migration 0004: ops tables + publish-state trigger
-3. **P1-T05** — Migration 0005: search column + indexes + synonyms seed
+1. **P1-T05** — Migration 0005: `fts` generated column + GIN indexes + `search_synonyms` + `search_logs` (seed common craft synonyms: mould/mold, colour/color, resin/epoxy)
+2. **P1-T06** — Migration 0006: RLS policies on every table + RLS attack tests. This is the migration that locks anon down to public-select only.
+3. **P1-T07** — Migration 0007: catalog indexes + `category_with_descendants` recursive view
 
 ## Notes log (most recent first)
 
-- 2026-05-15 — **P1-T02 SQL written + validated locally.** New pglite harness catches bugs before they hit the owner. `0002_attributes.sql` defines `attribute_type` enum, `attribute_definitions` + `product_attributes` (composite PK), value-type validation trigger, and 7 seeded starter attributes.
-- 2026-05-15 — **P1-T01 done.** Live Supabase has `profiles`, `categories`, `products` + 4 enums + 4 triggers. Verified via direct REST API probe.
-- 2026-05-15 — **P0-T11 done + pushed.** Security headers verified via `curl -I`.
-- 2026-05-15 — **P0-T06/T07/T08/T09 done.** shadcn, design tokens, Supabase clients, lint isolation.
-- 2026-05-15 — **Option B applied.** Git relocated to project root.
+- 2026-05-15 — **P1-T03 + P1-T04 written + validated.** Bundled because they're independent of each other and the user said "proceed." 13 new tables added to schema, publish-state trigger enforces invariants.
+- 2026-05-15 — **P1-T02 done.** REST probe confirmed 7 seeded attribute_definitions.
+- 2026-05-15 — **P1-T01 done.** Live Supabase has core tables.
+- 2026-05-15 — Phase 0 functionally complete (AI side); Vercel config awaits owner.
 - 2026-05-15 — Plan v2.1 approved.

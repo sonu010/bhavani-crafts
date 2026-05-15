@@ -2,7 +2,7 @@
 id: P1-T03
 phase: 1
 title: Migration — variants + options + images + tags
-status: not_started
+status: in_progress
 depends_on: [P1-T01]
 estimate_hours: 1.5
 owner: ai
@@ -54,6 +54,17 @@ pnpm tsc --noEmit
 
 None.
 
-# Notes for next agent
+# Notes for next agent (in-progress)
 
-(filled in when status → done)
+**2026-05-15 — SQL written, validated locally, committed, pushed; awaits `supabase db push`.**
+
+`web/supabase/migrations/0003_variants_images_tags.sql` contains:
+- 2 enums (`image_source`, `license_status`)
+- 7 tables: `product_images`, `product_options`, `product_option_values`, `product_variants`, `variant_option_values`, `tags`, `product_tags`
+- 1 partial unique index (`one_default_per_product` on `product_variants`)
+- 6 `updated_at` triggers
+- A smoke block exercising: image license default, option-value uniqueness, partial-unique-default on variants (rejecting two `is_default=true`), allowing a second `is_default=false` variant, variant↔option_value linking, product_tags PK uniqueness
+
+`types.gen.ts` extended with all 7 new tables + 2 new enums (typed Row/Insert/Update for each).
+
+Move to `done` once owner reports `supabase db push` succeeded and REST probe confirms the tables exist.

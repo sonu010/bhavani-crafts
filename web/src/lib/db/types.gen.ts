@@ -41,6 +41,45 @@ export type ReviewStatus =
 
 export type AttributeType = "text" | "number" | "boolean" | "select";
 
+export type ImageSource =
+  | "justkraft_seed"
+  | "admin_upload"
+  | "owner_provided"
+  | "third_party_licensed"
+  | "unknown";
+
+export type LicenseStatus =
+  | "unverified"
+  | "owned"
+  | "licensed"
+  | "public_domain"
+  | "disputed"
+  | "removed";
+
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export type ImportAction = "create" | "update" | "skip" | "error";
+
+export type AiTaskType =
+  | "category_suggest"
+  | "tag_suggest"
+  | "alt_text"
+  | "description_draft"
+  | "duplicate_detect"
+  | "csv_cleanup"
+  | "search_synonym_mine";
+
+export type AiGenerationStatus =
+  | "proposed"
+  | "accepted"
+  | "rejected"
+  | "semantic_fail";
+
 // ─── Table row shapes ────────────────────────────────────────────────────
 export interface ProfileRow {
   id: string;
@@ -198,6 +237,305 @@ export type ProductAttributeInsert = {
 };
 export type ProductAttributeUpdate = Partial<ProductAttributeInsert>;
 
+// product_images
+export interface ProductImageRow {
+  id: string;
+  product_id: string;
+  url: string;
+  storage_path: string | null;
+  alt: string | null;
+  width: number | null;
+  height: number | null;
+  sort_order: number;
+  blur_data_url: string | null;
+  source: ImageSource;
+  source_url: string | null;
+  source_attribution: string | null;
+  license_status: LicenseStatus;
+  license_verified_by: string | null;
+  license_verified_at: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+export type ProductImageInsert = {
+  id?: string;
+  product_id: string;
+  url: string;
+  storage_path?: string | null;
+  alt?: string | null;
+  width?: number | null;
+  height?: number | null;
+  sort_order?: number;
+  blur_data_url?: string | null;
+  source?: ImageSource;
+  source_url?: string | null;
+  source_attribution?: string | null;
+  license_status?: LicenseStatus;
+  license_verified_by?: string | null;
+  license_verified_at?: string | null;
+  deleted_at?: string | null;
+};
+export type ProductImageUpdate = Partial<ProductImageInsert>;
+
+// product_options
+export interface ProductOptionRow {
+  id: string;
+  product_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+export type ProductOptionInsert = {
+  id?: string;
+  product_id: string;
+  name: string;
+  sort_order?: number;
+};
+export type ProductOptionUpdate = Partial<ProductOptionInsert>;
+
+// product_option_values
+export interface ProductOptionValueRow {
+  id: string;
+  option_id: string;
+  value: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+export type ProductOptionValueInsert = {
+  id?: string;
+  option_id: string;
+  value: string;
+  sort_order?: number;
+};
+export type ProductOptionValueUpdate = Partial<ProductOptionValueInsert>;
+
+// product_variants
+export interface ProductVariantRow {
+  id: string;
+  product_id: string;
+  sku: string;
+  name: string | null;
+  price_inr: number | null;
+  compare_at_price_inr: number | null;
+  stock_status: StockStatus;
+  stock_quantity: number | null;
+  is_default: boolean;
+  sort_order: number;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+export type ProductVariantInsert = {
+  id?: string;
+  product_id: string;
+  sku: string;
+  name?: string | null;
+  price_inr?: number | null;
+  compare_at_price_inr?: number | null;
+  stock_status?: StockStatus;
+  stock_quantity?: number | null;
+  is_default?: boolean;
+  sort_order?: number;
+};
+export type ProductVariantUpdate = Partial<ProductVariantInsert>;
+
+// variant_option_values
+export interface VariantOptionValueRow {
+  variant_id: string;
+  option_value_id: string;
+}
+export type VariantOptionValueInsert = VariantOptionValueRow;
+export type VariantOptionValueUpdate = Partial<VariantOptionValueInsert>;
+
+// tags
+export interface TagRow {
+  id: string;
+  slug: string;
+  name: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+export type TagInsert = {
+  id?: string;
+  slug: string;
+  name: string;
+  deleted_at?: string | null;
+};
+export type TagUpdate = Partial<TagInsert>;
+
+// product_tags
+export interface ProductTagRow {
+  product_id: string;
+  tag_id: string;
+}
+export type ProductTagInsert = ProductTagRow;
+export type ProductTagUpdate = Partial<ProductTagInsert>;
+
+// audit_logs (insert-only; updates are rare to never)
+export interface AuditLogRow {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  before_json: Json | null;
+  after_json: Json | null;
+  request_id: string | null;
+  created_at: string;
+}
+export type AuditLogInsert = {
+  id?: string;
+  actor_id?: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  before_json?: Json | null;
+  after_json?: Json | null;
+  request_id?: string | null;
+};
+export type AuditLogUpdate = Partial<AuditLogInsert>;
+
+// background_jobs
+export interface BackgroundJobRow {
+  id: string;
+  kind: string;
+  status: JobStatus;
+  payload_json: Json | null;
+  result_json: Json | null;
+  error: string | null;
+  progress: number;
+  total: number;
+  checkpoint: Json | null;
+  created_by: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+}
+export type BackgroundJobInsert = {
+  id?: string;
+  kind: string;
+  status?: JobStatus;
+  payload_json?: Json | null;
+  result_json?: Json | null;
+  error?: string | null;
+  progress?: number;
+  total?: number;
+  checkpoint?: Json | null;
+  created_by?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+};
+export type BackgroundJobUpdate = Partial<BackgroundJobInsert>;
+
+// job_events
+export interface JobEventRow {
+  id: string;
+  job_id: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  data_json: Json | null;
+  created_at: string;
+}
+export type JobEventInsert = {
+  id?: string;
+  job_id: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  data_json?: Json | null;
+};
+export type JobEventUpdate = Partial<JobEventInsert>;
+
+// import_runs
+export interface ImportRunRow {
+  id: string;
+  filename: string | null;
+  status: JobStatus;
+  total_rows: number;
+  success_count: number;
+  error_count: number;
+  created_by: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+export type ImportRunInsert = {
+  id?: string;
+  filename?: string | null;
+  status?: JobStatus;
+  total_rows?: number;
+  success_count?: number;
+  error_count?: number;
+  created_by?: string | null;
+  finished_at?: string | null;
+};
+export type ImportRunUpdate = Partial<ImportRunInsert>;
+
+// import_run_rows
+export interface ImportRunRowRow {
+  id: string;
+  import_run_id: string;
+  row_number: number;
+  sku: string | null;
+  action: ImportAction | null;
+  error_message: string | null;
+  raw_json: Json;
+  applied_at: string | null;
+}
+export type ImportRunRowInsert = {
+  id?: string;
+  import_run_id: string;
+  row_number: number;
+  sku?: string | null;
+  action?: ImportAction | null;
+  error_message?: string | null;
+  raw_json: Json;
+  applied_at?: string | null;
+};
+export type ImportRunRowUpdate = Partial<ImportRunRowInsert>;
+
+// ai_generations
+export interface AiGenerationRow {
+  id: string;
+  task_type: AiTaskType;
+  entity_type: string;
+  entity_id: string | null;
+  prompt_version: string;
+  model: string;
+  input_hash: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  usd_cost: number | null;
+  output_json: Json | null;
+  validation_status: string;
+  validation_error: string | null;
+  status: AiGenerationStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+export type AiGenerationInsert = {
+  id?: string;
+  task_type: AiTaskType;
+  entity_type: string;
+  entity_id?: string | null;
+  prompt_version: string;
+  model: string;
+  input_hash: string;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  usd_cost?: number | null;
+  output_json?: Json | null;
+  validation_status: string;
+  validation_error?: string | null;
+  status?: AiGenerationStatus;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+};
+export type AiGenerationUpdate = Partial<AiGenerationInsert>;
+
 // ─── Database type wrapper used by Supabase client ───────────────────────
 export interface Database {
   public: {
@@ -227,6 +565,71 @@ export interface Database {
         Insert: ProductAttributeInsert;
         Update: ProductAttributeUpdate;
       };
+      product_images: {
+        Row: ProductImageRow;
+        Insert: ProductImageInsert;
+        Update: ProductImageUpdate;
+      };
+      product_options: {
+        Row: ProductOptionRow;
+        Insert: ProductOptionInsert;
+        Update: ProductOptionUpdate;
+      };
+      product_option_values: {
+        Row: ProductOptionValueRow;
+        Insert: ProductOptionValueInsert;
+        Update: ProductOptionValueUpdate;
+      };
+      product_variants: {
+        Row: ProductVariantRow;
+        Insert: ProductVariantInsert;
+        Update: ProductVariantUpdate;
+      };
+      variant_option_values: {
+        Row: VariantOptionValueRow;
+        Insert: VariantOptionValueInsert;
+        Update: VariantOptionValueUpdate;
+      };
+      tags: {
+        Row: TagRow;
+        Insert: TagInsert;
+        Update: TagUpdate;
+      };
+      product_tags: {
+        Row: ProductTagRow;
+        Insert: ProductTagInsert;
+        Update: ProductTagUpdate;
+      };
+      audit_logs: {
+        Row: AuditLogRow;
+        Insert: AuditLogInsert;
+        Update: AuditLogUpdate;
+      };
+      background_jobs: {
+        Row: BackgroundJobRow;
+        Insert: BackgroundJobInsert;
+        Update: BackgroundJobUpdate;
+      };
+      job_events: {
+        Row: JobEventRow;
+        Insert: JobEventInsert;
+        Update: JobEventUpdate;
+      };
+      import_runs: {
+        Row: ImportRunRow;
+        Insert: ImportRunInsert;
+        Update: ImportRunUpdate;
+      };
+      import_run_rows: {
+        Row: ImportRunRowRow;
+        Insert: ImportRunRowInsert;
+        Update: ImportRunRowUpdate;
+      };
+      ai_generations: {
+        Row: AiGenerationRow;
+        Insert: AiGenerationInsert;
+        Update: AiGenerationUpdate;
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -238,6 +641,12 @@ export interface Database {
       product_source: ProductSource;
       review_status: ReviewStatus;
       attribute_type: AttributeType;
+      image_source: ImageSource;
+      license_status: LicenseStatus;
+      job_status: JobStatus;
+      import_action: ImportAction;
+      ai_task_type: AiTaskType;
+      ai_generation_status: AiGenerationStatus;
     };
     CompositeTypes: Record<string, never>;
   };
