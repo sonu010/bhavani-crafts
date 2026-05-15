@@ -18,6 +18,7 @@
  * Exits 0 on success, 1 on failure. Run before every `supabase db push`.
  */
 import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -25,7 +26,12 @@ import url from "node:url";
 const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.resolve(HERE, "..", "supabase", "migrations");
 
-// Lines pglite can't handle that Supabase provides natively.
+// Strip Supabase-provided extension declarations.
+// pgcrypto is part of Postgres 17 core (gen_random_uuid), so the strip is
+// safe. unaccent we don't strictly need for validation (we don't use it
+// in any index op-class yet). pg_trgm IS loaded as a contrib extension
+// above so trigram op-classes work; we still strip the SQL line to avoid
+// a duplicate-extension error.
 const STRIP_EXTENSION = /^CREATE EXTENSION[^;]+;.*$/gm;
 
 const AUTH_STUB = `
@@ -46,8 +52,10 @@ function preprocess(sql) {
 }
 
 async function main() {
-  const db = new PGlite();
+  const db = new PGlite({ extensions: { pg_trgm } });
   await db.exec(AUTH_STUB);
+  // The contrib extension still needs to be CREATE'd into the catalog.
+  await db.exec("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
 
   const migrations = listMigrations();
   if (migrations.length === 0) {

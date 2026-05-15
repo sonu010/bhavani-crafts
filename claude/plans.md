@@ -45,9 +45,9 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 
 - ✅ [P1-T01: Migration — core tables (profiles, categories, products)](tasks/phase-1-foundation/P1-T01-migration-core-tables.md) — applied to live Supabase
 - ✅ [P1-T02: Migration — attributes (definitions + product_attributes)](tasks/phase-1-foundation/P1-T02-migration-attributes.md) — applied; 7 seeded
-- 🟡 [P1-T03: Migration — variants + options + images + tags](tasks/phase-1-foundation/P1-T03-migration-variants-options.md) — SQL written + validated; awaits `db push`
-- 🟡 [P1-T04: Migration — ops tables + publish-state trigger](tasks/phase-1-foundation/P1-T04-migration-ops-tables.md) — SQL written + validated; awaits `db push`
-- ⬜ [P1-T05: Migration — search (synonyms, search_logs, FTS + trigram)](tasks/phase-1-foundation/P1-T05-migration-search.md) — depends P1-T01
+- ✅ [P1-T03: Migration — variants + options + images + tags](tasks/phase-1-foundation/P1-T03-migration-variants-options.md) — applied
+- ✅ [P1-T04: Migration — ops tables + publish-state trigger](tasks/phase-1-foundation/P1-T04-migration-ops-tables.md) — applied
+- ✅ [P1-T05: Migration — search (synonyms, search_logs, FTS + trigram)](tasks/phase-1-foundation/P1-T05-migration-search.md) — applied; threshold issue flagged in search.md
 - ⬜ [P1-T06: RLS policies (incl. child-parent EXISTS) + RLS attack test](tasks/phase-1-foundation/P1-T06-rls-policies.md) — depends P1-T02, P1-T03, P1-T04, P1-T05
 - ⬜ [P1-T07: Indexes + category_with_descendants view](tasks/phase-1-foundation/P1-T07-indexes-and-views.md) — depends P1-T06
 - ⬜ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — depends P1-T07

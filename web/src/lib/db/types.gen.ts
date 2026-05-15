@@ -110,6 +110,9 @@ export interface ProductRow {
   sku: string;
   slug: string;
   name: string;
+  // Note: products.fts (tsvector) is a generated STORED column added in
+  // 0005_search.sql. It's not surfaced in the typed Row because no
+  // application code reads it directly — we use FTS only in WHERE clauses.
   description: string | null;
   short_description: string | null;
   category_id: string | null;
@@ -496,6 +499,37 @@ export type ImportRunRowInsert = {
 };
 export type ImportRunRowUpdate = Partial<ImportRunRowInsert>;
 
+// search_synonyms
+export interface SearchSynonymRow {
+  id: string;
+  term: string;
+  synonyms: string[];
+  created_at: string;
+  updated_at: string;
+}
+export type SearchSynonymInsert = {
+  id?: string;
+  term: string;
+  synonyms: string[];
+};
+export type SearchSynonymUpdate = Partial<SearchSynonymInsert>;
+
+// search_logs
+export interface SearchLogRow {
+  id: string;
+  query: string;
+  result_count: number;
+  user_id: string | null;
+  created_at: string;
+}
+export type SearchLogInsert = {
+  id?: string;
+  query: string;
+  result_count: number;
+  user_id?: string | null;
+};
+export type SearchLogUpdate = Partial<SearchLogInsert>;
+
 // ai_generations
 export interface AiGenerationRow {
   id: string;
@@ -629,6 +663,16 @@ export interface Database {
         Row: AiGenerationRow;
         Insert: AiGenerationInsert;
         Update: AiGenerationUpdate;
+      };
+      search_synonyms: {
+        Row: SearchSynonymRow;
+        Insert: SearchSynonymInsert;
+        Update: SearchSynonymUpdate;
+      };
+      search_logs: {
+        Row: SearchLogRow;
+        Insert: SearchLogInsert;
+        Update: SearchLogUpdate;
       };
     };
     Views: Record<string, never>;

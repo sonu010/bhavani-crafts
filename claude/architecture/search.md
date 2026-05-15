@@ -87,6 +87,29 @@ The list grows organically via the **synonym mining** feature in Phase 4 (P4-T09
 - No personalization. No "trending searches."
 - No filter-after-search composability (the search results page is its own thing; filters live on category pages). Acceptable for MVP given craft-supply browsing patterns.
 
+## Trigram threshold — known issue
+
+Measured values from pglite (Postgres 17 + pg_trgm):
+
+| name (in DB)                               | query   | `similarity()` |
+|---|---|---|
+| `Resin`                                    | `rezin` | 0.333 |
+| `Resin epoxy`                              | `resi`  | 0.308 |
+| `Resin epoxy 100ml clear casting kit`      | `rezin` | **0.079** |
+
+The default `pg_trgm.similarity_threshold` is **0.3**. The `%` operator uses that threshold. Long product names dilute the similarity score because trigrams from unrelated words (epoxy, 100ml, casting, kit) reduce the match ratio.
+
+**This means the WHERE clause in the production query above (`name % $original`) will MISS typos against long-named products with default settings.** This is a real correctness issue, not just an MVP polish item.
+
+Options when we implement the search query handler:
+
+1. **Lower threshold per query** — `SELECT set_limit(0.15)` in the same transaction before the search. Easy, but tunes globally per session.
+2. **Use `similarity()` directly with a per-query threshold** — `WHERE similarity(name, $original) >= 0.15`. Explicit, but loses the GIN-index acceleration that `%` provides.
+3. **Tokenize the query and OR each word** — for each word in the user query, run `name % $word`. Hits long names because we compare per-word. Adds query complexity but is the right shape.
+4. **Move to a search engine** (Meilisearch, Typesense) — overkill at MVP; per ADR-004 we revisit at > 100k products.
+
+**Decision deferred** to when we build the search query handler in Phase 3 (P3-T18/T19). Recommended first attempt: option 3 (tokenize + OR), with a SELECT performance test against seed data; fall back to option 2 if option 3's plan is bad.
+
 ## Performance budget
 
 - p95 FTS query time: ≤ 80 ms (enforced in CI via a perf test against seed data).

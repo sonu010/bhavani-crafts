@@ -2,7 +2,7 @@
 id: P1-T05
 phase: 1
 title: Migration — search (synonyms, search_logs, FTS column + indexes)
-status: not_started
+status: done
 depends_on: [P1-T01]
 estimate_hours: 1
 owner: ai
@@ -78,4 +78,18 @@ None.
 
 # Notes for next agent
 
-(filled in when status → done)
+**2026-05-15 — DONE.** Migration applied to live Supabase by me (`pnpm dlx supabase@latest db push`). Verified via REST probe: 7 seeded synonyms present (`acrylic`, `colour`, `glitter`, `gsm`, `mdf`, `mould`, `resin`); `products.fts` queryable; `search_logs` empty + reachable.
+
+**`0005_search.sql` contents:**
+- `products.fts tsvector` generated STORED column (name + short_description + description, tokenized as English)
+- 3 GIN indexes: `products_fts_idx` (FTS), `products_name_trgm_idx` (trigram on name), `products_sku_trgm_idx` (trigram on sku)
+- `search_synonyms` table (term lowercased + 2-40 chars; synonyms non-empty array)
+- `search_logs` table (query 1-200 chars; result_count >= 0)
+- 7 seeded synonyms
+- Smoke block: FTS round-trip on "resin", FTS multi-word on "clear casting", trigram reachable (similarity > 0 for typo), uppercase-term rejection, empty-synonyms rejection
+
+**Tooling change in this session:** validator harness loads `@electric-sql/pglite/contrib/pg_trgm` and `CREATE EXTENSION pg_trgm` before applying migrations. Without that the GIN trigram indexes fail to validate against pglite.
+
+**Important documentation update:** `claude/architecture/search.md` now has a §"Trigram threshold — known issue" section. Default `pg_trgm.similarity_threshold` is 0.3, but `similarity()` between long product names and a one-word typo like "rezin" is **0.079** (measured). So `WHERE name % $query` will MISS typos for most real products. Decision deferred to P3-T18/T19 — recommended approach: tokenize query and OR per-word trigram. This is a real correctness issue, flagged not patched.
+
+Next: P1-T06 (RLS policies + RLS attack test).
