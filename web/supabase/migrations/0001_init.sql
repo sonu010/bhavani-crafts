@@ -70,7 +70,7 @@ CREATE TYPE review_status AS ENUM (
 
 
 -- ╭──────────────────────────────────────────────────────────────╮
--- │ 3. Helper functions                                          │
+-- │ 3. Helper functions — part 1 (no table dependencies)         │
 -- ╰──────────────────────────────────────────────────────────────╯
 
 -- Touch updated_at on every UPDATE. Reused by all tables.
@@ -84,23 +84,9 @@ BEGIN
 END;
 $$;
 
--- Cheap admin check used by RLS policies (lands in 0006_rls.sql).
--- STABLE so Postgres can cache the result within a single transaction.
--- SECURITY DEFINER so it can read profiles regardless of caller's row-level perms.
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles
-    WHERE id = auth.uid()
-      AND role IN ('owner', 'admin', 'editor')
-  );
-$$;
+-- (public.is_admin() is defined below in section 5, after the profiles
+--  table exists. Postgres validates LANGUAGE sql function bodies at CREATE
+--  time, so we have to define profiles first.)
 
 
 -- ╭──────────────────────────────────────────────────────────────╮
@@ -145,7 +131,30 @@ CREATE TRIGGER on_auth_user_created
 
 
 -- ╭──────────────────────────────────────────────────────────────╮
--- │ 5. categories — self-referential tree, globally unique slugs │
+-- │ 5. Helper functions — part 2 (depends on profiles)           │
+-- ╰──────────────────────────────────────────────────────────────╯
+
+-- Cheap admin check used by RLS policies (lands in 0006_rls.sql).
+-- STABLE so Postgres can cache the result within a single transaction.
+-- SECURITY DEFINER so it can read profiles regardless of caller's row-level perms.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = auth.uid()
+      AND role IN ('owner', 'admin', 'editor')
+  );
+$$;
+
+
+-- ╭──────────────────────────────────────────────────────────────╮
+-- │ 6. categories — self-referential tree, globally unique slugs │
 -- ╰──────────────────────────────────────────────────────────────╯
 CREATE TABLE public.categories (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -173,7 +182,7 @@ CREATE TRIGGER categories_set_updated_at
 
 
 -- ╭──────────────────────────────────────────────────────────────╮
--- │ 6. products                                                  │
+-- │ 7. products                                                  │
 -- ╰──────────────────────────────────────────────────────────────╯
 CREATE TABLE public.products (
   id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -238,7 +247,7 @@ CREATE TRIGGER products_set_updated_at
 
 
 -- ╭──────────────────────────────────────────────────────────────╮
--- │ 7. Smoke insert (rolled back) — fails the migration loudly   │
+-- │ 8. Smoke insert (rolled back) — fails the migration loudly   │
 -- │    if anything above is structurally broken                  │
 -- ╰──────────────────────────────────────────────────────────────╯
 DO $$
