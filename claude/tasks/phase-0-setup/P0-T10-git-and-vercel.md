@@ -2,7 +2,7 @@
 id: P0-T10
 phase: 0
 title: Git init + GitHub repo + Vercel link
-status: not_started
+status: done
 depends_on: [P0-T07, P0-T09]
 estimate_hours: 1
 owner: shared
@@ -139,4 +139,24 @@ None.
 
 # Notes for next agent
 
-(filled in when status → done)
+**2026-05-15 — DONE.** Both halves landed:
+
+Git + GitHub side (AI, earlier):
+- Project root `.git` initialized (Option B)
+- Remote `https://github.com/sonu010/bhavani-crafts.git`
+- `main` untouched (legacy prototype)
+- `rebuild-v2` branch with full rebuild progress; latest at `f8ebe8e`
+- `pre-rebuild` tag pins legacy commit `71e3ad5`
+
+Vercel side (owner, 2026-05-15):
+- Root Directory → `web`
+- Env vars added (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)
+- Preview redeployed successfully
+- Deployment protection disabled on preview to allow AI curl-based verification
+
+Live preview: `https://bhavani-crafts-6cg92t4ki-sonu010s-projects.vercel.app/`
+- `/` → HTTP 200, Bhavani placeholder renders, all 6 security headers present (CSP, HSTS, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=()/microphone=()/geolocation=())
+- `/api/health` → `{"ok":true}` (live Supabase reachable from Vercel)
+- `/design` → HTTP 404 (correct user-facing behavior; RSC payload leak logged as follow-up in blockers.md, fixed via middleware in P2-T04)
+
+**Follow-up not in this task:** Husky pre-commit hook + lint-staged config. Will add when first storefront/admin code lands (P3-T01 onwards).

@@ -35,4 +35,8 @@ These pause specific Phase 0 tasks. The rest of Phase 0 can proceed in parallel.
 
 ## Resolved blockers
 
-(none yet)
+- **Vercel Root Directory + env vars** (resolved 2026-05-15) — owner configured Root Directory → `web`, added 3 Supabase env vars, redeployed. Preview at `https://bhavani-crafts-<hash>-sonu010s-projects.vercel.app/` returns 200 on `/`, `{"ok":true}` on `/api/health`, all 6 security headers present, `/design` returns HTTP 404. Deployment protection disabled on preview to allow AI curls.
+
+## Follow-ups (not blocking, but tracked)
+
+- **`/design` RSC payload leak** (logged 2026-05-15) — `/design` returns HTTP 404 with the Next default not-found UI, but the RSC payload in the response body still contains the dev gallery's serialized tree (palette swatches, type examples). Layout-level `notFound()` doesn't prevent child page from streaming into the response. The user-facing behavior is correct (404 status, 404 UI), and the leaked content is non-sensitive (just our palette + fonts), so this isn't security-critical. Will be fixed in P2-T04 (middleware admin gate) — the same middleware will 404 any `/design*` path in production before any rendering happens. Until then, the gating relies on `process.env.NODE_ENV === "production"` in `web/src/app/(dev)/layout.tsx`.

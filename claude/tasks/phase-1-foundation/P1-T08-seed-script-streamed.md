@@ -2,7 +2,7 @@
 id: P1-T08
 phase: 1
 title: Seed script — streaming Just Kraft JSON into Postgres
-status: not_started
+status: done
 depends_on: [P1-T07]
 estimate_hours: 3
 owner: ai
@@ -100,4 +100,32 @@ psql "$DB_URL" -c "SELECT count(*) FROM products WHERE source = 'justkraft_seed'
 
 # Notes for next agent
 
-(filled in when status → done. Note any data-quality surprises that should be added to `seed_report.json`.)
+**2026-05-15 — DONE.** `web/scripts/seed-from-justkraft.mjs` ran cleanly against live Supabase after three iterations. Live counts (verified via REST):
+
+```
+products              7,780   (all is_published=false, source='justkraft_seed')
+categories              362
+tags                    458
+product_images       14,964   (all license_status='unverified' — RLS blocks public read)
+product_variants      8,181
+product_tags          7,971
+```
+
+Anon probe confirms 0 products visible (RLS holds). Launch-blocker condition holds: 0 published seed rows.
+
+**Data quality surprises** that adjusted final numbers from the 8,509 starting count:
+- **729 duplicate SKUs in the source JSON.** Deduplicated last-write-wins after streaming. Final unique-by-SKU count: 7,780. (The Just Kraft sitemap apparently lists the same product under multiple URLs in some cases.)
+
+**Three bugs hit + fixed during the runs** (all in iterative dev, not on owner):
+
+1. **`stream-json` v2 import shape:** v1 was `import StreamArray from 'stream-json/streamers/StreamArray.js'`; v2 is named export `{ streamArray }`. Also needs `pick` filter to drill into the `products` array of the top-level object.
+2. **Slug collisions on long product names.** First attempt `slugify(name + "-" + sku)` truncated to 80 chars and lost the SKU tail. Fix: dedicated `productSlug(name, sku)` puts the name prefix ≤60 chars, SKU as full suffix.
+3. **`ON CONFLICT DO UPDATE` row-twice error:** duplicate SKUs in one batch hit Postgres's restriction that each conflict target can only update once per command. Fix: dedupe by sku before upserting.
+
+**Idempotency strategy:** the script begins with a cleanup pass that deletes all `source = 'justkraft_seed'` products. CASCADE FKs unwind images, variants, options, attributes, product_tags. This is necessary because `product_images` has no UNIQUE on (product_id, url) — without cleanup, a re-run would double-insert images. Tags themselves and search_synonyms are preserved across runs.
+
+**Local-only.** The 22MB JSON is gitignored. Script must run from a developer's laptop with `web/.env.local` populated. Never deploy this script.
+
+`seed_report.json` written at `data/justkraft-inventory/seed_report.json` with the final counts + truncated error list.
+
+Phase 1 schema migrations are now backed with realistic data. Ready for P1-T09 (typed data layer).

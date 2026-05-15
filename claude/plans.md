@@ -36,7 +36,7 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ✅ [P0-T07: Write design tokens (CSS vars + Tailwind theme)](tasks/phase-0-setup/P0-T07-write-design-tokens.md) — Bhavani palette + Newsreader/Manrope/JetBrains Mono + `/design` gallery
 - ✅ [P0-T08: Create Supabase project + wire env](tasks/phase-0-setup/P0-T08-create-supabase-project.md) — project `lyycugadkxjtevmugqol`, env wired locally
 - ✅ [P0-T09: Wire Supabase clients (browser/server/admin)](tasks/phase-0-setup/P0-T09-wire-env-and-clients.md) — health check returns `connected`
-- 🟡 [P0-T10: Git init + GitHub + Vercel link](tasks/phase-0-setup/P0-T10-git-and-vercel.md) — git + GitHub done; Vercel config awaits owner action per user/06
+- ✅ [P0-T10: Git init + GitHub + Vercel link](tasks/phase-0-setup/P0-T10-git-and-vercel.md) — preview live; all checks pass
 - ✅ [P0-T11: Set security headers in next.config](tasks/phase-0-setup/P0-T11-set-security-headers.md) — all 6 headers verified
 
 ---
@@ -50,7 +50,7 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ✅ [P1-T05: Migration — search (synonyms, search_logs, FTS + trigram)](tasks/phase-1-foundation/P1-T05-migration-search.md) — applied; threshold issue flagged in search.md
 - ✅ [P1-T06: RLS policies (incl. child-parent EXISTS) + RLS attack test](tasks/phase-1-foundation/P1-T06-rls-policies.md) — applied; 10/10 attack probes pass
 - ✅ [P1-T07: Indexes + category_with_descendants view](tasks/phase-1-foundation/P1-T07-indexes-and-views.md) — applied; 9 indexes + recursive view
-- ⬜ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — depends P1-T07
+- ✅ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — 7,780 products seeded on live; anon-blocked; launch-blockers green
 - ⬜ [P1-T09: Typed data layer (lib/db/* with Zod)](tasks/phase-1-foundation/P1-T09-typed-data-layer.md) — depends P1-T07
 - ⬜ [P1-T10: Verify seed counts and RLS sanity](tasks/phase-1-foundation/P1-T10-verify-seed-counts.md) — depends P1-T08, P1-T09
 - ⬜ [P1-T11: Author architecture/database-schema.md fully](tasks/phase-1-foundation/P1-T11-write-database-schema-doc.md) — depends P1-T10
@@ -127,7 +127,7 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 
 ## Real-content gate (hard gate before Phase 4 polish)
 
-- 🚧 [GATE: Real-content gate](blockers.md#real-content-gate) — see [blockers.md](blockers.md)
+- 🚧 [GATE: Real-content gate](blockers.md) — see [blockers.md](blockers.md)
 
 ---
 
