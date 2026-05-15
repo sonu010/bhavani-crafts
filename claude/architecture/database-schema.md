@@ -1,0 +1,393 @@
+# Database schema
+
+This file is the human-readable spec. The authoritative source is the SQL in `web/supabase/migrations/`, written by Phase 1 tasks (P1-T01..P1-T05). After P1-T11, this file is regenerated to reflect the actual deployed schema.
+
+## Conventions
+
+- All tables have `created_at` and (mutable tables) `updated_at` `timestamptz default now()`.
+- Soft-delete columns: `deleted_at timestamptz null`, `deleted_by uuid null`. Indexes are typically partial: `WHERE deleted_at IS NULL`.
+- All PKs are `uuid default gen_random_uuid()` unless otherwise noted.
+- Enums are defined once at the top of `0001_init.sql` and reused.
+- Every table has RLS enabled. See [security.md](security.md) for policies.
+
+## Enums
+
+```sql
+CREATE TYPE profile_role AS ENUM ('owner', 'admin', 'editor', 'viewer');
+
+CREATE TYPE stock_status AS ENUM (
+  'in_stock', 'low_stock', 'out_of_stock', 'made_to_order', 'unknown'
+);
+
+CREATE TYPE product_source AS ENUM (
+  'manual', 'justkraft_seed', 'csv_import', 'ai_assisted'
+);
+
+CREATE TYPE review_status AS ENUM (
+  'draft', 'needs_review', 'ready_to_publish', 'published', 'archived'
+);
+
+CREATE TYPE image_source AS ENUM (
+  'justkraft_seed', 'admin_upload', 'owner_provided', 'third_party_licensed', 'unknown'
+);
+
+CREATE TYPE license_status AS ENUM (
+  'unverified', 'owned', 'licensed', 'public_domain', 'disputed', 'removed'
+);
+
+CREATE TYPE attribute_type AS ENUM ('text', 'number', 'boolean', 'select');
+
+CREATE TYPE job_status AS ENUM (
+  'queued', 'running', 'succeeded', 'failed', 'cancelled'
+);
+
+CREATE TYPE import_action AS ENUM ('create', 'update', 'skip', 'error');
+
+CREATE TYPE ai_task_type AS ENUM (
+  'category_suggest', 'tag_suggest', 'alt_text',
+  'description_draft', 'duplicate_detect', 'csv_cleanup', 'search_synonym_mine'
+);
+
+CREATE TYPE ai_generation_status AS ENUM ('proposed', 'accepted', 'rejected', 'semantic_fail');
+```
+
+## Catalog tables
+
+### `profiles`
+1:1 with `auth.users`. Source of admin roles. Created via trigger when a new user signs up.
+```sql
+profiles (
+  id          uuid primary key references auth.users(id) on delete cascade,
+  role        profile_role not null default 'viewer',
+  full_name   text,
+  created_at, updated_at
+)
+```
+
+### `categories`
+Self-referential tree. Slugs are **globally unique** (URL is `/c/<slug>`, never nested). See glossary §Slug.
+```sql
+categories (
+  id              uuid pk,
+  slug            text not null unique,
+  name            text not null,
+  description     text,
+  parent_id       uuid references categories(id) on delete restrict,
+  sort_order      int not null default 0,
+  image_url       text,
+  meta_title      text,
+  meta_description text,
+  deleted_at, deleted_by,
+  created_at, updated_at
+)
+```
+
+### `products`
+The catalog.
+```sql
+products (
+  id                       uuid pk,
+  sku                      text not null unique,
+  slug                     text not null unique,
+  name                     text not null,
+  description              text,                          -- markdown
+  short_description        text,                          -- plain, ≤ 280 chars
+  category_id              uuid references categories(id) on delete restrict,
+  base_price_inr           numeric(10,2),                 -- null = "Price on request"
+  compare_at_price_inr     numeric(10,2),                 -- was-price for sales
+  stock_status             stock_status not null default 'unknown',
+  stock_quantity           int,
+  low_stock_threshold      int not null default 5,
+  allow_backorder          boolean not null default false,
+  reserved_quantity        int not null default 0,
+  min_order_qty            int not null default 1,
+  max_order_qty            int,
+  is_published             boolean not null default false,
+  review_status            review_status not null default 'draft',
+  is_featured              boolean not null default false,
+  source                   product_source not null default 'manual',
+  source_url               text,                          -- original URL if seeded
+  meta_title               text, meta_description text, canonical_url text,
+  deleted_at, deleted_by,
+  created_at, updated_at,
+  created_by, updated_by                                  -- uuid references profiles(id)
+)
+```
+
+**Trigger:** `products_publish_state_consistency` enforces:
+- `review_status = 'published'` ⟹ `is_published = true`
+- `review_status = 'archived'`  ⟹ `is_published = false`
+
+Any UPDATE that violates either direction is rejected with a clear error.
+
+### `product_images`
+Ordered images per product, with license tracking.
+```sql
+product_images (
+  id              uuid pk,
+  product_id      uuid not null references products(id) on delete cascade,
+  url             text not null,                          -- public URL
+  storage_path    text,                                   -- null while hotlinking; set after re-host
+  alt             text,
+  width           int, height int,
+  sort_order      int not null default 0,
+  blur_data_url   text,                                   -- LQIP base64
+
+  source              image_source not null default 'unknown',
+  source_url          text,
+  source_attribution  text,
+  license_status      license_status not null default 'unverified',
+  license_verified_by uuid references profiles(id),
+  license_verified_at timestamptz,
+
+  deleted_at, created_at, updated_at
+)
+```
+
+### `product_options`, `product_option_values`, `product_variants`, `variant_option_values`
+Real variant model — variants have own SKU, price, and stock. Options are axes (Size, Color); values are points on the axis.
+```sql
+product_options (
+  id          uuid pk,
+  product_id  uuid not null references products(id) on delete cascade,
+  name        text not null,
+  sort_order  int not null default 0,
+  created_at, updated_at
+);
+
+product_option_values (
+  id          uuid pk,
+  option_id   uuid not null references product_options(id) on delete cascade,
+  value       text not null,
+  sort_order  int not null default 0,
+  created_at, updated_at
+);
+
+product_variants (
+  id                    uuid pk,
+  product_id            uuid not null references products(id) on delete cascade,
+  sku                   text not null unique,
+  name                  text,
+  price_inr             numeric(10,2),
+  compare_at_price_inr  numeric(10,2),
+  stock_status          stock_status not null default 'unknown',
+  stock_quantity        int,
+  is_default            boolean not null default false,
+  sort_order            int not null default 0,
+  deleted_at, created_at, updated_at
+);
+
+variant_option_values (
+  variant_id       uuid not null references product_variants(id) on delete cascade,
+  option_value_id  uuid not null references product_option_values(id) on delete restrict,
+  primary key (variant_id, option_value_id)
+);
+```
+
+### `attribute_definitions`, `product_attributes`
+Faceted filtering. Composite PK on `product_attributes` (no surrogate id).
+```sql
+attribute_definitions (
+  id                          uuid pk,
+  slug                        text not null unique,
+  name                        text not null,
+  type                        attribute_type not null,
+  unit                        text,                            -- 'ml', 'gsm', 'mm'
+  applies_to_category_id      uuid references categories(id),  -- null = all
+  options_json                jsonb,                           -- for type='select'
+  is_filterable               boolean not null default true,
+  sort_order                  int not null default 0,
+  created_at, updated_at
+);
+
+product_attributes (
+  product_id    uuid not null references products(id) on delete cascade,
+  attribute_id  uuid not null references attribute_definitions(id) on delete restrict,
+  value_text    text,
+  value_number  numeric,
+  value_boolean boolean,
+  created_at, updated_at,
+  primary key (product_id, attribute_id)             -- composite; no separate id column
+);
+```
+
+### `tags`, `product_tags`
+```sql
+tags (
+  id uuid pk,
+  slug text not null unique,
+  name text not null,
+  deleted_at,
+  created_at, updated_at
+);
+
+product_tags (
+  product_id  uuid not null references products(id) on delete cascade,
+  tag_id      uuid not null references tags(id) on delete cascade,
+  primary key (product_id, tag_id)
+);
+```
+
+## Ops tables
+
+### `audit_logs`
+Every admin mutation. Insert via service-role only.
+```sql
+audit_logs (
+  id           uuid pk,
+  actor_id     uuid references profiles(id),
+  action       text not null,            -- 'product.update', 'category.delete', etc.
+  entity_type  text not null,            -- 'product', 'category', 'image', 'variant', ...
+  entity_id    uuid not null,
+  before_json  jsonb,
+  after_json   jsonb,
+  request_id   text,
+  created_at
+)
+```
+
+### `background_jobs`, `job_events`
+```sql
+background_jobs (
+  id           uuid pk,
+  kind         text not null,             -- 'bulk_publish', 'csv_import', 'image_rehost', ...
+  status       job_status not null default 'queued',
+  payload_json jsonb,
+  result_json  jsonb,
+  error        text,
+  progress     int not null default 0,
+  total        int not null default 0,
+  checkpoint   jsonb,                      -- cursor for resume
+  created_by   uuid references profiles(id),
+  created_at, started_at, finished_at
+);
+
+job_events (
+  id        uuid pk,
+  job_id    uuid not null references background_jobs(id) on delete cascade,
+  level     text not null check (level in ('info', 'warn', 'error')),
+  message   text not null,
+  data_json jsonb,
+  created_at
+);
+```
+
+### `import_runs`, `import_run_rows`
+```sql
+import_runs (
+  id            uuid pk,
+  filename      text,
+  status        job_status not null default 'queued',
+  total_rows    int not null default 0,
+  success_count int not null default 0,
+  error_count   int not null default 0,
+  created_by    uuid references profiles(id),
+  created_at, finished_at
+);
+
+import_run_rows (
+  id              uuid pk,
+  import_run_id   uuid not null references import_runs(id) on delete cascade,
+  row_number      int not null,
+  sku             text,
+  action          import_action,
+  error_message   text,
+  raw_json        jsonb not null,
+  applied_at      timestamptz
+);
+```
+
+### Search ops
+```sql
+search_synonyms (
+  id        uuid pk,
+  term      text not null unique,
+  synonyms  text[] not null default '{}',
+  created_at, updated_at
+);
+
+search_logs (
+  id           uuid pk,
+  query        text not null,
+  result_count int not null,
+  user_id      uuid references profiles(id),
+  created_at
+);
+```
+
+### AI ops
+```sql
+ai_generations (
+  id                uuid pk,
+  task_type         ai_task_type not null,
+  entity_type       text not null,
+  entity_id         uuid,
+  prompt_version    text not null,
+  model             text not null,                  -- 'claude-haiku-4-5', 'claude-sonnet-4-6', ...
+  input_hash        text not null,                  -- sha256 of input
+  input_tokens      int,
+  output_tokens     int,
+  usd_cost          numeric(10,6),
+  output_json       jsonb,
+  validation_status text not null,                  -- 'ok' | 'rejected' | 'semantic_fail'
+  validation_error  text,
+  status            ai_generation_status not null default 'proposed',
+  reviewed_by       uuid references profiles(id),
+  reviewed_at       timestamptz,
+  created_at
+);
+```
+
+## Indexes
+
+```sql
+CREATE INDEX products_slug_idx               ON products (slug);
+CREATE INDEX products_category_idx           ON products (category_id) WHERE deleted_at IS NULL;
+CREATE INDEX products_published_at_idx       ON products (is_published, created_at DESC);
+CREATE INDEX products_base_price_idx         ON products (base_price_inr)
+  WHERE is_published = true AND deleted_at IS NULL;
+CREATE INDEX products_stock_status_idx       ON products (stock_status);
+CREATE INDEX product_images_sort_idx         ON product_images (product_id, sort_order) WHERE deleted_at IS NULL;
+CREATE INDEX product_variants_product_idx    ON product_variants (product_id) WHERE deleted_at IS NULL;
+CREATE INDEX categories_parent_idx           ON categories (parent_id) WHERE deleted_at IS NULL;
+CREATE INDEX product_attributes_text_idx     ON product_attributes (attribute_id, value_text);
+CREATE INDEX product_attributes_number_idx   ON product_attributes (attribute_id, value_number);
+
+-- Full-text search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
+CREATE INDEX products_fts_idx ON products
+  USING GIN (to_tsvector('english', name || ' ' || coalesce(description, '')));
+CREATE INDEX products_name_trgm_idx ON products
+  USING GIN (name gin_trgm_ops);
+CREATE INDEX products_sku_trgm_idx ON products
+  USING GIN (sku gin_trgm_ops);
+```
+
+## Views
+
+```sql
+-- Recursive view returning every (ancestor, descendant) pair for category traversal.
+CREATE OR REPLACE VIEW category_with_descendants AS
+WITH RECURSIVE tree AS (
+  SELECT id AS ancestor_id, id AS descendant_id FROM categories WHERE deleted_at IS NULL
+  UNION ALL
+  SELECT t.ancestor_id, c.id
+  FROM tree t
+  JOIN categories c ON c.parent_id = t.descendant_id
+  WHERE c.deleted_at IS NULL
+)
+SELECT * FROM tree;
+```
+
+Used by category pages: `WHERE category_id IN (SELECT descendant_id FROM category_with_descendants WHERE ancestor_id = $1)`.
+
+## RLS policies
+
+See [security.md](security.md) §"RLS" for the full policies and the child-parent EXISTS pattern. Quick reference:
+
+- `products`, `categories`, `tags`, `attribute_definitions` — public select where `deleted_at IS NULL` (+ `is_published = true` on products).
+- `product_images`, `product_variants`, `product_attributes`, `product_tags`, `product_option_values`, `variant_option_values` — public select via EXISTS subquery to parent product (`is_published = true AND deleted_at IS NULL`). `product_images` additionally requires `license_status IN ('owned','licensed','public_domain')`.
+- Admin role (`owner`/`admin`/`editor`) — full CRUD on all catalog tables.
+- Ops tables (`audit_logs`, `background_jobs`, `import_runs`, `ai_generations`, `search_logs`, `search_synonyms`) — admin-only select; insert via service-role only.

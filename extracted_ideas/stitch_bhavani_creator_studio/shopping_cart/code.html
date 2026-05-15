@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shopping Cart - Bhavani Crafts</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-primary-container": "#fffbff",
+                            "on-secondary-container": "#3d6c6a",
+                            "on-tertiary-fixed-variant": "#4b472b",
+                            "on-tertiary-fixed": "#1f1c04",
+                            "error": "#ba1a1a",
+                            "secondary-container": "#baece9",
+                            "secondary": "#366664",
+                            "surface-container-high": "#eae8e3",
+                            "error-container": "#ffdad6",
+                            "outline-variant": "#dac1bb",
+                            "on-surface": "#1b1c19",
+                            "on-secondary-fixed": "#00201f",
+                            "tertiary": "#635f40",
+                            "surface-tint": "#944933",
+                            "primary": "#914631",
+                            "tertiary-fixed-dim": "#cec7a2",
+                            "primary-fixed": "#ffdbd1",
+                            "on-surface-variant": "#54433e",
+                            "on-error": "#ffffff",
+                            "inverse-surface": "#30312e",
+                            "tertiary-fixed": "#eae3bc",
+                            "surface-container-highest": "#e4e2dd",
+                            "inverse-primary": "#ffb5a0",
+                            "surface-bright": "#fbf9f4",
+                            "on-secondary-fixed-variant": "#1c4e4c",
+                            "on-secondary": "#ffffff",
+                            "surface-container-low": "#f5f3ee",
+                            "on-primary-fixed-variant": "#76321e",
+                            "surface-variant": "#e4e2dd",
+                            "primary-container": "#af5e47",
+                            "on-tertiary-container": "#444024",
+                            "on-background": "#1b1c19",
+                            "surface-container": "#f0eee9",
+                            "surface": "#fbf9f4",
+                            "tertiary-container": "#b2ac88",
+                            "secondary-fixed": "#baece9",
+                            "background": "#fbf9f4",
+                            "primary-fixed-dim": "#ffb5a0",
+                            "on-tertiary": "#ffffff",
+                            "inverse-on-surface": "#f2f1ec",
+                            "on-primary-fixed": "#3b0900",
+                            "on-error-container": "#93000a",
+                            "on-primary": "#ffffff",
+                            "surface-container-lowest": "#ffffff",
+                            "secondary-fixed-dim": "#9ed0cd",
+                            "surface-dim": "#dbdad5",
+                            "outline": "#87736d"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "stack-sm": "1rem",
+                            "container-max": "1440px",
+                            "unit": "8px",
+                            "stack-lg": "5rem",
+                            "gutter": "2rem",
+                            "margin-page": "5vw",
+                            "stack-md": "2.5rem"
+                    },
+                    "fontFamily": {
+                            "body-md": [
+                                    "Manrope"
+                            ],
+                            "body-lg": [
+                                    "Manrope"
+                            ],
+                            "h1": [
+                                    "Newsreader"
+                            ],
+                            "button": [
+                                    "Manrope"
+                            ],
+                            "label-caps": [
+                                    "Manrope"
+                            ],
+                            "h3": [
+                                    "Newsreader"
+                            ],
+                            "h2": [
+                                    "Newsreader"
+                            ]
+                    },
+                    "fontSize": {
+                            "body-md": [
+                                    "1rem",
+                                    {
+                                            "lineHeight": "1.5",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "body-lg": [
+                                    "1.125rem",
+                                    {
+                                            "lineHeight": "1.6",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "h1": [
+                                    "4.5rem",
+                                    {
+                                            "lineHeight": "1.1",
+                                            "letterSpacing": "-0.02em",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "button": [
+                                    "0.875rem",
+                                    {
+                                            "lineHeight": "1",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "label-caps": [
+                                    "0.75rem",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "letterSpacing": "0.1em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "h3": [
+                                    "2rem",
+                                    {
+                                            "lineHeight": "1.3",
+                                            "fontWeight": "500"
+                                    }
+                            ],
+                            "h2": [
+                                    "3rem",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "letterSpacing": "-0.01em",
+                                            "fontWeight": "500"
+                                    }
+                            ]
+                    }
+            },
+                },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Soft Extrusion Utility */
+        .soft-extrusion {
+            box-shadow: inset 1px 1px 0px rgba(255,255,255,0.4), 
+                        4px 4px 12px rgba(54, 102, 100, 0.08), 
+                        1px 1px 2px rgba(54, 102, 100, 0.12);
+        }
+        .soft-extrusion-hover:hover {
+            box-shadow: inset 1px 1px 0px rgba(255,255,255,0.5), 
+                        6px 6px 16px rgba(54, 102, 100, 0.12), 
+                        2px 2px 4px rgba(54, 102, 100, 0.15);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<header class="bg-[#FDFCFB] dark:bg-stone-950 docked full-width top-0 border-b border-stone-200/60 dark:border-stone-800/60 shadow-[0_1px_3px_0_rgba(194,109,85,0.05)] z-50 sticky">
+<div class="flex justify-between items-center px-8 py-4 w-full max-w-screen-2xl mx-auto">
+<!-- Brand Logo -->
+<a class="text-2xl font-semibold italic text-[#C26D55] dark:text-[#D98E77] tracking-tight Newsreader" href="#">
+                CRAFTED
+            </a>
+<!-- Navigation Links (Hidden on Mobile) -->
+<nav class="hidden md:flex gap-8 items-center">
+<a class="text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 font-body-md text-body-md hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-all duration-300 ease-in-out px-3 py-2 rounded-DEFAULT" href="#">Curation</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 font-body-md text-body-md hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-all duration-300 ease-in-out px-3 py-2 rounded-DEFAULT" href="#">Makers</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 font-body-md text-body-md hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-all duration-300 ease-in-out px-3 py-2 rounded-DEFAULT" href="#">Journal</a>
+<!-- Shop is active intent for a cart page context -->
+<a class="text-[#C26D55] dark:text-[#D98E77] border-b border-[#C26D55] pb-1 font-medium font-body-md text-body-md px-3 py-2 rounded-DEFAULT" href="#">Shop</a>
+</nav>
+<!-- Trailing Icons -->
+<div class="flex gap-4 items-center">
+<button aria-label="shopping_cart" class="text-[#C26D55] dark:text-[#D98E77] scale-95 active:opacity-70 transition-transform p-2 rounded-full hover:bg-stone-50 dark:hover:bg-stone-900/50">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button aria-label="account_circle" class="text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 scale-95 active:opacity-70 transition-transform p-2 rounded-full hover:bg-stone-50 dark:hover:bg-stone-900/50 hidden md:block">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-page py-stack-lg">
+<div class="mb-stack-md border-b border-surface-variant pb-stack-sm">
+<h1 class="font-h2 text-h2 italic text-on-surface mb-2">Your Creative Toolkit</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Review your selected items and prepare for your next project.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- Cart Items List (Takes up 8 columns on large screens) -->
+<div class="lg:col-span-8 flex flex-col gap-unit">
+<!-- Item 1: Project Bundle -->
+<article class="bg-surface rounded-xl p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center relative soft-extrusion">
+<div class="w-full sm:w-32 aspect-square rounded-lg overflow-hidden shrink-0 bg-surface-container-highest">
+<img alt="Resin Ocean Tray Masterclass Bundle" class="w-full h-full object-cover" data-alt="A top-down view of a complete resin art kit laid out beautifully on a clean, light-wood studio table. The kit includes clear bottles of resin and hardener, several small cups of vibrant ocean-blue and white liquid pigments, mixing sticks, and a raw wooden tray blank. Natural, soft daylight streams across the workspace, casting gentle shadows and highlighting the tactile textures of the materials. The overall aesthetic is bright, organized, and inspiring, fitting a high-end tactile-modern UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASo3lOhR5yzxhR1tTm0-RfYa_KSnFjQxJYCDf-D7L8dEJLofJgiqaT-Lhz3cM3Zxs9zliUqMdGWq7B4RVN2n0zFuNrNb2LejZgTuuoej5O9FJUia6Xvph6AsJOUK0xnkvB_vxuSznALra8LXRJbJGVgo-mcHi0MC5U-qMphuDDkk4iJMJvqfh0rnVX8yK2PF4J37geHayBIGLv2hZ3PaNKEcHhYP5vU7fZs6TN2PwNlUe7_e_moOEGGhRrPeZ3gWf9OWVKGjrCb-EA"/>
+</div>
+<div class="flex-grow flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<div>
+<span class="inline-block px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed font-label-caps text-label-caps rounded-DEFAULT mb-1">Bundle</span>
+<h3 class="font-h3 text-[1.5rem] leading-tight text-on-surface mb-1">Resin Ocean Tray Masterclass Bundle</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Includes all materials, tools, and digital workshop access.</p>
+</div>
+<button aria-label="Remove item" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-4 mt-2">
+<div class="flex items-center gap-2 border border-outline-variant rounded-DEFAULT overflow-hidden bg-surface-container-lowest">
+<button aria-label="Decrease quantity" class="px-3 py-1 text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[1rem]">remove</span>
+</button>
+<span class="font-body-md text-body-md text-on-surface px-2 min-w-[2ch] text-center">1</span>
+<button aria-label="Increase quantity" class="px-3 py-1 text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[1rem]">add</span>
+</button>
+</div>
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">$145.00</span>
+</div>
+<div class="flex items-center gap-1 mt-1 text-secondary">
+<span class="material-symbols-outlined text-[1rem]">storefront</span>
+<span class="font-body-md text-[0.875rem]">Available for Estimated Pickup: Today</span>
+</div>
+</div>
+</article>
+<!-- Item 2: Individual Item -->
+<article class="bg-surface rounded-xl p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center relative soft-extrusion">
+<div class="w-full sm:w-32 aspect-square rounded-lg overflow-hidden shrink-0 bg-surface-container-highest">
+<img alt="Organic Indigo Pigment" class="w-full h-full object-cover" data-alt="A close-up, tactile shot of deep, rich organic indigo pigment powder mounded inside a handmade, unglazed ceramic bowl. The deep blue contrasts beautifully against a light, neutral linen cloth resting underneath. The lighting is soft and directional, creating subtle highlights on the textured surface of the powder and deep shadows within the bowl's ridges. The composition embodies a minimal, artisanal aesthetic with a warm, earthy undertone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0uBrL1EJwH7kQCv_6YM03qxmEmjkPcY4S9rL0Ph2k1kUBLmp2E96rPHBJyg7tt-7KR9BHHnfG3BgfZ9Ba-wf8oZWoY2DWKEeSTPmmLICTC5VqPwbQ3_R6OBmZYsLHulQr9SDS65tRHqQfHtD7LV2VWAopFN9UXxWFuFg8kW4uWNaZHvdlnC0D3wE21QHzyow5YpkUPkrJC-YL_quvBjV6RG2FbLCRmLmHYYAkGy6acAyeGqKUca8SykH-JXc3mxI_FjEMAUzHvc3X"/>
+</div>
+<div class="flex-grow flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<div>
+<span class="inline-block px-2 py-1 bg-secondary-container text-on-secondary-container font-label-caps text-label-caps rounded-DEFAULT mb-1">Pigment</span>
+<h3 class="font-h3 text-[1.5rem] leading-tight text-on-surface mb-1">Organic Indigo Pigment</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">100g • Sustainably sourced from raw plant matter.</p>
+</div>
+<button aria-label="Remove item" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-4 mt-2">
+<div class="flex items-center gap-2 border border-outline-variant rounded-DEFAULT overflow-hidden bg-surface-container-lowest">
+<button aria-label="Decrease quantity" class="px-3 py-1 text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[1rem]">remove</span>
+</button>
+<span class="font-body-md text-body-md text-on-surface px-2 min-w-[2ch] text-center">2</span>
+<button aria-label="Increase quantity" class="px-3 py-1 text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[1rem]">add</span>
+</button>
+</div>
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">$36.00</span>
+</div>
+<div class="flex items-center gap-1 mt-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[1rem]">local_shipping</span>
+<span class="font-body-md text-[0.875rem]">Ships within 2-3 days</span>
+</div>
+</div>
+</article>
+</div>
+<!-- Order Summary (Takes up 4 columns on large screens) -->
+<aside class="lg:col-span-4 sticky top-24">
+<div class="bg-surface-container-low rounded-xl p-8 flex flex-col gap-6 soft-extrusion">
+<h2 class="font-h3 text-h3 text-on-surface border-b border-outline-variant pb-4">Order Summary</h2>
+<div class="flex flex-col gap-3 font-body-md text-body-md text-on-surface-variant">
+<div class="flex justify-between">
+<span>Subtotal (2 items)</span>
+<span class="text-on-surface">$181.00</span>
+</div>
+<!-- Fulfillment Selection -->
+<div class="mt-4 flex flex-col gap-2">
+<label class="text-on-surface font-semibold mb-1">Fulfillment Method</label>
+<label class="flex items-center gap-3 p-3 border border-outline-variant rounded-DEFAULT cursor-pointer hover:bg-surface-container transition-colors has-[:checked]:bg-primary-container/10 has-[:checked]:border-primary">
+<input checked="" class="text-primary focus:ring-primary border-outline" name="fulfillment" type="radio" value="pickup"/>
+<div class="flex flex-col">
+<span class="text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[1rem]">storefront</span> Local Pickup</span>
+<span class="text-[0.875rem]">Free • Bhavani Crafts Studio</span>
+</div>
+</label>
+<label class="flex items-center gap-3 p-3 border border-outline-variant rounded-DEFAULT cursor-pointer hover:bg-surface-container transition-colors has-[:checked]:bg-primary-container/10 has-[:checked]:border-primary">
+<input class="text-primary focus:ring-primary border-outline" name="fulfillment" type="radio" value="shipping"/>
+<div class="flex flex-col">
+<span class="text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[1rem]">local_shipping</span> Shipping</span>
+<span class="text-[0.875rem]">Calculated at next step</span>
+</div>
+</label>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-4 flex justify-between items-center font-h3 text-[1.75rem] text-on-surface">
+<span>Total</span>
+<span>$181.00</span>
+</div>
+<p class="font-body-md text-[0.875rem] text-on-surface-variant italic">Taxes calculated at checkout.</p>
+<button class="w-full bg-primary text-on-primary font-button text-button py-4 rounded-DEFAULT soft-extrusion-hover transition-all flex items-center justify-center gap-2 mt-2">
+                        Proceed to Checkout
+                        <span class="material-symbols-outlined text-[1.25rem]">arrow_forward</span>
+</button>
+<div class="flex items-center justify-center gap-2 text-on-surface-variant font-body-md text-[0.875rem] mt-2">
+<span class="material-symbols-outlined text-[1rem]">lock</span>
+<span>Secure Checkout</span>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-stone-50 dark:bg-stone-900 full-width py-16 px-8 mt-auto border-t border-stone-200 dark:border-stone-800 flat">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+<div class="flex flex-col gap-4">
+<span class="text-xl font-bold tracking-widest text-stone-900 dark:text-white Newsreader">CRAFTED</span>
+<p class="font-serif text-sm Newsreader text-stone-800 dark:text-stone-200 opacity-80">© 2024 Crafted. Built for the tactile soul.</p>
+</div>
+<nav class="flex flex-wrap gap-x-8 gap-y-4">
+<a class="font-serif text-sm Newsreader text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all opacity-80 hover:opacity-100" href="#">Our Story</a>
+<a class="font-serif text-sm Newsreader text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all opacity-80 hover:opacity-100" href="#">Shipping &amp; Local Pickup</a>
+<a class="font-serif text-sm Newsreader text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all opacity-80 hover:opacity-100" href="#">Sustainability</a>
+<a class="font-serif text-sm Newsreader text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all opacity-80 hover:opacity-100" href="#">Maker Portal</a>
+<a class="font-serif text-sm Newsreader text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all opacity-80 hover:opacity-100" href="#">Privacy</a>
+</nav>
+</div>
+</footer>
+</body></html>

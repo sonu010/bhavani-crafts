@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-labelledby="title desc">
+  <title id="title">Temporary paper craft image</title>
+  <desc id="desc">Layered colorful paper sheets and quilling strips.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e3ecf6"/>
+      <stop offset="1" stop-color="#395a7f"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="700" fill="url(#bg)"/>
+  <rect x="110" y="132" width="360" height="430" rx="20" fill="#ffffff" opacity=".78"/>
+  <rect x="154" y="100" width="360" height="430" rx="20" fill="#dff0e7"/>
+  <rect x="198" y="70" width="360" height="430" rx="20" fill="#f0b429"/>
+  <path d="M102 520c92-78 154-78 246 0s154 78 246 0" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity=".82"/>
+  <circle cx="176" cy="444" r="42" fill="#e55642"/>
+  <circle cx="282" cy="444" r="42" fill="#176c5f"/>
+  <circle cx="388" cy="444" r="42" fill="#a12d55"/>
+</svg>

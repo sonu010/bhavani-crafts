@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-labelledby="title desc">
+  <title id="title">Temporary school project supplies image</title>
+  <desc id="desc">Chart paper, foam sheets, glitter, and school project materials.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#edf4d4"/>
+      <stop offset="1" stop-color="#5c6f2b"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="700" fill="url(#bg)"/>
+  <rect x="108" y="118" width="484" height="360" rx="32" fill="#ffffff" opacity=".86"/>
+  <rect x="148" y="160" width="188" height="260" rx="16" fill="#f0b429"/>
+  <rect x="364" y="160" width="188" height="260" rx="16" fill="#395a7f"/>
+  <path d="M212 512l42-82 42 82 92 14-66 64 16 90-84-42-82 42 16-90-66-64z" fill="#e55642"/>
+  <path d="M468 520l30-58 30 58 66 10-48 46 12 64-60-30-60 30 12-64-48-46z" fill="#176c5f"/>
+</svg>

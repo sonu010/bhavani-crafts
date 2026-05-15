@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout - Bhavani Crafts</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#fffbff",
+                      "on-secondary-container": "#3d6c6a",
+                      "on-tertiary-fixed-variant": "#4b472b",
+                      "on-tertiary-fixed": "#1f1c04",
+                      "error": "#ba1a1a",
+                      "secondary-container": "#baece9",
+                      "secondary": "#366664",
+                      "surface-container-high": "#eae8e3",
+                      "error-container": "#ffdad6",
+                      "outline-variant": "#dac1bb",
+                      "on-surface": "#1b1c19",
+                      "on-secondary-fixed": "#00201f",
+                      "tertiary": "#635f40",
+                      "surface-tint": "#944933",
+                      "primary": "#914631",
+                      "tertiary-fixed-dim": "#cec7a2",
+                      "primary-fixed": "#ffdbd1",
+                      "on-surface-variant": "#54433e",
+                      "on-error": "#ffffff",
+                      "inverse-surface": "#30312e",
+                      "tertiary-fixed": "#eae3bc",
+                      "surface-container-highest": "#e4e2dd",
+                      "inverse-primary": "#ffb5a0",
+                      "surface-bright": "#fbf9f4",
+                      "on-secondary-fixed-variant": "#1c4e4c",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#f5f3ee",
+                      "on-primary-fixed-variant": "#76321e",
+                      "surface-variant": "#e4e2dd",
+                      "primary-container": "#af5e47",
+                      "on-tertiary-container": "#444024",
+                      "on-background": "#1b1c19",
+                      "surface-container": "#f0eee9",
+                      "surface": "#fbf9f4",
+                      "tertiary-container": "#b2ac88",
+                      "secondary-fixed": "#baece9",
+                      "background": "#fbf9f4",
+                      "primary-fixed-dim": "#ffb5a0",
+                      "on-tertiary": "#ffffff",
+                      "inverse-on-surface": "#f2f1ec",
+                      "on-primary-fixed": "#3b0900",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed-dim": "#9ed0cd",
+                      "surface-dim": "#dbdad5",
+                      "outline": "#87736d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "1rem",
+                      "container-max": "1440px",
+                      "unit": "8px",
+                      "stack-lg": "5rem",
+                      "gutter": "2rem",
+                      "margin-page": "5vw",
+                      "stack-md": "2.5rem"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "h1": [
+                              "Newsreader"
+                      ],
+                      "button": [
+                              "Manrope"
+                      ],
+                      "label-caps": [
+                              "Manrope"
+                      ],
+                      "h3": [
+                              "Newsreader"
+                      ],
+                      "h2": [
+                              "Newsreader"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "1rem",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "1.125rem",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h1": [
+                              "4.5rem",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "button": [
+                              "0.875rem",
+                              {
+                                      "lineHeight": "1",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "0.75rem",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "h3": [
+                              "2rem",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "h2": [
+                              "3rem",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .tactile-input {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        }
+        .tactile-card {
+            box-shadow: 0 4px 6px -1px rgba(54, 102, 100, 0.05), 0 2px 4px -1px rgba(54, 102, 100, 0.03);
+        }
+        .tactile-button {
+            box-shadow: -2px -2px 5px rgba(255,255,255,0.8), 2px 2px 5px rgba(145, 70, 49, 0.2);
+            transition: all 0.2s ease;
+        }
+        .tactile-button:hover {
+            box-shadow: -1px -1px 3px rgba(255,255,255,0.8), 1px 1px 3px rgba(145, 70, 49, 0.2);
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex flex-col">
+<!-- Minimal Header for Distraction-Free Checkout -->
+<header class="w-full bg-surface py-6 px-margin-page border-b border-surface-variant flex justify-between items-center">
+<a class="font-h3 text-h3 text-primary italic font-semibold" href="#">CRAFTED</a>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[1.25rem]">arrow_back</span>
+<span class="font-button text-button">Back to Shop</span>
+</a>
+</header>
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-page py-stack-md flex flex-col lg:flex-row gap-gutter">
+<!-- Left Column: Checkout Steps -->
+<div class="flex-1 max-w-3xl flex flex-col gap-stack-sm">
+<!-- Step Indicator -->
+<nav aria-label="Checkout Steps" class="mb-8">
+<ol class="flex items-center w-full">
+<li class="flex w-full items-center text-primary after:content-[''] after:w-full after:h-1 after:border-b after:border-primary after:border-4 after:inline-block">
+<span class="flex items-center justify-center w-8 h-8 bg-primary-container text-on-primary-container rounded-full lg:h-10 lg:w-10 shrink-0 font-button text-button">
+<span class="material-symbols-outlined text-[1.25rem]">check</span>
+</span>
+</li>
+<li class="flex w-full items-center text-primary after:content-[''] after:w-full after:h-1 after:border-b after:border-surface-variant after:border-4 after:inline-block">
+<span class="flex items-center justify-center w-8 h-8 bg-primary text-on-primary rounded-full lg:h-10 lg:w-10 shrink-0 font-button text-button">
+                            2
+                        </span>
+</li>
+<li class="flex items-center text-on-surface-variant">
+<span class="flex items-center justify-center w-8 h-8 bg-surface-container text-on-surface-variant rounded-full lg:h-10 lg:w-10 shrink-0 font-button text-button">
+                            3
+                        </span>
+</li>
+</ol>
+<div class="flex justify-between w-full mt-3 font-label-caps text-label-caps uppercase text-on-surface-variant">
+<span class="text-primary">Shipping</span>
+<span class="text-primary text-center -ml-4">Payment</span>
+<span class="text-right">Review</span>
+</div>
+</nav>
+<h1 class="font-h2 text-h2 text-on-surface mb-6">Payment Method</h1>
+<!-- Payment Options -->
+<div class="flex flex-col gap-6">
+<!-- Credit Card Option (Active) -->
+<div class="bg-surface rounded-xl p-6 tactile-card border-2 border-primary">
+<div class="flex items-center gap-4 mb-6">
+<input checked="" class="w-5 h-5 text-primary border-outline focus:ring-primary" id="pay-card" name="payment_method" type="radio"/>
+<label class="font-h3 text-[1.5rem] text-on-surface flex-grow cursor-pointer" for="pay-card">Credit or Debit Card</label>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-outline">credit_card</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="col-span-1 md:col-span-2 flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant" for="card-number">Card Number</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-3 px-4 tactile-input focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="card-number" placeholder="0000 0000 0000 0000" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-3 text-outline-variant">lock</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant" for="card-expiry">Expiration Date</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-3 px-4 tactile-input focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="card-expiry" placeholder="MM/YY" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant" for="card-cvc">CVC</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-3 px-4 tactile-input focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="card-cvc" placeholder="123" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-3 text-outline-variant cursor-help" title="3 digits on back of card">help</span>
+</div>
+</div>
+<div class="col-span-1 md:col-span-2 flex flex-col gap-2 mt-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant" for="card-name">Name on Card</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-3 px-4 tactile-input focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="card-name" type="text"/>
+</div>
+</div>
+</div>
+<!-- UPI Option -->
+<div class="bg-surface rounded-xl p-6 tactile-card border border-transparent hover:border-outline-variant transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<input class="w-5 h-5 text-primary border-outline focus:ring-primary" id="pay-upi" name="payment_method" type="radio"/>
+<label class="font-h3 text-[1.5rem] text-on-surface flex-grow cursor-pointer" for="pay-upi">UPI</label>
+<span class="material-symbols-outlined text-outline">qr_code_scanner</span>
+</div>
+</div>
+<!-- Digital Wallet Option -->
+<div class="bg-surface rounded-xl p-6 tactile-card border border-transparent hover:border-outline-variant transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<input class="w-5 h-5 text-primary border-outline focus:ring-primary" id="pay-wallet" name="payment_method" type="radio"/>
+<label class="font-h3 text-[1.5rem] text-on-surface flex-grow cursor-pointer" for="pay-wallet">Digital Wallets</label>
+<span class="material-symbols-outlined text-outline">account_balance_wallet</span>
+</div>
+</div>
+</div>
+<!-- Billing Address Match -->
+<div class="mt-8 flex items-start gap-3">
+<input checked="" class="mt-1 w-5 h-5 text-primary rounded border-outline focus:ring-primary" id="billing-same" type="checkbox"/>
+<label class="text-on-surface" for="billing-same">Billing address is the same as shipping address.</label>
+</div>
+<!-- Action Buttons -->
+<div class="mt-12 flex justify-between items-center pt-8 border-t border-surface-variant">
+<button class="font-button text-button text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[1.25rem]">arrow_back</span>
+                    Return to Shipping
+                </button>
+<button class="bg-primary text-on-primary font-button text-button py-4 px-8 rounded-lg tactile-button">
+                    Review Order
+                </button>
+</div>
+</div>
+<!-- Right Column: Order Summary -->
+<aside class="w-full lg:w-[400px] shrink-0">
+<div class="bg-surface-container-low rounded-xl p-8 sticky top-8">
+<h2 class="font-h3 text-[1.75rem] text-on-surface mb-6 pb-4 border-b border-surface-variant">Order Summary</h2>
+<!-- Items -->
+<div class="flex flex-col gap-6 mb-8">
+<div class="flex gap-4 items-start">
+<div class="w-20 h-24 rounded-md overflow-hidden shrink-0 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A close-up studio shot of a hand-thrown ceramic vase with a textured, earthy beige glaze. The lighting is soft and natural, emphasizing the tactile ridges of the clay. The background is a warm, minimalist neutral tone, creating an artisanal, high-end gallery aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmXglDpUGqP8ZCRng9enqW8dtyx5C1vMYQseyYo2E-SRDqTAO6_eBnTCTRUBXHx94Gb5cvc2Fa0HYQHzNI8pLS2XqockwiuJYs9UGGevV5SVADEgN5QjXxTznOjhpvPSZ14AKvixdSb_k42aEQSjamOYzq4qY7tVVzrSx0wOCaU0J_NKnFq_yjQGDJjaF_i0iCsgM4YNtOMCk3QfbjWyaE9MKbpK9FRwBFZwFIkCfHD0MSGnCrUeSMERQeI5D4NGvnp2eX5FUo46lC"/>
+<span class="absolute -top-2 -right-2 bg-secondary text-on-secondary w-6 h-6 rounded-full flex items-center justify-center font-label-caps text-[0.6rem] z-10">1</span>
+</div>
+<div class="flex-grow flex flex-col justify-between h-24 py-1">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-medium leading-tight">Terracotta Ridge Vase</h3>
+<p class="text-sm text-on-surface-variant mt-1">Natural Earth</p>
+</div>
+<p class="font-body-md text-on-surface font-medium">$145.00</p>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="w-20 h-24 rounded-md overflow-hidden shrink-0 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A beautifully woven linen textile draped casually over a wooden surface. The fabric features subtle, organic variations in a deep sage green color. The lighting is gentle and warm, highlighting the natural fibers and conveying a sense of soft, tactile comfort in a minimalist setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnuSWpNX6W6ZKq3BVrgT2kL5m7VdMzYS8dt4-sxtg51hYC--VvK5D1lYm-iHdh3J6ElpYTsmlXFp92oe2dfVQCAW7KueHU0VxqK1rQgD1nd8i0SZVDtljwoOYz2TXoxfCYEYSSYBVGMLPS49ORGNs0SxU7xqn4A9h-HL0Pv8pXOXI4VoLyGZfw_fIqaTqOoo8yhWL6tYzBFE7h2eBiSojWu5i1Awl65fic7IHG5bYvXAzw51nlaXX4WLqLxkhGY16I2mPrnJqeo8D6"/>
+<span class="absolute -top-2 -right-2 bg-secondary text-on-secondary w-6 h-6 rounded-full flex items-center justify-center font-label-caps text-[0.6rem] z-10">2</span>
+</div>
+<div class="flex-grow flex flex-col justify-between h-24 py-1">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-medium leading-tight">Handwoven Linen Throw</h3>
+<p class="text-sm text-on-surface-variant mt-1">Sage Green</p>
+</div>
+<p class="font-body-md text-on-surface font-medium">$180.00</p>
+</div>
+</div>
+</div>
+<!-- Totals -->
+<div class="border-t border-surface-variant pt-6 flex flex-col gap-3">
+<div class="flex justify-between text-on-surface-variant">
+<span>Subtotal</span>
+<span class="text-on-surface">$325.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Shipping</span>
+<span class="text-on-surface">Calculated next step</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Estimated Taxes</span>
+<span class="text-on-surface">$26.00</span>
+</div>
+<div class="flex justify-between items-center mt-4 pt-4 border-t border-surface-variant">
+<span class="font-h3 text-[1.5rem] text-on-surface">Total</span>
+<span class="font-h3 text-[1.5rem] text-primary">$351.00</span>
+</div>
+</div>
+<!-- Trust Badges -->
+<div class="mt-8 pt-6 border-t border-surface-variant flex flex-col items-center gap-4 opacity-80">
+<div class="flex gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined">lock</span>
+<span class="text-sm font-medium">Secure Checkout</span>
+</div>
+<p class="text-xs text-center text-outline px-4">Transactions are encrypted and securely processed.</p>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer Component from JSON -->
+<footer class="bg-stone-50 dark:bg-stone-900 text-stone-800 dark:text-stone-200 font-serif text-sm Newsreader full-width py-16 px-8 mt-auto border-t border-stone-200 dark:border-stone-800 flat opacity-80 hover:opacity-100 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12 w-full">
+<div class="flex flex-col gap-4">
+<div class="text-xl font-bold tracking-widest text-stone-900 dark:text-white">CRAFTED</div>
+<p>© 2024 Crafted. Built for the tactile soul.</p>
+</div>
+<nav class="flex flex-wrap gap-6">
+<a class="text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all" href="#">Our Story</a>
+<a class="text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all" href="#">Shipping &amp; Local Pickup</a>
+<a class="text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all" href="#">Sustainability</a>
+<a class="text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all" href="#">Maker Portal</a>
+<a class="text-stone-500 dark:text-stone-400 hover:underline underline-offset-4 decoration-[#C26D55] transition-all" href="#">Privacy</a>
+</nav>
+</footer>
+</body></html>

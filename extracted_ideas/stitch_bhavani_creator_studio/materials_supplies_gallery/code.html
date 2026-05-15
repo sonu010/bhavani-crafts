@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bhavani Crafts - Materials Gallery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Soft Extrusion Utility */
+        .tactile-card {
+            box-shadow: -2px -2px 5px rgba(255, 255, 255, 0.7), 4px 4px 10px rgba(54, 102, 100, 0.1);
+            transition: all 0.3s ease;
+        }
+        .tactile-card:hover {
+            box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.8), 8px 8px 20px rgba(54, 102, 100, 0.15);
+            transform: translateY(-2px);
+        }
+        .inset-input {
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-container": "#b2ac88",
+                      "background": "#fbf9f4",
+                      "on-secondary-fixed-variant": "#1c4e4c",
+                      "surface-dim": "#dbdad5",
+                      "outline-variant": "#dac1bb",
+                      "on-tertiary": "#ffffff",
+                      "surface": "#fbf9f4",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#fbf9f4",
+                      "surface-container": "#f0eee9",
+                      "secondary": "#366664",
+                      "on-primary-fixed": "#3b0900",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#3d6c6a",
+                      "inverse-primary": "#ffb5a0",
+                      "secondary-fixed-dim": "#9ed0cd",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#4b472b",
+                      "on-primary-container": "#fffbff",
+                      "on-secondary-fixed": "#00201f",
+                      "secondary-container": "#baece9",
+                      "primary-container": "#af5e47",
+                      "primary": "#914631",
+                      "on-surface": "#1b1c19",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#ffb5a0",
+                      "surface-container-highest": "#e4e2dd",
+                      "on-tertiary-fixed": "#1f1c04",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed": "#eae3bc",
+                      "tertiary": "#635f40",
+                      "tertiary-fixed-dim": "#cec7a2",
+                      "on-tertiary-container": "#444024",
+                      "surface-container-high": "#eae8e3",
+                      "surface-container-low": "#f5f3ee",
+                      "on-surface-variant": "#54433e",
+                      "on-primary-fixed-variant": "#76321e",
+                      "outline": "#87736d",
+                      "secondary-fixed": "#baece9",
+                      "on-secondary": "#ffffff",
+                      "surface-tint": "#944933",
+                      "inverse-surface": "#30312e",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed": "#ffdbd1",
+                      "on-background": "#1b1c19",
+                      "inverse-on-surface": "#f2f1ec",
+                      "surface-variant": "#e4e2dd"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1440px",
+                      "stack-lg": "5rem",
+                      "unit": "8px",
+                      "margin-page": "5vw",
+                      "stack-sm": "1rem",
+                      "stack-md": "2.5rem",
+                      "gutter": "2rem"
+              },
+              "fontFamily": {
+                      "h2": ["Newsreader"],
+                      "button": ["Manrope"],
+                      "h1": ["Newsreader"],
+                      "body-md": ["Manrope"],
+                      "h3": ["Newsreader"],
+                      "label-caps": ["Manrope"],
+                      "body-lg": ["Manrope"]
+              },
+              "fontSize": {
+                      "h2": ["3rem", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                      "button": ["0.875rem", {"lineHeight": "1", "fontWeight": "600"}],
+                      "h1": ["4.5rem", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "body-md": ["1rem", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "h3": ["2rem", {"lineHeight": "1.3", "fontWeight": "500"}],
+                      "label-caps": ["0.75rem", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                      "body-lg": ["1.125rem", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-[#FDFBF9] dark:bg-stone-950 font-serif font-newsreader leading-relaxed docked full-width top-0 shadow-sm border-stone-200/60 dark:border-stone-800 fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 border-b">
+<div class="flex items-center gap-6">
+<span class="text-2xl font-bold italic text-[#C26D55] dark:text-[#D98E77]">Artisanal Craft</span>
+<nav class="hidden md:flex gap-6 ml-8">
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#C26D55] transition-colors hover:bg-stone-100/50 dark:hover:bg-stone-900 transition-all duration-300 px-3 py-2 rounded-lg scale-98 active:opacity-80 transition-transform" href="#">Home</a>
+<a class="text-[#C26D55] dark:text-[#D98E77] font-semibold border-b-2 border-[#C26D55] pb-1 px-3 py-2" href="#">Shop</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#C26D55] transition-colors hover:bg-stone-100/50 dark:hover:bg-stone-900 transition-all duration-300 px-3 py-2 rounded-lg scale-98 active:opacity-80 transition-transform" href="#">Projects</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#C26D55] transition-colors hover:bg-stone-100/50 dark:hover:bg-stone-900 transition-all duration-300 px-3 py-2 rounded-lg scale-98 active:opacity-80 transition-transform" href="#">About</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="inset-input pl-10 pr-4 py-2 rounded-full bg-surface border-none focus:ring-2 focus:ring-primary w-64 font-body-md text-body-md transition-shadow" placeholder="Search crafts..." type="text"/>
+</div>
+<button class="p-2 text-[#C26D55] dark:text-[#D98E77] hover:bg-stone-100/50 dark:hover:bg-stone-900 transition-all duration-300 rounded-full scale-98 active:opacity-80 transition-transform">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+<button class="p-2 text-[#C26D55] dark:text-[#D98E77] hover:bg-stone-100/50 dark:hover:bg-stone-900 transition-all duration-300 rounded-full scale-98 active:opacity-80 transition-transform">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<div class="flex pt-20">
+<!-- SideNavBar -->
+<aside class="hidden md:flex bg-[#FDFBF9] dark:bg-stone-950 font-serif font-newsreader tracking-tight h-full w-64 rounded-r-lg border-r border-stone-100 dark:border-stone-900 shadow-[4px_0_24px_rgba(0,0,0,0.02)] fixed left-0 top-20 h-[calc(100vh-5rem)] flex flex-col p-6 overflow-y-auto z-40">
+<div class="mb-8">
+<h2 class="text-lg font-semibold text-stone-800 dark:text-stone-200">Material Studio</h2>
+<p class="text-sm text-stone-500 mt-1">Filter by Category</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 hover:translate-x-1 transition-transform hover:text-[#C26D55] dark:hover:text-[#D98E77] rounded-lg ease-out duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="water_drop">water_drop</span>
+                    Resin
+                </a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 hover:translate-x-1 transition-transform hover:text-[#C26D55] dark:hover:text-[#D98E77] rounded-lg ease-out duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+                    Clay
+                </a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 hover:translate-x-1 transition-transform hover:text-[#C26D55] dark:hover:text-[#D98E77] rounded-lg ease-out duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="handyman">handyman</span>
+                    Tools
+                </a>
+<a class="flex items-center gap-3 bg-stone-100/80 dark:bg-stone-900 text-[#C26D55] font-medium rounded-lg px-4 py-3 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.05)]" href="#">
+<span class="material-symbols-outlined" data-icon="texture">texture</span>
+                    Textiles
+                </a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 hover:translate-x-1 transition-transform hover:text-[#C26D55] dark:hover:text-[#D98E77] rounded-lg ease-out duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="forest">forest</span>
+                    Wood
+                </a>
+</nav>
+<div class="mt-auto pt-6 border-t border-stone-100 dark:border-stone-800">
+<button class="w-full bg-primary text-on-primary font-button text-button py-3 rounded-lg tactile-card flex justify-center items-center gap-2">
+                    New Arrivals
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-margin-page">
+<!-- Shop by Project Banner -->
+<section class="mb-stack-lg rounded-xl overflow-hidden relative tactile-card bg-surface-container">
+<div class="absolute inset-0 z-0">
+<img alt="Shop by Project background" class="w-full h-full object-cover opacity-60 mix-blend-multiply" data-alt="A softly lit, artisanal workspace bathed in warm morning light. Focus on a wooden table scattered with terracotta clay tools, spools of natural dyed yarn, and half-finished ceramic pieces. The overall aesthetic is tactile, modern, and inviting, utilizing a palette of earthy warm tones, soft sage greens, and deep stone greys. The composition feels curated and aspirational, perfect for a high-end craft gallery." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUBKsHlvkhV8EMTSTgS5K5HLdBLPF_YlTWKT9s9H5lWfVSEc_I4WoKflO5NCe0f9-DdOPdRqoK6oSvWHb1bmSYbgKcaZds4QOPKlTULwbIPnCy4tUzUuKH0c94v9SCI-1FUsYfqhFiXJz2vhLNMHo6vG01yd8PJZBwy4IUCn6lV6ulMyxxruplSrf06MNPiX4zm5zdktykrkyseHZdRLlItkzMSv_iP_IT4qco9r1V7kxHt6aT9jmDUSxTW8tNSx7itRwcB--4uT4h"/>
+</div>
+<div class="relative z-10 p-12 md:p-16 flex flex-col items-start max-w-3xl">
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed/80 px-3 py-1 rounded-full mb-4">Inspiration Driven</span>
+<h2 class="font-h2 text-h2 text-on-surface mb-4">Shop by Project</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-xl">
+                        Discover materials curated specifically for our masterclass projects. From organic weaving to structural resin casting, find exactly what you need to replicate the vision.
+                    </p>
+<button class="bg-primary text-on-primary font-button text-button px-6 py-3 rounded-lg tactile-card flex items-center gap-2">
+                        Explore Projects
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- Section Header -->
+<div class="mb-stack-md flex flex-col md:flex-row justify-between items-end gap-6">
+<div>
+<h1 class="font-h1 text-h1 text-on-background mb-2">Materials for Your Masterpiece</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                        Professional-grade supplies, ethically sourced and hand-selected for durability and aesthetic excellence.
+                    </p>
+</div>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 font-button text-button text-secondary border border-outline px-4 py-2 rounded-lg hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-sm">tune</span>
+                        Filters
+                    </button>
+<button class="flex items-center gap-2 font-button text-button text-secondary border border-outline px-4 py-2 rounded-lg hover:bg-surface-variant transition-colors">
+                        Sort by
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Staggered Masonry Grid (Bento/Asymmetric) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
+<!-- Product Card 1: Large (Span 1, aspect 4:5) -->
+<article class="tactile-card rounded-xl bg-surface overflow-hidden group flex flex-col h-full">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low p-6 flex justify-center items-center">
+<img alt="Premium Casting Resin" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="A close-up, high-resolution shot of crystal-clear casting resin poured into a geometric mold. The lighting is bright and studio-quality, highlighting the clarity and lack of bubbles in the resin. Subtle, warm terracotta and sage accents are in the blurred background to maintain brand consistency. The image feels tactile, modern, and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuZWi0bNw2ao0G2a0w7ZhsyeQ2MHARjfwidNNbG3SmEtiIOppuTwzIKwYRg6jRc6Ea5C2qPAeMESorUg6K0tXRqujan6N_wKMl-6_TIgjxhX6gF1g2wtdh8oOLsPFfqWhturR_TY4K5nuNQkLDB_gVomO9Dm5eVchuIDXbvqKiDqRzQ0y6oHBuxMYhNuvAMTnSu65ZKqnc7ip5yUI58krXL3MDh1IMJkQSQoHTNvY-zSrW2KMARSFXh2ieEUsKyjpcIGCSjSU3wAZA"/>
+<div class="absolute top-4 right-4 flex flex-col gap-2">
+<button class="w-10 h-10 rounded-full bg-surface/80 backdrop-blur flex justify-center items-center text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-h3 text-h3 text-on-surface text-xl">Crystal Clear Deep Pour Resin</h3>
+<span class="font-body-lg text-body-lg font-semibold text-primary">$85.00</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-1">
+                            Ultra-low viscosity formula perfect for river tables and deep floral encapsulations. UV resistant.
+                        </p>
+<div class="space-y-3">
+<div class="flex items-center gap-2 bg-secondary-container/50 px-3 py-2 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-on-secondary-container">Seen in: 'Botanical Coasters'</span>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-on-primary font-button text-button py-3 rounded-lg tactile-card flex justify-center items-center gap-2">
+                                    Add to Bag
+                                </button>
+<button class="w-12 h-12 border border-outline rounded-lg flex justify-center items-center text-secondary hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Product Card 2: Square (aspect 1:1) - Offset visually via mt in larger screens if needed, here just flowing in grid -->
+<article class="tactile-card rounded-xl bg-surface overflow-hidden group flex flex-col h-full xl:mt-12">
+<div class="relative aspect-square overflow-hidden bg-surface-container-low p-6 flex justify-center items-center">
+<img alt="Handcrafted Clay Tools" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="An overhead flat-lay of handcrafted wooden clay sculpting tools resting on a rough stone surface. The tools are made of rich, dark wood with brass accents. Next to them is a small mound of raw, unworked terracotta clay. The lighting is soft and natural, emphasizing the textures of the wood and stone. The mood is artisanal and grounded." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRGdbdzqENUHm1lfaSENhWhawsHtWBMagKtvCpaspQIMXNRuNisAIhoV64zU0Yq-8Dy-_UGMvc1_yXIAXUcyJ-EehU30IipZdXmaHacCv-ssltmQCMmZPbemXfpyr7HshmknYQwx9VazAvtnqWDi-HpQBo52kHZBKbtO574ujUBjBjOubq9czEpsJJsLp2OMbfx5k6IOTzbJKXEneWc87Rr_iJxzQxPThyflrHUDnTn_5Le6wC-s9MKwqoo_VJsV6MqHJFg36vPOtR"/>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-h3 text-h3 text-on-surface text-xl">Artisan Sculpting Set</h3>
+<span class="font-body-lg text-body-lg font-semibold text-primary">$42.00</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-1">
+                            Set of 5 ergonomically carved boxwood tools for precision detailing and smoothing.
+                        </p>
+<div class="space-y-3">
+<div class="flex items-center gap-2 bg-tertiary-container/30 px-3 py-2 rounded-lg">
+<span class="material-symbols-outlined text-tertiary text-sm">brush</span>
+<span class="font-label-caps text-label-caps text-on-tertiary-container">Seen in: 'Abstract Vases'</span>
+</div>
+<button class="w-full bg-surface text-secondary border border-outline font-button text-button py-3 rounded-lg hover:bg-surface-variant transition-colors flex justify-center items-center gap-2">
+                                Add to Bag
+                            </button>
+</div>
+</div>
+</article>
+<!-- Product Card 3: 3:4 aspect -->
+<article class="tactile-card rounded-xl bg-surface overflow-hidden group flex flex-col h-full">
+<div class="relative aspect-[3/4] overflow-hidden bg-surface-container-low p-6 flex justify-center items-center">
+<img alt="Natural Indigo Dye" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Glass jars filled with vibrant natural pigments, focusing primarily on a rich, deep indigo powder. The jars are sitting on a light oak table. A swatch of raw linen fabric partially dyed in the indigo is draped softly nearby. The scene is brightly lit with a minimalist, clean aesthetic, utilizing the brand's off-white background tones to make the pigment pop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA22p1Ukl8RhaLW1A1h9YpqR9XQ-FnrlfEz4InnR7VOOefNgGmbvpWjOJgbg5IfGzSUkHzyKFMaxsVTF2h5CdjBihivk-vmXd568yrVaKVq_SofL7kwQejMsmKt-d3MDEvXXodWjRZsXHKtq8-AbMnM6GUgTBGp5NXEIiPK6kL_wzedNhodi01wsmKbwhcRTLTOTim5j_Nc5A7gg8lzcvZ6QXv3jREm6lhhw6L4SwXrjGuqa3hFJlJV-cgQJlx1gsQn7Hlgt4Tfqima"/>
+<span class="absolute top-4 left-4 font-label-caps text-label-caps bg-secondary-fixed text-on-secondary-fixed px-2 py-1 rounded">Best Seller</span>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-h3 text-h3 text-on-surface text-xl">Organic Indigo Pigment</h3>
+<span class="font-body-lg text-body-lg font-semibold text-primary">$28.00</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-1">
+                            Finely milled, ethically harvested indigo powder for deep, lasting textile dyes.
+                        </p>
+<div class="space-y-3">
+<div class="flex items-center gap-2 bg-secondary-container/50 px-3 py-2 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-sm">waves</span>
+<span class="font-label-caps text-label-caps text-on-secondary-container">Seen in: 'Shibori Linens'</span>
+</div>
+<button class="w-full bg-primary text-on-primary font-button text-button py-3 rounded-lg tactile-card flex justify-center items-center gap-2">
+                                Add to Bag
+                            </button>
+</div>
+</div>
+</article>
+</div>
+</main>
+</div>
+</body></html>

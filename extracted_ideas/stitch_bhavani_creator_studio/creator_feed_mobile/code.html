@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Bhavani Crafts - Mobile Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#4b472b",
+                        "on-surface": "#1b1c19",
+                        "tertiary-fixed": "#eae3bc",
+                        "surface-tint": "#944933",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#54433e",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#ffdbd1",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#87736d",
+                        "tertiary-container": "#b2ac88",
+                        "on-tertiary-container": "#444024",
+                        "on-primary-container": "#fffbff",
+                        "secondary": "#366664",
+                        "tertiary": "#635f40",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fbf9f4",
+                        "primary-fixed-dim": "#ffb5a0",
+                        "primary-container": "#af5e47",
+                        "on-background": "#1b1c19",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dbdad5",
+                        "on-secondary-fixed": "#00201f",
+                        "on-error": "#ffffff",
+                        "surface-container": "#f0eee9",
+                        "on-secondary-container": "#3d6c6a",
+                        "inverse-surface": "#30312e",
+                        "surface-variant": "#e4e2dd",
+                        "inverse-on-surface": "#f2f1ec",
+                        "on-tertiary-fixed": "#1f1c04",
+                        "on-primary-fixed": "#3b0900",
+                        "background": "#fbf9f4",
+                        "tertiary-fixed-dim": "#cec7a2",
+                        "secondary-container": "#baece9",
+                        "surface-container-highest": "#e4e2dd",
+                        "primary": "#914631",
+                        "inverse-primary": "#ffb5a0",
+                        "surface-container-low": "#f5f3ee",
+                        "on-secondary-fixed-variant": "#1c4e4c",
+                        "surface-container-high": "#eae8e3",
+                        "surface": "#fbf9f4",
+                        "outline-variant": "#dac1bb",
+                        "on-primary-fixed-variant": "#76321e",
+                        "secondary-fixed-dim": "#9ed0cd",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#baece9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "stack-md": "2.5rem",
+                        "stack-lg": "5rem",
+                        "margin-page": "5vw",
+                        "gutter": "2rem",
+                        "container-max": "1440px",
+                        "stack-sm": "1rem",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Manrope"],
+                        "h3": ["Newsreader"],
+                        "label-caps": ["Manrope"],
+                        "h2": ["Newsreader"],
+                        "button": ["Manrope"],
+                        "h1": ["Newsreader"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-md": ["1rem", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h3": ["2rem", {"lineHeight": "1.3", "fontWeight": "500"}],
+                        "label-caps": ["0.75rem", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "h2": ["3rem", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "button": ["0.875rem", {"lineHeight": "1", "fontWeight": "600"}],
+                        "h1": ["4.5rem", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-lg": ["1.125rem", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Mobile optimization */
+        body, html {
+            height: 100%;
+            overflow: hidden; /* Prevent body scroll, let the container scroll */
+            touch-action: pan-y;
+        }
+        
+        /* Hide scrollbar for clean feed look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Soft text shadow for readability over images */
+        .text-shadow-soft {
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* Tactile button shadow */
+        .shadow-tactile {
+            box-shadow: 0 4px 12px rgba(145, 70, 49, 0.2), inset 1px 1px 1px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased h-screen w-full relative">
+<!-- Top Navigation (Tabs) -->
+<header class="fixed top-0 w-full z-50 pt-8 pb-4 px-6 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
+<div class="flex justify-center items-center gap-6 pointer-events-auto">
+<button class="font-body-md text-on-primary/70 font-semibold tracking-wide hover:text-on-primary transition-colors text-shadow-soft text-lg">Following</button>
+<div class="w-1 h-1 rounded-full bg-on-primary/50"></div>
+<button class="font-body-md text-on-primary font-bold tracking-wide text-shadow-soft text-lg relative after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-4 after:h-0.5 after:bg-on-primary after:rounded-full">For You</button>
+</div>
+<div class="absolute top-8 right-6 pointer-events-auto">
+<span class="material-symbols-outlined text-on-primary text-3xl text-shadow-soft" data-icon="search">search</span>
+</div>
+</header>
+<!-- Main Feed Container (Vertical Snap Scrolling) -->
+<main class="h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black">
+<!-- Video/Item 1 -->
+<section class="h-full w-full snap-start relative flex items-center justify-center">
+<!-- Immersive Background Image (simulating video) -->
+<img alt="Pottery making" class="absolute inset-0 w-full h-full object-cover z-0" data-alt="A close-up vertical shot of hands shaping wet terracotta clay on a spinning pottery wheel. The lighting is warm and directional, emphasizing the texture of the clay and the movement of the wheel. The background is slightly blurred out, showing hints of an artisanal studio space with earthy tones. The overall aesthetic is tactile, organic, and beautifully crafted, fitting an inspiring maker's feed." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaBMd13NLJBVKOkXspeTK5JGMqfA_T5yXQPuC87xAOVJxSOL6mMvIakJe7EEdjXT0S8Damlx_IVQYIcE-kfMbdTHWKMGoBtPTtVroES2zN2axK-vz9ChRqjHhAYKNXLOXFJAMO5gEXzqh3bBSp1Wzbr-Yv2lx4sd9OYJu_JMbIRX4HwZtLjQ58T_Uw8M9Ox-fusH4lsx0z6vhwJM8g6ZUtQrjKs1iXRljnfhzl_NF5YSxwCS1m3NpnZ6oeNyL-wIT_QpcxOCZ2M3hK"/>
+<!-- Dark gradient overlay for bottom text readability -->
+<div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none"></div>
+<!-- Right Side Interactions -->
+<div class="absolute right-4 bottom-32 z-20 flex flex-col items-center gap-6">
+<!-- Avatar -->
+<div class="relative mb-2 cursor-pointer">
+<img alt="Creator Avatar" class="w-12 h-12 rounded-full border-2 border-on-primary object-cover" data-alt="A small, circular portrait of a young female artisan with dark hair pulled back, wearing a simple linen apron. The background is a soft, out-of-focus studio. Bright, natural lighting gives her a welcoming, creative presence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeAGPCXHjbIboBzkYzI52wXJ87gyPsVc-7JwJrDib-wcsrcaREKsbNjMfXUwpCMPsD3gNDivjDlc2y0oRh3nzRpUwRfPDPFrll5n-YVrxndEoss-firMaQNwOy6Fn3gjCWARMG9dA8fT8YFFkKXaakQqRBDB2nZYNYppOrsnt4m7LnmBLE8X4AhQenbDmyl9w0STU8exyKyocEesUiuOI1txIfwOvU6CbFfa51iZOST8BGmMpS52mGcuqsogrwsuKpDWIR9nVrgeQw"/>
+<button class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-on-primary rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-sm font-bold" data-icon="add">add</span>
+</button>
+</div>
+<!-- Like -->
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-4xl text-on-primary drop-shadow-md group-hover:scale-110 transition-transform" data-icon="favorite" data-weight="fill">favorite</span>
+<span class="text-on-primary font-body-md text-xs font-semibold text-shadow-soft">12K</span>
+</button>
+<!-- Comment -->
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-4xl text-on-primary drop-shadow-md group-hover:scale-110 transition-transform" data-icon="chat_bubble">chat_bubble</span>
+<span class="text-on-primary font-body-md text-xs font-semibold text-shadow-soft">342</span>
+</button>
+<!-- Share -->
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-4xl text-on-primary drop-shadow-md group-hover:scale-110 transition-transform" data-icon="share">share</span>
+<span class="text-on-primary font-body-md text-xs font-semibold text-shadow-soft">Share</span>
+</button>
+<!-- Save -->
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-4xl text-on-primary drop-shadow-md group-hover:scale-110 transition-transform" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+<!-- Bottom Info & CTA -->
+<div class="absolute left-0 bottom-20 w-full px-4 pr-20 z-20 flex flex-col gap-3">
+<!-- Creator Name & Craft Title -->
+<div>
+<h3 class="font-body-md text-on-primary font-semibold text-lg text-shadow-soft flex items-center gap-2">
+                        Elena Rostova
+                        <span class="material-symbols-outlined text-sm text-secondary-container" data-icon="verified" data-weight="fill">verified</span>
+</h3>
+<h2 class="font-h3 font-h3 text-on-primary text-2xl mt-1 text-shadow-soft leading-tight">Hand-Thrown Terracotta Vase</h2>
+</div>
+<!-- Description -->
+<p class="font-body-md text-on-primary/90 text-sm line-clamp-2 text-shadow-soft">
+                    Watch the process of centering and pulling up the walls for this rustic piece. The clay body is rich in grog for that perfect tactile finish. #pottery #ceramics #process
+                </p>
+<!-- Primary Action CTA -->
+<button class="mt-2 self-start bg-primary text-on-primary font-button text-button py-3 px-6 rounded-full shadow-tactile flex items-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]" data-icon="shopping_bag">shopping_bag</span>
+                    Make This (Get Bundle)
+                </button>
+</div>
+</section>
+<!-- Video/Item 2 (Dummy for scrolling context) -->
+<section class="h-full w-full snap-start relative flex items-center justify-center bg-surface-container-highest">
+<img alt="Resin art pouring" class="absolute inset-0 w-full h-full object-cover z-0" data-alt="A dynamic, vertical close-up shot of clear, viscous resin being poured over a textured, earthy wooden slab. The lighting catches the glossy surface of the wet resin, contrasting with the matte, natural grain of the wood. The color palette is rich browns, deep amber, and warm studio lighting, creating a highly tactile and mesmerizing visual." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVllBhHBGhUpbWCkMOHwjkLvzwka_l_LWXeqrnpRq16QzMBG-qLIlOW6GrlgwNMkMRsoxCgyWjSmXrX6lJTdzaR0K4BCXgE8Dkm9s498Gq_haddYV1QbP83sKjEdq7BsihBMNL2Qr0Pe2y-9gYbCPCKtHGZGd7PaS_NZtrllqirYtXZ01CcOpOeaj8_UzAbM-emvNfEzO0aF7cfoXhtcs85eoP3E3dWcXMzg60XsfobZ0TDYN34BWDWNCK31AIkpMDqufKuYr4-H5K"/>
+<div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none"></div>
+<!-- Replicate structure for scroll feel, simplified content -->
+<div class="absolute left-4 bottom-20 z-20">
+<h2 class="font-h3 font-h3 text-on-primary text-2xl text-shadow-soft">Live Edge Resin Table</h2>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (from Shared Components JSON) -->
+<!-- Applying rules: Active state is "Feed" based on the request context -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-[#F9F7F2] dark:bg-stone-900 rounded-t-3xl border-t border-stone-200 dark:border-stone-800 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] md:hidden">
+<!-- Item 1: Discovery (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-[#C26D55] transition-colors w-16" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="explore">explore</span>
+<span class="font-['Newsreader'] text-[10px] uppercase tracking-widest font-semibold">Discovery</span>
+</a>
+<!-- Item 2: Feed (Active - Based on requested page context) -->
+<a class="flex flex-col items-center justify-center text-[#C26D55] bg-stone-100 dark:bg-stone-800 rounded-xl px-3 py-1 shadow-[inset_-2px_-2px_5px_rgba(255,255,255,0.7),inset_2px_2px_5px_rgba(0,0,0,0.05)] w-16 translate-y-0.5 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="style" data-weight="fill">style</span>
+<span class="font-['Newsreader'] text-[10px] uppercase tracking-widest font-semibold">Feed</span>
+</a>
+<!-- Item 3: Projects (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-[#C26D55] transition-colors w-16" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="handyman">handyman</span>
+<span class="font-['Newsreader'] text-[10px] uppercase tracking-widest font-semibold">Projects</span>
+</a>
+<!-- Item 4: Profile (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-[#C26D55] transition-colors w-16" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="person">person</span>
+<span class="font-['Newsreader'] text-[10px] uppercase tracking-widest font-semibold">Profile</span>
+</a>
+</nav>
+</body></html>

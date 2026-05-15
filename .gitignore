@@ -1,0 +1,71 @@
+# Bhavani Crafts — project-root .gitignore
+# (Each subproject also has its own .gitignore; this is the safety net.)
+
+# ─── Secrets — never track ───
+**/.env
+**/.env.*
+!**/.env.example
+
+# ─── OS junk ───
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# ─── Node / pnpm / Next.js ───
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/dist/
+**/coverage/
+**/.turbo/
+**/.vercel/
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# ─── Logs ───
+*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*
+
+# ─── IDE / editor ───
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# ─── Test artifacts ───
+**/playwright-report/
+**/test-results/
+**/.lighthouseci/
+
+# ─── Anthropic / Claude Code tooling (NOT the same as the claude/ working-memory folder) ───
+.claude/
+claude/.local/
+
+# ─── AI scratch ───
+*.scratch.md
+
+# ─── Large seed fixtures (Just Kraft scrape, ~36MB) ───
+# These are dev-only seed data; obtain out-of-band, do not commit.
+# Keep the directory and its .gitkeep so the path exists.
+data/justkraft-inventory/*.json
+data/justkraft-inventory/*.csv
+data/justkraft-inventory/*.checkpoint.json
+data/justkraft-inventory/seed_report.json
+
+# ─── Other large binary blobs ───
+stitch_bhavani_creator_studio.zip
+
+# ─── Backups ───
+*.bak
+*.orig
+*.rej
+
+# ─── Misc temp ───
+/tmp/
+*.tmp

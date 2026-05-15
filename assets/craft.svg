@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-labelledby="title desc">
+  <title id="title">Temporary craft supplies image</title>
+  <desc id="desc">A colorful arrangement of craft supplies and tools.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5f0"/>
+      <stop offset="1" stop-color="#176c5f"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="700" fill="url(#bg)"/>
+  <circle cx="170" cy="170" r="82" fill="#f0b429"/>
+  <circle cx="530" cy="168" r="72" fill="#e55642"/>
+  <circle cx="540" cy="512" r="92" fill="#395a7f"/>
+  <rect x="134" y="304" width="432" height="86" rx="43" fill="#ffffff" opacity=".9"/>
+  <rect x="160" y="430" width="210" height="92" rx="22" fill="#ffffff" opacity=".84"/>
+  <rect x="410" y="430" width="130" height="92" rx="22" fill="#ffffff" opacity=".84"/>
+  <path d="M168 304l118-118M286 304L168 186" stroke="#14211f" stroke-width="20" stroke-linecap="round" opacity=".55"/>
+  <path d="M408 350h96" stroke="#176c5f" stroke-width="22" stroke-linecap="round"/>
+</svg>
