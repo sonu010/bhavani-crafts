@@ -2,7 +2,7 @@
 id: P1-T01
 phase: 1
 title: Migration — core tables (profiles, categories, products)
-status: not_started
+status: in_progress
 depends_on: [P0-T09]
 estimate_hours: 2
 owner: ai
@@ -67,6 +67,32 @@ SQL
 
 None.
 
-# Notes for next agent
+# Notes for next agent (in-progress)
 
-(filled in when status → done. Be sure to mention any enum value tweaks vs the doc.)
+**2026-05-15 — migration SQL written and committed; awaiting owner application.**
+
+`web/supabase/migrations/0001_init.sql` contains:
+- 4 enums (profile_role, stock_status, product_source, review_status)
+- 3 extensions (pgcrypto, pg_trgm, unaccent)
+- 2 helper functions (`set_updated_at`, `is_admin`)
+- 3 tables (`profiles`, `categories`, `products`) with full check constraints
+- 4 triggers (3 × updated_at, 1 × on_auth_user_created)
+- A `DO $$ ... $$` smoke block at the end that inserts/deletes test rows so the migration fails loudly if anything's structurally broken
+
+**Hand-written `web/src/lib/db/types.gen.ts`** mirrors the SQL. Will be regenerated via `supabase gen types typescript --linked` once CLI auth is set up.
+
+**Decision: did not initialize Supabase CLI auth this turn.** `supabase login` is browser-OAuth interactive, can't run from the AI. Wrote `user/07-apply-first-migration.md` with two clear paths:
+- Path A: paste into SQL Editor (zero CLI setup; 30 seconds)
+- Path B: `supabase login` once + `supabase db push` (one-time setup; future migrations auto-apply)
+
+Once the owner applies the migration, status → done. Then:
+1. Verify schema via a quick `SELECT count(*) FROM information_schema.tables WHERE table_schema='public'` (or by hitting an expanded /api/health that reads from `categories`)
+2. Promote owner's account if they've signed up (P2-T02 + runbook); not strictly required to proceed to P1-T02
+3. Move on to P1-T02 (attributes)
+
+**Choices documented inline in the SQL:**
+- Compound check constraints (e.g. `compare_at_price_inr > base_price_inr`) wrap `base_price_inr IS NULL OR ...` so "Price on request" rows aren't rejected
+- `min_order_qty >= 1` default 1; `max_order_qty NULL OR >= min_order_qty`
+- All audit columns (`created_by`/`updated_by`/`deleted_by`) FK to `profiles(id)` with `ON DELETE SET NULL` so deleting a profile doesn't cascade-destroy their work
+- `category_id` FK uses `ON DELETE RESTRICT` — admin can't drop a category that still has products; matches P2-T19 UX
+- Slug regex `^[a-z0-9][a-z0-9-]{0,79}$` enforced at the DB level. Same regex used for product slugs.
