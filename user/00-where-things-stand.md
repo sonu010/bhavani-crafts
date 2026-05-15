@@ -2,14 +2,26 @@
 
 ## TL;DR
 
-- **Live site:** https://bhavani-crafts.vercel.app/ (the **legacy prototype**, not the rebuild)
-- **Git repo:** `github.com/sonu010/bhavani-crafts`
-- **Local repo location:** `web/.git` (inside the `web/` folder, not at project root)
-- **Branches:**
-  - `main` — legacy prototype. Untouched. Vercel deploys this.
-  - `rebuild-v2` — **the rebuild branch.** Local only; not pushed yet.
-- **Safety tag:** `pre-rebuild` — points at the same commit as `main`. We can always recover the prototype.
-- **Secrets check:** ✅ Clean. No `.env*` files were ever tracked. No keys appear in any commit. `.gitignore` already excludes env files.
+- **Live site:** https://bhavani-crafts.vercel.app/ (the **legacy prototype** on `main`, not the rebuild)
+- **Git repo:** `github.com/sonu010/bhavani-crafts` — one repo, one source of truth
+- **Local repo location:** project root (`.git`), per Option B
+- **Branches on GitHub:**
+  - `main` — legacy prototype. Untouched. Vercel deploys this → live site.
+  - `rebuild-v2` — **the rebuild branch (pushed).** Vercel will try to make a preview build; it will fail until you complete the Root Directory change in [`06-next-steps-vercel-and-supabase.md`](06-next-steps-vercel-and-supabase.md).
+- **Safety tag (on GitHub):** `pre-rebuild` — pins the legacy prototype's commit so we can always recover.
+- **Secrets check:** ✅ Clean. No `.env*` files have ever been tracked. No keys appear in any commit. `.gitignore` excludes env files at every level.
+
+## "Why do I see 2 things?" — one repo, two branches
+
+You may see two histories on GitHub:
+- `main` history — the legacy prototype (Next.js was at repo root)
+- `rebuild-v2` history — the new layout (Next.js at `web/`, plus `claude/`, `user/`, etc.)
+
+These are **two branches of one repo**, not two repos. They have divergent histories on purpose: the rebuild started fresh rather than incrementally editing the prototype, so the commits don't share a common ancestor. When the rebuild ships, we'll either:
+- Force-replace `main` with `rebuild-v2` (clean, single-history result), or
+- Tag `main` as `legacy-archive` and rename `rebuild-v2` → `main`.
+
+Either way we end up with one branch named `main` after launch.
 
 ## Why the rebuild is on a branch
 

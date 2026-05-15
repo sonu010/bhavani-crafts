@@ -2,7 +2,7 @@
 id: P0-T11
 phase: 0
 title: Set security headers + image remotePatterns in next.config
-status: not_started
+status: done
 depends_on: [P0-T10]
 estimate_hours: 0.5
 owner: ai
@@ -95,4 +95,30 @@ None.
 
 # Notes for next agent
 
-(filled in when status → done)
+**Done 2026-05-15.** `next.config.ts` now sets:
+
+Six security headers on every response (verified via `curl -I`):
+- `Content-Security-Policy` (strict, with documented exceptions for Next runtime + Vercel Analytics + Supabase)
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `X-Frame-Options: DENY` (redundant with `frame-ancestors 'none'` but kept for legacy browsers)
+
+`images.remotePatterns`:
+- `djl2kq23xfhqi.cloudfront.net` (Just Kraft seed CDN — dev only, RLS license_status gate ensures it never serves on production)
+- `<NEXT_PUBLIC_SUPABASE_URL host>/storage/v1/object/public/**` (computed at build time from env)
+
+Notable choices documented inline in `next.config.ts`:
+- `'unsafe-inline'` and `'unsafe-eval'` in `script-src` are required by Next 16 runtime + Vercel Analytics; revisit when we move to nonce-based CSP
+- `connect-src` allows Supabase REST + Realtime + Sentry ingest (when wired) + Vercel Analytics
+
+**P0-T10 (git init + GitHub + Vercel link)** is functionally complete via earlier work + this commit:
+- Git init: done in the Option B commit (`838c7a3`)
+- Remote: re-added to `https://github.com/sonu010/bhavani-crafts.git`
+- GitHub push: `rebuild-v2` branch + `pre-rebuild` tag pushed
+- Vercel link: pre-existing on the project. Owner needs to update Root Directory to `web/` and add env vars per `user/06-next-steps-vercel-and-supabase.md`. Husky/pre-commit hook is deferred to a follow-up.
+
+**Verified headers via curl against `next dev` at port 3004** — all six headers landed correctly. Will re-verify against Vercel preview build once the Root Directory change is applied.
+
+**To run securityheaders.com scan:** wait for Vercel preview to be live, then https://securityheaders.com/?q=https%3A%2F%2F<preview-url>. Expected grade: A or A+.
