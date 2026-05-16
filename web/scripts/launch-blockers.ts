@@ -69,28 +69,20 @@ async function check(name: string, fn: () => Promise<CheckResult>) {
 }
 
 async function main() {
-
-/**
- * Count rows in a service-role query. Returns the exact count or throws.
- * Used by SQL launch-blockers (which are all "expected count = 0" checks).
- */
-async function srvCount(
-  table: keyof Database["public"]["Tables"],
-  build: (q: ReturnType<typeof srv.from>) => ReturnType<typeof srv.from>,
-): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const base = srv.from(table as any).select("id", { count: "exact", head: true });
-  const { count, error } = await build(base);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
 // ─── SQL launch-blockers ───────────────────────────────────────────────
 await check("1. no published seed-sourced products", async () => {
-  const n = await srvCount("products", (q) =>
-    q.eq("is_published", true).is("deleted_at", null).eq("source", "justkraft_seed"),
-  );
-  return { name: "1. no published seed-sourced products", pass: n === 0, detail: `count=${n}` };
+  const { count, error } = await srv
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .eq("source", "justkraft_seed");
+  if (error) throw new Error(error.message);
+  return {
+    name: "1. no published seed-sourced products",
+    pass: (count ?? 0) === 0,
+    detail: `count=${count ?? 0}`,
+  };
 });
 
 await check("2. no public image URLs pointing at Just Kraft CDN", async () => {
