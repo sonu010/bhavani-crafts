@@ -259,7 +259,7 @@ for (let i = 0; i < orderedCats.length; i += 100) {
 }
 // Now set parent_id for those that have a parent.
 for (let i = 0; i < orderedCats.length; i += 100) {
-  const batch = orderedCats.slice(i, i + 100).filter(([_, m]) => m.parentSlug);
+  const batch = orderedCats.slice(i, i + 100).filter(([, m]) => m.parentSlug);
   if (batch.length === 0) continue;
   const updates = batch.map(([slug, meta]) => ({
     slug,

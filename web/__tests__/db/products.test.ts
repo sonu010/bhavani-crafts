@@ -34,10 +34,10 @@ describe("listProducts (anon, RLS-respecting)", () => {
   test("filters by minPriceInr/maxPriceInr", async () => {
     const cheap = await listProducts(anon, { maxPriceInr: 100, perPage: 5 });
     for (const p of cheap.items) {
-      // base_price_inr may be null for some test products in the seed; we
-      // explicitly excluded those by filter, so non-null is expected.
-      expect(p.base_price_inr).toBeNull;
-      if (p.base_price_inr !== null) expect(p.base_price_inr).toBeLessThanOrEqual(100);
+      // Postgres treats NULL-price rows as failing `<= 100`, so when a
+      // maxPriceInr filter is set, every returned row has a non-null price.
+      expect(p.base_price_inr).not.toBeNull();
+      expect(p.base_price_inr ?? Infinity).toBeLessThanOrEqual(100);
     }
   });
 

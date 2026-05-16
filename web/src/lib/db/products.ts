@@ -15,7 +15,6 @@
  * tags map is the caller's responsibility.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
 import type { Database } from "./types.gen";
 import {
   ProductListItemSchema,
@@ -29,8 +28,7 @@ type SC = SupabaseClient<Database>;
 const LIST_DEFAULT_PER_PAGE = 24;
 const LIST_MAX_PER_PAGE = 100;
 
-const SortSchema = z.enum(["newest", "price_asc", "price_desc"]);
-export type ListProductsSort = z.infer<typeof SortSchema>;
+export type ListProductsSort = "newest" | "price_asc" | "price_desc";
 
 /**
  * Cursor pagination — encodes the last seen (created_at, id) of the previous

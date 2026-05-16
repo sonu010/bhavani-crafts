@@ -355,7 +355,8 @@ await check("10. anon CAN read search_synonyms (needed for query expansion)", as
   console.log("\nLaunch blockers — verify before any production deploy.\n");
   for (const r of results) {
     console.log(r.pass ? "  PASS" : "  FAIL", r.name, r.detail ? `(${r.detail})` : "");
-    r.pass ? passCount++ : failCount++;
+    if (r.pass) passCount++;
+    else failCount++;
   }
   console.log(`\n${passCount} passed, ${failCount} failed of ${results.length} checks.`);
   process.exit(failCount === 0 ? 0 : 1);
