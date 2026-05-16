@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main, rebuild-v2]
+  pull_request:
+
+# Cancel in-flight runs on the same ref when a new push arrives.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Static checks ──────────────────────────────────────────────────
+  # No live secrets required. Runs on every push + PR.
+  static:
+    name: lint · typecheck · build · pglite migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: web
+        run: pnpm lint
+
+      - name: Typecheck
+        working-directory: web
+        run: pnpm exec tsc --noEmit
+
+      - name: Validate migrations (pglite)
+        working-directory: web
+        run: pnpm validate:migrations
+
+      - name: Build
+        working-directory: web
+        # Build needs NEXT_PUBLIC_SUPABASE_URL for next.config.ts fail-fast.
+        # If the secret isn't set, use a stub URL — the build doesn't actually
+        # call Supabase, it just parses the hostname for images.remotePatterns.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
+        run: pnpm build
+
+  # ─── Live checks ────────────────────────────────────────────────────
+  # Require Supabase secrets. Skipped if secrets aren't set on the repo.
+  # These mutate the live DB (create + delete fixtures) so they only run
+  # against rebuild-v2 and PRs targeting rebuild-v2 — never against main
+  # until main becomes the rebuild branch.
+  live:
+    name: vitest · launch-blockers (live Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: static
+    if: |
+      github.ref == 'refs/heads/rebuild-v2'
+      || (github.event_name == 'pull_request' && github.base_ref == 'rebuild-v2')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets are configured
+        id: check-secrets
+        # If any required secret is empty/unset, skip the rest of this job
+        # (the gate handles that via outputs).
+        env:
+          URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SRV: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$ANON" ] || [ -z "$SRV" ]; then
+            echo "::warning::Supabase secrets not configured on this repo. Skipping live checks."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check-secrets.outputs.configured == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.check-secrets.outputs.configured == 'true'
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.local (used by tests + launch-blockers)
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EOF
+
+      - name: Data-layer integration tests
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm exec vitest run __tests__/db/
+
+      - name: Launch-blockers (deploy gate)
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm launch-blockers
