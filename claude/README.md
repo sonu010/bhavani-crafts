@@ -8,12 +8,13 @@ The master plan lives at `~/.claude/plans/i-just-web-scraped-goofy-bubble.md` (o
 
 Read in this order — **do not skip**:
 
-1. **`architecture/engineering-principles.md`** — non-negotiable rules for how we work. Read this every session.
-2. `plans.md` — find the next task with `status: not_started` whose `depends_on` are all `done`. Pick it.
-3. `progress.md` — verify the chosen task is still the right next step. If anything looks stale, fix `progress.md` before proceeding.
-4. `blockers.md` — skip the task if it's blocked.
-5. The task file itself (`tasks/<phase>/<task-id>-*.md`) — read top to bottom.
-6. Every file listed under the task's **Prerequisites** section.
+1. **`SESSION-RESUME.md`** — compressed digest of the most recent session (where we are, what's locked, what's next). Read first; everything below is detail.
+2. **`architecture/engineering-principles.md`** — non-negotiable rules for how we work. Read every session.
+3. `plans.md` — find the next task with `status: not_started` whose `depends_on` are all `done`. Pick it.
+4. `progress.md` — verify the chosen task is still the right next step. If anything looks stale, fix `progress.md` before proceeding.
+5. `blockers.md` — skip the task if it's blocked.
+6. The task file itself (`tasks/<phase>/<task-id>-*.md`) — read top to bottom.
+7. Every file listed under the task's **Prerequisites** section.
 
 Then, and only then, start work.
 
