@@ -2,7 +2,7 @@
 id: P1-T09
 phase: 1
 title: Typed data layer (lib/db/* with Zod)
-status: not_started
+status: done
 depends_on: [P1-T07]
 estimate_hours: 2
 owner: ai
@@ -72,4 +72,23 @@ None.
 
 # Notes for next agent
 
-(filled in when status → done)
+**2026-05-15 — DONE.** 21/21 integration tests pass against live Supabase.
+
+**Shape delivered:**
+- `web/src/lib/schemas/product.ts` — Zod schemas (StockStatus, ReviewStatus, ProductListItem, CategoryBadge, ProductImage, ProductVariant, TagBadge, ProductDetail)
+- `web/src/lib/schemas/category.ts` — Category, CategoryTreeNode (recursive)
+- `web/src/lib/db/products.ts` — `listProducts(supabase, opts)` with cursor pagination + category/price/stock filters + sort; `getProductBySlug(supabase, slug)` joined to images, variants, tags, category
+- `web/src/lib/db/categories.ts` — `listTopLevelCategories`, `getCategoryBySlug`, `getDescendantIds` (via 0007 view), `getCategoryTree`
+- `web/src/lib/db/search.ts` — `searchProducts(supabase, query)` with synonym expansion + multi-word phrase handling + FTS
+
+**Design decision: dependency-inject the Supabase client.** Every function takes `supabase: SupabaseClient<Database>` as its first arg. Same function works from server components (cookie-authed client), server actions, scripts, and tests. No magic global; no need to wrap every function in a context provider. Tests pass an anon or service-role client directly.
+
+**Cache wrappers deferred.** Functions do not wrap themselves in `unstable_cache`. Caller (storefront server components in Phase 3) is responsible per `architecture/caching-and-revalidation.md` — they own the tag map. Wrapping uncalled functions in cache hides bugs.
+
+**Search bug found + fixed during dev:** seeded synonym `["epoxy", "epoxy resin"]` contains a multi-word entry. Initial `buildTsquery` produced `(resin | epoxy | epoxy resin) & clear` which Postgres tsquery rejects with "syntax error" because space-separated lexemes need an explicit operator. Fix: multi-word synonyms become parenthesized AND groups, e.g. `(resin | epoxy | (epoxy & resin)) & clear`. Single-word entries stay as bare lexemes.
+
+**types.gen.ts regenerated via CLI.** Hand-written types from before didn't satisfy `@supabase/supabase-js` v2's `GenericSchema` structural constraints — table operations were collapsing to `never`. Regenerated via `supabase gen types typescript --linked`. The CLI output included a stray "Initialising login role..." log line at the top and an injected `<claude-code-hint .../>` tag at the bottom; both stripped. Application code only imports the `Database` type, so the swap was transparent.
+
+**Test fixture clean-up:** All test fixtures use `zzz-`-prefixed slugs and SKUs so they sort last and are trivially queryable for residue. Every fixture creator returns a `cleanup()` that the suite calls in `afterAll`. RLS attack still passes — anon never sees unpublished test products.
+
+**One known gap (logged for P3-T18 follow-up):** trigram fuzzy match isn't used in `searchProducts` because of the threshold issue documented in `architecture/search.md`. Production search should tokenize the query and OR per-word trigram match alongside FTS.
