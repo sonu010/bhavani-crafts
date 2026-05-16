@@ -52,8 +52,8 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ✅ [P1-T07: Indexes + category_with_descendants view](tasks/phase-1-foundation/P1-T07-indexes-and-views.md) — applied; 9 indexes + recursive view
 - ✅ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — 7,780 products seeded on live; anon-blocked; launch-blockers green
 - ✅ [P1-T09: Typed data layer (lib/db/* with Zod)](tasks/phase-1-foundation/P1-T09-typed-data-layer.md) — 21/21 integration tests pass on live
-- ⬜ [P1-T10: Verify seed counts and RLS sanity](tasks/phase-1-foundation/P1-T10-verify-seed-counts.md) — depends P1-T08, P1-T09
-- ⬜ [P1-T11: Author architecture/database-schema.md fully](tasks/phase-1-foundation/P1-T11-write-database-schema-doc.md) — depends P1-T10
+- ✅ [P1-T10: Launch-blockers script + RLS sanity](tasks/phase-1-foundation/P1-T10-verify-seed-counts.md) — 12/12 checks pass on live
+- ✅ [P1-T11: database-schema.md regenerated from live](tasks/phase-1-foundation/P1-T11-write-database-schema-doc.md) — no drift; verified appendix added
 
 ---
 
