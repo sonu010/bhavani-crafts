@@ -81,6 +81,10 @@ e40a3d8  P0-T02 + P0-T04: archive legacy prototype, scaffold fresh Next.js 16 ap
 
 - **GitHub Actions secrets** (optional, non-blocking): three values from `web/.env.local` to enable the `live` CI job. See [`user/08`](../user/08-ci-and-github-secrets.md). Without them, `static` runs and `live` auto-skips with a warning.
 
+## Non-blocking follow-ups
+
+- **Re-seed live with the cleaned fixture.** A new `scripts/clean-justkraft-inventory.mjs` rejects 2,701 scrape-failure rows, normalizes 44 SKUs, repairs 16 mojibake names, dedupes 4 duplicates → **5,804 cleaned products** in `data/justkraft-inventory/justkraft_products.cleaned.json`. Live still has the **7,780 pre-cleaner products** from 2026-05-15. The seed script (`web/scripts/seed-from-justkraft.mjs`) is already pointed at the cleaned fixture; one `node scripts/seed-from-justkraft.mjs` from `web/` will wipe-and-reseed. Not urgent — all rows are unpublished + RLS-blocked, so the discrepancy doesn't affect the storefront. Schedule before P3 storefront work begins.
+
 ## Next 3 to work (Phase 2)
 
 1. **P2-T00** — Expand Phase 2 task stubs with lessons learned from Phase 1 (DI Supabase client pattern, pglite-test-before-push, fixture cleanup convention, tsconfig exclude pattern).

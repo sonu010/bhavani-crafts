@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "clean:justkraft": "node ../scripts/clean-justkraft-inventory.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
     "launch-blockers": "tsx scripts/launch-blockers.ts"
   },

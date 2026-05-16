@@ -52,7 +52,7 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ✅ [P1-T05: Migration — search (synonyms, search_logs, FTS + trigram)](tasks/phase-1-foundation/P1-T05-migration-search.md) — applied; threshold issue flagged in search.md
 - ✅ [P1-T06: RLS policies (incl. child-parent EXISTS) + RLS attack test](tasks/phase-1-foundation/P1-T06-rls-policies.md) — applied; 10/10 attack probes pass
 - ✅ [P1-T07: Indexes + category_with_descendants view](tasks/phase-1-foundation/P1-T07-indexes-and-views.md) — applied; 9 indexes + recursive view
-- ✅ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — 7,780 products seeded on live; anon-blocked; launch-blockers green
+- ✅ [P1-T08: Seed script — streaming Just Kraft JSON](tasks/phase-1-foundation/P1-T08-seed-script-streamed.md) — clean→seed pipeline (`scripts/clean-justkraft-inventory.mjs` + `web/scripts/seed-from-justkraft.mjs`); 7,780 live (pre-cleaner); 5,804 cleaned fixture ready; reseed pending (non-blocking)
 - ✅ [P1-T09: Typed data layer (lib/db/* with Zod)](tasks/phase-1-foundation/P1-T09-typed-data-layer.md) — 21/21 integration tests pass on live
 - ✅ [P1-T10: Launch-blockers script + RLS sanity](tasks/phase-1-foundation/P1-T10-verify-seed-counts.md) — 12/12 checks pass on live
 - ✅ [P1-T11: database-schema.md regenerated from live](tasks/phase-1-foundation/P1-T11-write-database-schema-doc.md) — no drift; verified appendix added

@@ -2,7 +2,7 @@
 /**
  * web/scripts/seed-from-justkraft.mjs
  *
- * Streams data/justkraft-inventory/justkraft_products.json (22 MB) into
+ * Streams data/justkraft-inventory/justkraft_products.cleaned.json into
  * the live Supabase via the service-role client. Idempotent — re-runs
  * upsert on natural keys (sku for products, slug for categories/tags).
  *
@@ -17,7 +17,9 @@
  * Usage (from web/):
  *   node scripts/seed-from-justkraft.mjs
  *
- * Local-only. The 22MB JSON is gitignored; obtain out-of-band.
+ * Local-only. The raw and cleaned JSON fixtures are gitignored; obtain the
+ * raw scrape out-of-band, then run:
+ *   node scripts/clean-justkraft-inventory.mjs
  *
  * See claude/runbooks/seed-from-justkraft.md and the engineering principles:
  * fail fast, no fallback. If anything looks structurally wrong, throw.
@@ -36,7 +38,7 @@ const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(HERE, "..", "..");
 const SEED_JSON = path.join(
   PROJECT_ROOT,
-  "data/justkraft-inventory/justkraft_products.json",
+  "data/justkraft-inventory/justkraft_products.cleaned.json",
 );
 const REPORT_PATH = path.join(
   PROJECT_ROOT,
@@ -122,8 +124,8 @@ function productSlug(name, sku) {
 console.log("▶ Pass 1: streaming products.json ...");
 if (!fs.existsSync(SEED_JSON)) {
   throw new Error(
-    `Seed file not found: ${SEED_JSON}\n` +
-    `This file is gitignored. Obtain from the team archive before seeding.`,
+    `Clean seed file not found: ${SEED_JSON}\n` +
+    `Run from project root: node scripts/clean-justkraft-inventory.mjs`,
   );
 }
 
@@ -214,23 +216,17 @@ console.log(
   ).toFixed(1)}s)`,
 );
 
-// ─── Deduplicate by SKU (last-write-wins) ────────────────────────────────
-// The source JSON has duplicate SKUs in places (~30 dupes by observation).
-// Supabase `upsert` rejects batches that touch the same conflict-target row
-// twice ("ON CONFLICT DO UPDATE command cannot affect row a second time").
-// Dedupe up front so each batch is internally unique on sku.
+// ─── Validate cleaned seed invariants ────────────────────────────────────
+// Dedupe belongs in scripts/clean-justkraft-inventory.mjs, not here. If the
+// cleaned fixture violates the import contract, fail before touching Supabase.
 {
-  const bySku = new Map();
-  let dupCount = 0;
+  const seenSku = new Set();
   for (const p of products) {
-    if (!p.sku) continue;
-    if (bySku.has(p.sku)) dupCount++;
-    bySku.set(p.sku, p); // last wins
+    if (!p.sku) throw new Error(`clean seed has product without sku: ${p.name}`);
+    if (seenSku.has(p.sku)) throw new Error(`clean seed has duplicate sku: ${p.sku}`);
+    seenSku.add(p.sku);
   }
-  const before = products.length;
-  products.length = 0;
-  for (const p of bySku.values()) products.push(p);
-  console.log(`  deduped: ${before} → ${products.length} unique-by-sku (${dupCount} duplicate sku rows collapsed)`);
+  console.log(`  validated: ${products.length} cleaned products with unique SKUs`);
 }
 
 // ─── Pass 2a: upsert categories, parents first ───────────────────────────
