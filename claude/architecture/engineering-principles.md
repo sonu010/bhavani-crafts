@@ -144,7 +144,11 @@ Tracked here so a future agent can see what we changed and why.
 
 | Date | Violation found | Fix | Commit |
 |---|---|---|---|
-| 2026-05-15 | `git add -A` swept unrelated files into a commit | Switch to targeted `git add <paths>`; will not use `-A` going forward | (this commit) |
-| 2026-05-15 | `/api/health` had multi-branch fallback chain (PGRST205 + 42P01 + generic exception) | Simplified to a single happy-path query against `categories` | (this commit) |
-| 2026-05-15 | `next.config.ts` silently degraded when `SUPABASE_URL` missing | Throw at config-load time; missing env is a deploy-blocker | (this commit) |
-| 2026-05-15 | `lib/db/server.ts` try/catch had no comment | Added comment citing Next 16 Server Component cookie write restriction | (this commit) |
+| 2026-05-15 | `git add -A` swept unrelated files into a commit | Switch to targeted `git add <paths>`; will not use `-A` going forward | `4c1acab` |
+| 2026-05-15 | `/api/health` had multi-branch fallback chain (PGRST205 + 42P01 + generic exception) | Simplified to a single happy-path query against `categories` | `4c1acab` |
+| 2026-05-15 | `next.config.ts` silently degraded when `SUPABASE_URL` missing | Throw at config-load time; missing env is a deploy-blocker | `4c1acab` |
+| 2026-05-15 | `lib/db/server.ts` try/catch had no comment | Added comment citing Next 16 Server Component cookie write restriction | `4c1acab` |
+| 2026-05-16 | Vercel build failed on TypeScript error in `scripts/launch-blockers.ts` — generic helper had wrong return type | Inlined the only-use helper (deletion over addition) + excluded `scripts/`, `__tests__/`, `vitest.config.ts` from Next build typecheck (separate dev tooling from app bundle) | `0d9d5d9` |
+| 2026-05-16 | `expect(p.base_price_inr).toBeNull;` missing parentheses — assertion never ran; comment said "non-null expected" but the would-be assertion was the inverse | Fixed to `.not.toBeNull()` + working `<= 100` check. CI lint annotations surfaced this; local `tsc --noEmit` had let it through for two prior green runs. | `445d21e` |
+| 2026-05-16 | Unused `zod` import + `SortSchema` const in `lib/db/products.ts` (declared but only used as a type) | Replaced with a plain TS union; no runtime validation was happening at call sites anyway | `445d21e` |
+| 2026-05-16 | Ternary used as statement (`r.pass ? x++ : y++`) in `launch-blockers.ts` | Converted to `if/else` | `445d21e` |

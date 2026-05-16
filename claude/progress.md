@@ -4,15 +4,15 @@ Last updated: 2026-05-16
 
 ## Counts
 
-- ✅ Done: **22** (Phase 0: 11/11 · Phase 1: 11/11)
+- ✅ Done: **23** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI)
 - 🟡 In progress: 0
 - 🚧 Blocked: 0
-- ⏸️ Deferred: 1 (P0-T03 — cart store port; pulled at P3-T21)
-- ⬜ Not started: 73
+- ⏸️ Deferred: 1 (P0-T03 — cart store; pulled at P3-T21 directly from `origin/main`)
+- ⬜ Not started: 72
 
-## Phase 1 — complete
+## Phase 0 + 1 + 1.5 — complete
 
-All migrations applied, data layer typed + tested, launch-blockers passing, schema doc verified against live.
+### Phase 1 schema (live Supabase project `lyycugadkxjtevmugqol`)
 
 ```
 0001_init.sql                    profiles, categories, products + 4 enums
@@ -25,41 +25,74 @@ All migrations applied, data layer typed + tested, launch-blockers passing, sche
 
 Live schema: 11 enums · 20 tables · 43 indexes · 36 functions
 Seed data:   7,780 products · 362 categories · 458 tags · 14,964 images · 8,181 variants
-All seeded: is_published=false, source='justkraft_seed', RLS-blocked from anon
+             All is_published=false, source='justkraft_seed', RLS-blocked from anon
 ```
 
-## What's runnable today
+### Phase 1.5 — Continuous Integration
 
-| Command | Effect |
-|---|---|
-| `pnpm dev` (from web/) | Local dev server on :3000. `/`, `/api/health`, `/design` all live. |
-| `pnpm build` | Production build. Catches issues that don't show in dev. |
-| `pnpm validate:migrations` | Re-applies all 7 migrations through pglite (Postgres 17 WASM). 6s. |
-| `pnpm launch-blockers` | 12 checks against live: seed leakage, license sanity, RLS attack probes. Deploy gate. |
-| `./node_modules/.bin/vitest run __tests__/db/` | 21 integration tests of the data layer against live. ~10s. |
-| `node scripts/dump-live-schema.mjs` | Refresh the verified-live-state appendix in database-schema.md. |
-| `node scripts/seed-from-justkraft.mjs` | Wipe-and-reseed the 7,780-product Just Kraft dev catalog. ~30s. |
+- `.github/workflows/ci.yml` — `static` (always) + `live` (gated on secrets). Green on `f1b58e0`, `445d21e`.
+- `pnpm validate:migrations` — pglite Postgres 17 validator. ~6s.
+- `pnpm launch-blockers` — 12 checks (7 SQL + 5 RLS attack probes). Deploy gate.
+- See [architecture/testing-and-ci.md](architecture/testing-and-ci.md) + [ADR-010](decisions/ADR-010-pglite-and-di-supabase.md).
+
+## What runs locally today
+
+| Command (from `web/`) | Purpose | Time |
+|---|---|---|
+| `pnpm dev` | Local dev server on :3000 | instant |
+| `pnpm build` | Production build (same as Vercel) | ~30s |
+| `pnpm lint` | ESLint over `src/` | ~3s |
+| `pnpm exec tsc --noEmit` | Strict typecheck | ~3s |
+| `pnpm validate:migrations` | All 7 migrations through pglite | ~6s |
+| `pnpm launch-blockers` | 12 deploy-gate checks against live | ~12s |
+| `pnpm exec vitest run __tests__/db/` | 21 data-layer integration tests vs live | ~10s |
+| `node scripts/seed-from-justkraft.mjs` | Wipe + re-seed Just Kraft dev catalog | ~30s |
+| `node scripts/dump-live-schema.mjs` | Refresh schema-doc appendix | ~10s |
 
 ## Live deployments
 
-- **Production**: https://bhavani-crafts.vercel.app/ — still serving the legacy prototype from `origin/main`. Untouched.
-- **Preview**: https://bhavani-crafts-6cg92t4ki-sonu010s-projects.vercel.app/ — `rebuild-v2`, Phase 0 placeholder + `/api/health` + `/design` (dev-only).
+- **Production**: https://bhavani-crafts.vercel.app/ — legacy prototype from `origin/main`. Untouched.
+- **Preview**: https://bhavani-crafts-6cg92t4ki-sonu010s-projects.vercel.app/ — `rebuild-v2`. `/` Phase-0 placeholder · `/api/health` returns `{"ok":true}` · `/design` returns 404 in production (dev-only).
+
+## Commit history at Phase 1 + 1.5 close
+
+```
+445d21e  chore: clear lint warnings + fix broken test assertion
+f1b58e0  P1.5: GitHub Actions CI (static + live-Supabase gated)
+0d9d5d9  fix(build): inline srvCount helper + exclude dev tooling from build typecheck
+cdb0999  P1-T10 + P1-T11: launch-blockers script + verified schema doc — Phase 1 closes
+518ffee  P1-T09: typed data layer + 21 integration tests, all green
+601ad6f  P0-T10 done (Vercel verified) + P1-T08 done (7,780 products seeded on live)
+f8ebe8e  P1-T06 + P1-T07: RLS lockdown + catalog indexes + recursive view
+2c0d2a6  P1-T03/T04 done + P1-T05 applied: FTS + trigram + synonyms + search_logs
+4c1acab  Adopt engineering principles; audit-fix 3 violations
+a408e0f  P1-T02 done + P1-T03 + P1-T04: variants/images/tags + ops tables
+e518018  P1-T01 done + P1-T02: attributes migration + pglite validator harness
+136ab02  P1-T01: fix smoke-block slugs to comply with the check constraint they're testing
+035d028  P1-T01: fix is_admin() ordering — must follow profiles table CREATE
+268a50c  P1-T01: migration 0001_init.sql — core tables (profiles, categories, products)
+289f813  P0-T11: security headers + image remotePatterns + Phase 0 wrap-up
+c369523  P0-T06 + P0-T07 + P0-T08 + P0-T09: shadcn primitives, design system, Supabase clients
+e40a3d8  P0-T02 + P0-T04: archive legacy prototype, scaffold fresh Next.js 16 app
+838c7a3  Option B layout: move git to project root, rebuild-v2 initial commit
+```
 
 ## Awaiting owner action
 
-(none — Phase 1 work is owner-unblocked from here)
+- **GitHub Actions secrets** (optional, non-blocking): three values from `web/.env.local` to enable the `live` CI job. See [`user/08`](../user/08-ci-and-github-secrets.md). Without them, `static` runs and `live` auto-skips with a warning.
 
-The **real-content gate** (`user/05`) opens up later, between Phase 3 and Phase 4 polish. No action needed yet.
+## Next 3 to work (Phase 2)
 
-## Next 3 to work
-
-1. **P2-T00** — Expand Phase 2 task files (the stubs created in P0-T01 are frontmatter-only; this entry task fleshes them out with lessons learned from Phase 1).
-2. **P2-T01** — Supabase Auth (email + password) wiring.
-3. **P2-T02** — `profiles` table + sign-up trigger (already present from 0001+0006; this task wires the admin promote flow + auth.uid() helpers).
+1. **P2-T00** — Expand Phase 2 task stubs with lessons learned from Phase 1 (DI Supabase client pattern, pglite-test-before-push, fixture cleanup convention, tsconfig exclude pattern).
+2. **P2-T01** — Supabase Auth (email + password) — login page + middleware.
+3. **P2-T02** — `requireRole(supabase, role)` helper + a runbook for promoting the owner profile.
 
 ## Notes log (most recent first)
 
-- 2026-05-16 — **Phase 1 closed.** P1-T10 (launch-blockers script, 12/12 pass) + P1-T11 (schema doc verified appendix, no drift). Ready for Phase 2.
+- 2026-05-16 — **Doc audit + cold-start hygiene.** Added `architecture/testing-and-ci.md` and `ADR-010` to capture the DI-Supabase-client + pglite patterns durably. Fixed P0-T03 status drift (`not_started` → `deferred`). Refreshed engineering-principles audit log.
+- 2026-05-16 — **CI live.** GitHub Actions workflow runs lint + tsc + validate:migrations + build on every push; vitest + launch-blockers on `rebuild-v2`. Two consecutive green runs.
+- 2026-05-16 — **First Vercel build failure caught a hidden test bug.** `expect(p.base_price_inr).toBeNull;` was missing parens — never ran. CI annotations surfaced it.
+- 2026-05-16 — **Phase 1 closed.** P1-T10 (launch-blockers, 12/12) + P1-T11 (schema doc verified appendix).
 - 2026-05-16 — **P1-T09 done.** Data layer + Zod + 21 integration tests on live.
 - 2026-05-15 — **P1-T08 done.** 7,780 products seeded on live; RLS-blocked from anon.
 - 2026-05-15 — **P1-T06 + P1-T07 done.** RLS lockdown + recursive view.

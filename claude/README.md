@@ -43,11 +43,24 @@ For every task you take on:
 claude/
   README.md            ← you are here
   plans.md             ← master index (every task, with status)
-  progress.md          ← rollup: counts done / in-progress / blocked + last 5 + next 3
+  progress.md          ← rollup: counts done / in-progress / blocked + commit history
   blockers.md          ← waiting-on-owner items (assets, credentials)
   glossary.md          ← project vocabulary (SKU, slug, attribute, variant, …)
-  architecture/        ← reference docs (read for context, edit only when reality changes)
-  decisions/           ← ADRs — immutable once accepted, supersede with new ADR if reversed
+  architecture/
+    engineering-principles.md  ← non-negotiable, read every session
+    overview.md
+    database-schema.md         ← has a verified-from-live appendix
+    design-system.md
+    auth-and-roles.md
+    caching-and-revalidation.md
+    search.md
+    image-pipeline.md
+    background-jobs.md
+    observability.md
+    security.md
+    testing-and-ci.md          ← DI Supabase client + pglite + vitest + CI workflow
+    ai-workflow.md
+  decisions/           ← ADRs 001–010, immutable once accepted
   runbooks/            ← step-by-step operational guides (seed, deploy, restore, etc.)
   tasks/
     _template.md       ← copy this when creating a new task file

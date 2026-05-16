@@ -9,8 +9,9 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 ## Read me first (architecture + decisions)
 
 - [README](README.md) — how to use this folder
+- [architecture/engineering-principles.md](architecture/engineering-principles.md) — **read every session**
 - [architecture/overview.md](architecture/overview.md)
-- [architecture/database-schema.md](architecture/database-schema.md)
+- [architecture/database-schema.md](architecture/database-schema.md) — has a verified-from-live appendix at the bottom
 - [architecture/design-system.md](architecture/design-system.md)
 - [architecture/auth-and-roles.md](architecture/auth-and-roles.md)
 - [architecture/caching-and-revalidation.md](architecture/caching-and-revalidation.md)
@@ -19,8 +20,9 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - [architecture/background-jobs.md](architecture/background-jobs.md)
 - [architecture/observability.md](architecture/observability.md)
 - [architecture/security.md](architecture/security.md)
+- [architecture/testing-and-ci.md](architecture/testing-and-ci.md) — DI client, pglite, vitest, launch-blockers, CI workflow
 - [architecture/ai-workflow.md](architecture/ai-workflow.md)
-- ADRs 001–009 in [decisions/](decisions/)
+- ADRs 001–010 in [decisions/](decisions/)
 - Runbooks in [runbooks/](runbooks/)
 
 ---
@@ -54,6 +56,17 @@ Owner: Vignesh · Last updated: 2026-05-15 · Master plan: `~/.claude/plans/i-ju
 - ✅ [P1-T09: Typed data layer (lib/db/* with Zod)](tasks/phase-1-foundation/P1-T09-typed-data-layer.md) — 21/21 integration tests pass on live
 - ✅ [P1-T10: Launch-blockers script + RLS sanity](tasks/phase-1-foundation/P1-T10-verify-seed-counts.md) — 12/12 checks pass on live
 - ✅ [P1-T11: database-schema.md regenerated from live](tasks/phase-1-foundation/P1-T11-write-database-schema-doc.md) — no drift; verified appendix added
+
+---
+
+## Phase 1.5 — Continuous Integration   (out-of-band, added 2026-05-16)
+
+A lightweight wedge inserted between Phase 1 and Phase 2 after the first Vercel build failure caught a TypeScript error that local checks missed.
+
+- ✅ **CI workflow**: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — two jobs (`static` always; `live` gated on Supabase secrets + targets `rebuild-v2`). Green on `f1b58e0` and `445d21e`.
+- ✅ **`pnpm validate:migrations` harness**: [`web/scripts/validate-migrations.mjs`](../web/scripts/validate-migrations.mjs) — applies all migrations against pglite Postgres 17 before push. See [architecture/testing-and-ci.md](architecture/testing-and-ci.md) and [ADR-010](decisions/ADR-010-pglite-and-di-supabase.md).
+- ✅ **`pnpm launch-blockers` script**: [`web/scripts/launch-blockers.ts`](../web/scripts/launch-blockers.ts) — 12 checks (7 SQL + 5 runtime RLS). Deploy gate.
+- ✅ **Owner action: add 3 GitHub Actions secrets**: instructions at [`user/08`](../user/08-ci-and-github-secrets.md). Until added, `live` job auto-skips with warning. Not blocking.
 
 ---
 

@@ -2,12 +2,14 @@
 id: P0-T03
 phase: 0
 title: Extract reusable bits from web-legacy/
-status: not_started
+status: deferred
 depends_on: [P0-T02]
 estimate_hours: 0.5
 owner: ai
-last_updated: 2026-05-15
+last_updated: 2026-05-16
 ---
+
+> **Deferred.** The cart store is the only thing we plan to reuse from `web-legacy/`. It will be pulled directly from `origin/main` at the point of use (P3-T21). No upfront `_salvage/` folder is needed — Phase 3 fetches the file with `git show origin/main:web/src/store/cart.ts > web/src/store/cart.ts` when it's needed. Soft-delete this whole task at P3-T21 once the cart store lands fresh.
 
 # Goal
 

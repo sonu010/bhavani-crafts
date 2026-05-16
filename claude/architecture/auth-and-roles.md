@@ -26,7 +26,7 @@ A row in `profiles` is created automatically by a trigger when `auth.users` gets
 We never trust one layer alone.
 
 1. **Middleware (Edge)** — `web/src/middleware.ts`. Redirects any `/admin/*` request without a session cookie to `/login`. Cheap filter; not authorization.
-2. **Server-side authz** — Every server action's first line is `await requireRole('admin')`. Helper in `web/src/lib/auth/require.ts` reads the cookie, fetches the profile, checks the role. Throws `403` if missing. **This is the real gate.**
+2. **Server-side authz** — Every server action's first line is `await requireRole(supabase, 'admin')`. Helper in `web/src/lib/auth/require.ts` reads the cookie, fetches the profile, checks the role. Throws `403` if missing. **This is the real gate.** The Supabase client is passed in as the first arg per the dependency-injection pattern (see [testing-and-ci.md](testing-and-ci.md) and [ADR-010](../decisions/ADR-010-pglite-and-di-supabase.md)); `requireRole` doesn't construct its own.
 3. **RLS** — Postgres policies are the last line of defense. Even if the server-side check were skipped, RLS would prevent anon/viewer accounts from writing.
 
 ## Session policy

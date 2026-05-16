@@ -1,6 +1,8 @@
 # Architecture overview
 
-A 5-minute mental model of the Bhavani Crafts rebuild. Read this before any task in Phase 0–1.
+A 5-minute mental model of the Bhavani Crafts rebuild. Read this before any task that touches application architecture.
+
+> **Phase 0 + Phase 1 + Phase 1.5 are complete** as of 2026-05-16. Schema is live, data layer is typed + tested, CI is green. See `progress.md` for the current snapshot.
 
 ## What we are building
 
