@@ -41,15 +41,20 @@ export default async function TwoFactorSetupPage() {
   }
 
   const { data: factorsList } = await supabase.auth.mfa.listFactors();
-  // If the user already has a verified TOTP factor, they belong on
-  // /auth/verify-2fa, not here.
-  if (factorsList?.totp?.some((f) => f.status === "verified")) {
+  // Supabase API: `factorsList.totp` only contains *verified* TOTP
+  // factors. Unverified ones live in `factorsList.all` with
+  // factor_type='totp' + status='unverified'. So:
+  //   - "has verified TOTP?" → check `.totp.length > 0`
+  //   - "cleanup unverified TOTP?" → iterate `.all`, filter manually
+  // The Supabase types call `.totp` a TOTP array; the implicit "verified"
+  // semantic is undocumented but consistent in our smoke (see
+  // scripts/debug-enroll.mjs).
+  if ((factorsList?.totp?.length ?? 0) > 0) {
     redirect("/auth/verify-2fa");
   }
 
-  // Clean up any unverified leftovers so we don't accumulate orphans.
-  for (const f of factorsList?.totp ?? []) {
-    if (f.status !== "verified") {
+  for (const f of factorsList?.all ?? []) {
+    if (f.factor_type === "totp" && f.status !== "verified") {
       await supabase.auth.mfa.unenroll({ factorId: f.id });
     }
   }
@@ -74,7 +79,7 @@ export default async function TwoFactorSetupPage() {
 
       <EnrollForm
         factorId={enrollData.id}
-        qrCodeSvg={enrollData.totp.qr_code}
+        qrCodeDataUri={enrollData.totp.qr_code}
         secret={enrollData.totp.secret}
       />
     </main>

@@ -271,6 +271,18 @@ pnpm exec vitest run __tests__/auth/
 2. **End-to-end smoke** — owner promotes themselves via `user/09-promote-owner-account.md`, signs in, completes TOTP enrollment, lands on `/admin`. After this lands, P2-T03 also flips to `done`.
 3. **AAL2-success tests** — add an integration test that drives `mfa.enroll` → `mfa.challenge` → `mfa.verify` with a correct code, then asserts `requireAAL2` passes. Needs a TOTP library (e.g. `otplib`) as a devDependency to compute the expected code. Marginal automated coverage win; manual smoke is sufficient for now.
 
+**2026-05-17 — part-c (bug fixes from owner smoke):** the owner tried to enroll and hit two bugs in `EnrollForm`.
+
+1. **QR was double-prefixed.** Supabase's `mfa.enroll()` returns `totp.qr_code` already as a complete `data:image/svg+xml;utf-8,<svg>…</svg>` URI. The Supabase TS docstring claims you need to prepend the prefix; the runtime contradicts the doc. Our `enroll-form.tsx` was prefixing AND `encodeURIComponent`-ing, producing `data:image/svg+xml;utf-8,data%3Aimage%2Fsvg…` — invalid. Browser couldn't render the QR. Fix: use `qr_code` as-is. Renamed the prop `qrCodeSvg` → `qrCodeDataUri` so future agents can't make the same mistake.
+
+2. **Unverified factor cleanup was iterating the wrong array.** Supabase's `listFactors()` API: `.totp` only contains *verified* TOTP factors; unverified ones live in `.all` with `factor_type='totp'` + `status='unverified'`. Our cleanup loop iterated `.totp`, so it never saw unverified leftovers — they accumulated. Fix: iterate `.all` and filter by factor_type + status. The "redirect away if verified TOTP exists" check now uses `.totp.length > 0` (cleaner than `.some(verified)` which was correct-but-redundant).
+
+3. **Added `__tests__/auth/mfa-enroll.test.ts`** (5 tests, ~8s) to pin the API contract: `qr_code` shape, factor location in `.all` vs `.totp`, full enroll→challenge→verify→AAL2 round trip with a real TOTP code via `otplib`. `requireAAL2` AAL2-success path now has automated coverage.
+
+4. **`scripts/debug-enroll.mjs`** — diagnostic that exercises the same Supabase MFA flow with detailed logging. Useful for the next agent debugging an MFA issue; not part of the production code path.
+
+5. **`otplib` added as a devDependency** for the test. Tree-shaken from production builds.
+
 **TOTP routes landed in part-b sub-commit:**
 - `app/admin/2fa-setup/page.tsx` + `enroll-form.tsx` + `actions.ts`. Enrollment renders QR + manual-secret fallback; submit calls `mfa.challenge` + `mfa.verify`; audit log on success and failure; redirect to `/admin` on success.
 - `app/auth/verify-2fa/page.tsx` + `verify-form.tsx` + `actions.ts`. Subsequent sign-in: finds the verified factor and challenges it with the user's TOTP code.
