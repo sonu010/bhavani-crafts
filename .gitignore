@@ -50,6 +50,17 @@ claude/.local/
 # ─── AI scratch ───
 *.scratch.md
 
+# ─── Obsidian (user-local note-taking; not source) ───
+**/.obsidian/
+**/*.canvas
+# Obsidian daily-note pattern (YYYY-MM-DD.md at the claude/ root)
+claude/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].md
+# Stray Obsidian vault folder at repo root
+/bhavani\ crafts/
+
+# ─── Generated architecture pack (reproducible from scripts/extract-markdown-architecture.mjs) ───
+docs/idea-architecture/generated/
+
 # ─── Large seed fixtures (Just Kraft scrape, ~36MB) ───
 # These are dev-only seed data; obtain out-of-band, do not commit.
 # Keep the directory and its .gitkeep so the path exists.
