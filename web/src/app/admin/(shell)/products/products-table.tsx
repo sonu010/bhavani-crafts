@@ -1,20 +1,11 @@
 import Link from "next/link";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { AdminProductRow } from "@/lib/db/admin/products";
 
 /**
- * Relative-time label. Server-rendered, so we deliberately use a single
- * granularity (days) rather than the full "5 minutes ago" gradient — the
- * latter would require client JS to stay accurate across renders.
+ * Relative-time label. Server-rendered, single-granularity (days+) so the
+ * output is stable across renders without client JS.
  */
 function relativeDays(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
@@ -28,116 +19,125 @@ function relativeDays(iso: string): string {
 
 const STATUS_BADGE_VARIANT: Record<
   AdminProductRow["review_status"],
-  { label: string; className: string }
+  { label: string; shortLabel: string; className: string }
 > = {
-  draft: { label: "Draft", className: "border-husk-200 bg-husk-100 text-stone-500" },
+  draft: {
+    label: "Draft",
+    shortLabel: "Draft",
+    className: "border-husk-200 bg-husk-100 text-stone-500",
+  },
   needs_review: {
     label: "Needs review",
+    shortLabel: "Review",
     className: "border-clay-700/30 bg-clay-700/10 text-clay-700",
   },
   ready_to_publish: {
     label: "Ready",
+    shortLabel: "Ready",
     className: "border-moss-600/30 bg-moss-600/10 text-moss-600",
   },
   published: {
     label: "Published",
+    shortLabel: "Live",
     className: "border-teal-800/30 bg-teal-800/10 text-teal-800",
   },
   archived: {
     label: "Archived",
+    shortLabel: "Archived",
     className: "border-husk-200 bg-husk-100 text-stone-500",
   },
 };
 
 /**
- * Admin products table. Server component. The checkbox column is wired
- * for layout consistency but inert until P2-T09 (bulk actions).
+ * Admin products list — mobile-first card rows.
+ *
+ * Same layout at every breakpoint; no horizontal scroll, no
+ * column-toggling between viewports. Each row is the full tap target,
+ * navigating to /admin/products/[id]/edit. The bulk-action checkbox
+ * was removed (it was inert) and lands cleanly in P2-T09 when bulk
+ * actions ship.
+ *
+ * Spacing scales lightly with breakpoint: thumbnail 48px on mobile,
+ * 56px from sm+; meta line wraps tighter on the narrowest screens.
  */
 export function ProductsTable({ rows }: { rows: AdminProductRow[] }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-husk-200 bg-paper-0 p-8 text-center text-sm text-stone-500">
+      <div className="rounded-xl border border-husk-200 bg-paper-0 p-6 text-center text-sm text-stone-500 sm:p-8">
         No products match this filter.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-husk-200 bg-paper-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10 pl-4">
-              <Checkbox aria-label="Select all (bulk actions arrive in P2-T09)" disabled />
-            </TableHead>
-            <TableHead className="w-12"></TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className="hidden md:table-cell">Category</TableHead>
-            <TableHead className="hidden md:table-cell">SKU</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden lg:table-cell">Created</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => {
-            const badge = STATUS_BADGE_VARIANT[row.review_status];
-            return (
-              <TableRow key={row.id}>
-                <TableCell className="pl-4">
-                  <Checkbox
-                    aria-label={`Select ${row.name}`}
-                    disabled
-                  />
-                </TableCell>
-                <TableCell>
-                  {row.thumbnail_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      alt=""
-                      src={row.thumbnail_url}
-                      className="size-10 rounded border border-husk-200 object-cover"
-                    />
-                  ) : (
-                    <div className="size-10 rounded border border-husk-200 bg-husk-100" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/admin/products/${row.id}/edit`}
-                    className="block max-w-xs truncate text-bark-900 hover:underline"
-                    title={row.name}
-                  >
-                    {row.name}
-                  </Link>
-                  <div
-                    className="max-w-xs truncate font-mono text-xs text-stone-500"
-                    title={row.slug}
-                  >
-                    {row.slug}
-                  </div>
-                </TableCell>
-                <TableCell className="hidden text-sm text-stone-500 md:table-cell">
-                  {row.category?.name ?? "—"}
-                </TableCell>
-                <TableCell className="hidden font-mono text-xs text-stone-500 md:table-cell">
-                  {row.sku ?? "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={badge.className}
-                  >
-                    {badge.label}
-                  </Badge>
-                </TableCell>
-                <TableCell className="hidden font-mono text-xs text-stone-500 lg:table-cell">
-                  {relativeDays(row.created_at)}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <ul className="divide-y divide-husk-200 overflow-hidden rounded-xl border border-husk-200 bg-paper-0">
+      {rows.map((row) => {
+        const badge = STATUS_BADGE_VARIANT[row.review_status];
+        const meta: string[] = [];
+        if (row.category?.name) meta.push(row.category.name);
+        if (row.sku) meta.push(row.sku);
+        meta.push(relativeDays(row.created_at));
+
+        return (
+          <li key={row.id}>
+            <Link
+              href={`/admin/products/${row.id}/edit`}
+              className="group flex items-center gap-3 px-3 py-3 transition-colors hover:bg-husk-100 sm:gap-4 sm:px-4"
+            >
+              {/* Thumbnail */}
+              {row.thumbnail_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  alt=""
+                  src={row.thumbnail_url}
+                  className="size-12 shrink-0 rounded-md border border-husk-200 object-cover sm:size-14"
+                />
+              ) : (
+                <div className="size-12 shrink-0 rounded-md border border-husk-200 bg-husk-100 sm:size-14" />
+              )}
+
+              {/* Title + meta */}
+              <div className="min-w-0 flex-1">
+                <div
+                  className="truncate text-sm font-medium text-bark-900 group-hover:underline sm:text-base"
+                  title={row.name}
+                >
+                  {row.name}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500">
+                  {meta.map((m, i) => (
+                    <span key={i} className="flex items-center gap-1.5 truncate">
+                      {i > 0 ? <span aria-hidden>·</span> : null}
+                      {/* SKU rendered in mono; everything else in the body face */}
+                      <span
+                        className={
+                          (i === 1 && row.sku ? "font-mono " : "") +
+                          "truncate"
+                        }
+                      >
+                        {m}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status + chevron */}
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant="outline" className={badge.className}>
+                  {/* Short label on the narrowest screens; full from sm */}
+                  <span className="sm:hidden">{badge.shortLabel}</span>
+                  <span className="hidden sm:inline">{badge.label}</span>
+                </Badge>
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 text-stone-500 group-hover:text-bark-900"
+                />
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
