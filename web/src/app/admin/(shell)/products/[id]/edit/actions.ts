@@ -18,7 +18,14 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { requireAdminContext } from "@/lib/db/admin-context";
-import { updateProductGeneral } from "@/lib/db/admin/products";
+import {
+  getProductByIdBasic,
+} from "@/lib/db/products";
+import {
+  setProductTags,
+  updateProductCategory,
+  updateProductGeneral,
+} from "@/lib/db/admin/products";
 
 export type SaveProductGeneralResult =
   | { ok: true }
@@ -97,6 +104,95 @@ export async function saveProductGeneral(
   if (result.after.category_slug) {
     revalidatePath(`/c/${result.after.category_slug}`);
   }
+
+  return { ok: true };
+}
+
+// ─── Category tab (P2-T12) ──────────────────────────────────────────
+
+export type SaveProductCategoryResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: { code: "not_found" | "category_not_found" };
+    };
+
+export async function saveProductCategory(
+  id: string,
+  categoryId: string | null,
+): Promise<SaveProductCategoryResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await updateProductCategory(admin, id, categoryId, user.id);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.update_category",
+    entity_type: "product",
+    entity_id: id,
+    before_json: result.before as never,
+    after_json: result.after as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`saveProductCategory audit insert: ${auditErr.message}`);
+  }
+
+  // Revalidate the product's PDP + both old + new category pages.
+  // PDP slug comes from a tiny lookup; category slugs are in the result.
+  const prod = await getProductByIdBasic(admin, id);
+  updateTag("products");
+  updateTag("categories");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  if (result.before.categorySlug) {
+    revalidatePath(`/c/${result.before.categorySlug}`);
+  }
+  if (
+    result.after.categorySlug &&
+    result.after.categorySlug !== result.before.categorySlug
+  ) {
+    revalidatePath(`/c/${result.after.categorySlug}`);
+  }
+
+  return { ok: true };
+}
+
+export type SaveProductTagsResult =
+  | { ok: true }
+  | { ok: false; error: { code: "tag_not_found"; missingSlugs: string[] } };
+
+export async function saveProductTags(
+  id: string,
+  tagSlugs: string[],
+): Promise<SaveProductTagsResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await setProductTags(admin, id, tagSlugs);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.set_tags",
+    entity_type: "product",
+    entity_id: id,
+    before_json: result.before as never,
+    after_json: result.after as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`saveProductTags audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, id);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
 
   return { ok: true };
 }
