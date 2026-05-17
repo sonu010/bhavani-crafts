@@ -2,11 +2,11 @@
 id: P2-T00
 phase: 2
 title: Expand Phase 2 task files
-status: in_progress
+status: done
 depends_on: [P1-T11]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-16
+last_updated: 2026-05-17
 ---
 
 # Goal
@@ -87,8 +87,12 @@ grep -h "^depends_on:" claude/tasks/phase-2-admin/P2-T*.md | tr -d '[]" ' | tr '
   ls claude/tasks/*/${dep}-*.md >/dev/null 2>&1 || echo "BROKEN DEP: $dep"
 done
 
-# No file still contains the stub placeholder
-grep -l "Body to be written in P2-T00 once Phase 2 kicks off" claude/tasks/phase-2-admin/P2-T*.md && echo "STUB REMAINS"
+# No file still contains the stub placeholder (this task self-references the
+# placeholder phrase in its own grep command, so we exclude P2-T00 itself).
+grep -l "Body to be written in P2-T00 once Phase 2 kicks off" \
+  claude/tasks/phase-2-admin/P2-T*.md \
+  | grep -v 'P2-T00-' \
+  && echo "STUB REMAINS"
 
 # Every expanded file has all template sections
 for f in claude/tasks/phase-2-admin/P2-T*.md; do
@@ -107,4 +111,47 @@ None.
 
 # Notes for next agent
 
-(empty — to be filled in by the agent that flips this to `done` in commit 2)
+**2026-05-17 — DONE.** Two commits on `rebuild-v2`:
+- `33b5477` — auth foundation (T01–T04) + P2-T00 in_progress
+- this commit — admin surface (T05–T29) + P2-T00 done
+
+**Mixed-by-complexity depth landed as planned:**
+- Expansive (7 tasks, ~200–300 lines each): T01, T04, T15, T23, T24, T25, T28
+- Compact (22 tasks, ~80–170 lines each): everything else
+
+**Locked decisions baked in (cite-able from each task):**
+- T01: full 10-layer defense table at the top; hCaptcha test keys + Upstash sliding window + TOTP enrollment/verify split into `/admin/2fa-setup` and `/auth/verify-2fa`
+- T04: three-layer authz example code (middleware shape + `requireRole` body); `/design` RSC payload leak fix folded in
+- T05: navigation tree verbatim from SESSION-RESUME; Sheet drawer locked
+- T06: 2×3 widget ASCII grid verbatim + "no rev/customer/conversion" rationale
+- T07: `DEFAULT_STATUS = 'needs_review'` hard-coded constant with the "flip when < 50" note
+- T09: ADR-006 bulk-soft-only constraint enforced
+- T15: full security.md §"File-upload validation" enumeration; HEIC supported; license_status default `unverified` linked to the launch-blockers check
+- T23/24/25: import_runs + import_run_rows staging → background_jobs worker with checkpoint resume → report with errors CSV download
+- T28: ADR-006 read-out at the top; typed-confirmation modal mock; no bulk-hard-delete path
+- T29: 360px audit covers every page from T05–T28
+
+**Cross-cutting patterns referenced by section (not restated) in every task:**
+- DI Supabase client (ADR-010)
+- Soft delete (ADR-006)
+- Audit log via service-role
+- RLS EXISTS pattern
+- Service-role isolation
+- pglite-before-push
+- `revalidateTag`/`revalidatePath` per the mutation map
+- Design tokens (11 colors, three font families)
+- Targeted `git add`
+
+**`plans.md` not modified.** The depends_on graph and titles in the stubs were correct; no drift to sync. Per agreed scope.
+
+**Migrations the implementer may need to add as Phase 2 progresses** (flagged inside the task files, validate via pglite first):
+- 0008 partial-unique index for `product_variants.is_default` (T14)
+- 0009 `tags.deleted_at` if not already present + `merge_tags` RPC (T21)
+- 0010 `import_run_rows.applied_product_id` (T25)
+- 0011 audit_logs index `(created_at DESC, id DESC)` if missing (T26)
+
+**First buildable task is now P2-T01 (Supabase Auth + `/login`).** It depends on P2-T00 only, which is `done`. P2-T02 unblocks T03 + T04; T04 unblocks T05; T05 fans out to everything.
+
+**Two notes for whoever picks up T01 first:**
+1. The Upstash + hCaptcha env vars are listed in `files to touch` but the owner has not provisioned them yet — flag a credential block on T01 if production secrets aren't available.
+2. The TOTP enrollment flow lives at `/admin/2fa-setup` — that route is inside `/admin/*` which middleware (T04) gates. There's a chicken-and-egg: an AAL1 session needs to reach the 2fa-setup page. Solution baked into T04: middleware redirects AAL1 sessions to `/admin/2fa-setup` (not blocks them); the page itself is accessible at AAL1.

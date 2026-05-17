@@ -6,12 +6,85 @@ status: not_started
 depends_on: [P2-T11]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-15
+last_updated: 2026-05-17
 ---
 
 # Goal
 
-(Body to be written in P2-T00 once Phase 2 kicks off and we know what we learned from the prior phase. This stub exists so the index in `claude/plans.md` has a valid link and `depends_on` arrows are accurate from day one.)
+After this task, the Category tab of the product editor renders a single-select tree-search combobox over all 362 categories. Owner can type to filter or click to expand-and-pick. Save action sets `products.category_id` and writes an audit log. Tags multi-select also lives here (sibling control), persisting `product_tags` join rows. Category and tags are saved by independent server actions; saving one does not affect the other.
+
+# Prerequisites (read first)
+
+- [`web/src/lib/db/categories.ts`](../../../web/src/lib/db/categories.ts) — `getCategoryTree(supabase)` already exists; reuse
+- [`web/src/lib/db/tags.ts`](../../../web/src/lib/db/tags.ts) — `listTagsForProduct(supabase, productId)` if present; otherwise add
+- [`web/src/components/ui/command.tsx`](../../../web/src/components/ui/command.tsx) — shadcn `Command` primitive (combobox)
+- [P2-T11](P2-T11-product-editor-basic-fields.md) — save action pattern
+- [claude/architecture/caching-and-revalidation.md](../../architecture/caching-and-revalidation.md) — `revalidatePath('/c/' + oldSlug)` + new slug
+
+# Files to touch
+
+- `web/src/app/admin/products/[id]/edit/_tabs/category.tsx` (modified) — client; renders `<CategoryPicker>` + `<TagsPicker>`.
+- `web/src/app/admin/products/[id]/edit/_pickers/category-picker.tsx` (new) — shadcn `Command` with tree-indented items; type-to-filter.
+- `web/src/app/admin/products/[id]/edit/_pickers/tags-picker.tsx` (new) — shadcn `Command` multi-select with checkboxes; supports inline-create-new-tag (P2-T21 wires the table).
+- `web/src/app/admin/products/[id]/edit/actions.ts` (modified) — add `saveProductCategory(id, categoryId | null)` and `saveProductTags(id, tagSlugs[])`.
+- `web/src/lib/db/admin/products.ts` (modified) — `updateProductCategory(supabase, id, categoryId)`, `setProductTags(supabase, id, tagSlugs)` (replaces the full set; idempotent).
+- `web/__tests__/db/admin/products-category-tags.test.ts` (new)
+
+# Implementation notes
+
+**Category picker — single select, tree-indented.** The `getCategoryTree` result is a recursive `{ id, slug, name, children }[]`. Flatten for the combobox with a `depth` field; render with `padding-left: depth * 12px`. Typing filters by `name` or `slug` (case-insensitive, contains-match). Selecting an item closes the popover and sets the form value. A "None" item at the top of the list clears the category (sets `category_id = NULL`).
+
+**Tags picker — multi-select with inline-create.** Existing tags rendered as checkboxes inside the `Command` popover. Search filters. A "Create '<query>'" row appears at the bottom when the query doesn't match any existing tag. Selecting it calls a server action `createTag(slug, name)` (only available to admin role), refetches, then auto-selects.
+
+**Independent save actions.** Category save and tags save are separate server actions. The Category tab has two save buttons (or auto-save on change). Reason: each writes a distinct audit log entry; bundling them would conflate two changes in the history.
+
+**`setProductTags` replaces, not patches.** Given `tagSlugs[]`, the function:
+1. `SELECT tag_id FROM product_tags WHERE product_id = $1` — current set
+2. Diff against the new set
+3. `DELETE` removed; `INSERT` added; leave unchanged ones alone
+4. One audit log entry: `product.set_tags` with `before_json: oldTags`, `after_json: newTags`
+
+This keeps audit logs proportional to actions taken, not to set size.
+
+**RLS posture.** Both actions use the cookie-bound admin server client. RLS allows admin-role to read/write `product_tags`. Service-role only needed for the audit log insert.
+
+**Revalidation.**
+- Category change: `revalidateTag('products')` + `revalidateTag('categories')` + `revalidatePath('/c/' + oldCategorySlug)` + `revalidatePath('/c/' + newCategorySlug)` (look up both).
+- Tags change: `revalidateTag('products')` + `revalidatePath('/p/' + slug)`.
+
+**Validation.** Category id (if non-null) must reference an existing, non-deleted category. Tag slugs must all exist (or be created via the inline flow); reject the action if any slug doesn't resolve.
+
+**Performance.** Category tree loaded once at tab mount (server component prefetches). 362 categories is tiny; client-side filter is fine. Don't introduce a server-side type-ahead endpoint for this scale.
+
+# Acceptance criteria
+
+- [ ] Category tab renders both pickers.
+- [ ] Category picker shows all 362 categories tree-indented.
+- [ ] Typing filters categories by name or slug.
+- [ ] Selecting "None" clears `category_id`.
+- [ ] Tags picker shows existing tags; multi-select; checkbox state matches current `product_tags`.
+- [ ] Inline-create for a new tag works (admin role); refetched + auto-selected.
+- [ ] Save category writes a `product.update_category` audit log with before/after id.
+- [ ] Save tags writes one `product.set_tags` audit log with before/after slug arrays.
+- [ ] Both save actions call the right revalidations.
+- [ ] `pnpm tsc --noEmit`, `pnpm lint`, `pnpm build` green. `pnpm exec vitest run __tests__/db/admin/products-category-tags.test.ts` green.
+
+# Verification
+
+```bash
+cd web
+pnpm exec vitest run __tests__/db/admin/products-category-tags.test.ts
+pnpm dev &
+sleep 4
+# Editor → Category tab
+# 1. Pick a different category → save → audit_logs has product.update_category row
+# 2. Add 2 new tags, remove 1 existing → save → audit_logs has product.set_tags row
+# 3. Storefront /c/<old> and /c/<new> reflect changes after revalidation
+```
+
+# Dependencies added
+
+None.
 
 # Notes for next agent
 
