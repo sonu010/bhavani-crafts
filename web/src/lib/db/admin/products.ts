@@ -239,14 +239,18 @@ export async function listProductsAdmin(
     return { items: [], nextCursor: null };
   }
 
+  // Thumbnails are fetched in a SECOND query. PostgREST embeds aggregate
+  // EVERY matching row for the embedded resource before the parent
+  // LIMIT applies, so embedding product_images here turned a 200ms list
+  // query into a 6700ms list query. Two bounded queries (products
+  // limit 26 + a follow-up product_images IN those 26) is ~30× faster.
   let q = supabase
     .from("products")
     .select(
       `
         id, sku, slug, name, base_price_inr, review_status, is_published,
         stock_status, created_at, updated_at,
-        category:categories(id, slug, name),
-        thumbnail:product_images(url, sort_order)
+        category:categories(id, slug, name)
       `,
     )
     .is("deleted_at", null);
@@ -303,37 +307,51 @@ export async function listProductsAdmin(
   const { data, error } = await q;
   if (error) throw new Error(`listProductsAdmin: ${error.message}`);
 
-  // Supabase joins return arrays; pick the first thumbnail by sort_order.
   type RawRow = (typeof data extends Array<infer R> ? R : never) & {
     category: { id: string; slug: string; name: string } | null;
-    thumbnail: { url: string; sort_order: number }[] | null;
   };
+  const baseRows = (data ?? []).map((raw) => raw as unknown as RawRow);
 
-  const rows = (data ?? []).map((raw) => {
-    const r = raw as unknown as RawRow;
-    const firstImage =
-      (r.thumbnail ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null;
-    return {
-      id: r.id,
-      sku: r.sku,
-      slug: r.slug,
-      name: r.name,
-      base_price_inr: r.base_price_inr,
-      review_status: r.review_status,
-      is_published: r.is_published,
-      stock_status: r.stock_status,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-      category: r.category,
-      thumbnail_url: firstImage,
-    };
-  });
+  const hasMore = baseRows.length > perPage;
+  const trimmed = hasMore ? baseRows.slice(0, perPage) : baseRows;
+
+  // Second query: thumbnails for the trimmed page only. One round-trip
+  // returning ~50-80 rows (visible products × ~2-3 images each).
+  // Building a Map keeps the merge O(visible).
+  const thumbnailByProduct = new Map<string, string>();
+  if (trimmed.length > 0) {
+    const ids = trimmed.map((r) => r.id);
+    const { data: imgs, error: imgsErr } = await supabase
+      .from("product_images")
+      .select("product_id, url, sort_order")
+      .in("product_id", ids)
+      .is("deleted_at", null)
+      .order("sort_order", { ascending: true });
+    if (imgsErr) throw new Error(`listProductsAdmin (thumbnails): ${imgsErr.message}`);
+    for (const img of imgs ?? []) {
+      if (!thumbnailByProduct.has(img.product_id)) {
+        thumbnailByProduct.set(img.product_id, img.url);
+      }
+    }
+  }
+
+  const rows = trimmed.map((r) => ({
+    id: r.id,
+    sku: r.sku,
+    slug: r.slug,
+    name: r.name,
+    base_price_inr: r.base_price_inr,
+    review_status: r.review_status,
+    is_published: r.is_published,
+    stock_status: r.stock_status,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    category: r.category,
+    thumbnail_url: thumbnailByProduct.get(r.id) ?? null,
+  }));
 
   const parsed = AdminProductRowSchema.array().parse(rows);
-  const hasMore = parsed.length > perPage;
-  const items = hasMore ? parsed.slice(0, perPage) : parsed;
+  const items = parsed;
 
   let nextCursor: AdminCursor | null = null;
   if (hasMore) {
