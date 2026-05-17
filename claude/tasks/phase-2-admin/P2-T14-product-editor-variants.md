@@ -2,11 +2,11 @@
 id: P2-T14
 phase: 2
 title: Product editor — variants
-status: not_started
+status: done
 depends_on: [P2-T11]
 estimate_hours: 4
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -81,4 +81,55 @@ sleep 4
 
 # Notes for next agent
 
-(empty)
+Landed across four sub-commits — the breakdown saved review surface
+area on a 4hr task:
+
+  - **T14a (migrations 0010 + 0011 fixup)** — 0010 added a partial
+    unique index `product_variants_one_default_idx`, then I realized
+    0003 had already added `product_variants_one_default_per_product_idx`
+    with the identical definition. 0011 drops the duplicate. The
+    constraint the task asked for already existed in 0003 — net result:
+    no schema change, just verified the existing index works.
+
+  - **T14b** — `web/src/lib/db/admin/variants.ts` (six exports:
+    getVariantsBundle, setProductOptions, setProductVariants,
+    softDeleteVariant, setDefaultVariant, generateAllVariants) + 17
+    integration tests in `web/__tests__/db/admin/variants.test.ts`.
+    All errors are typed (`VariantsError` union).
+
+  - **T14c** — five server actions in
+    `_tabs/[id]/edit/actions.ts`: `saveProductOptions`,
+    `saveProductVariants`, `softDeleteVariantAction`,
+    `setDefaultVariantAction`, `generateAllVariantsAction`. Each
+    writes an `audit_logs` row + `updateTag('products')` +
+    `revalidatePath('/p/<slug>')`.
+
+  - **T14d** — three UI files:
+    - `_variants/options-editor.tsx` — add/remove options + values
+      (chip-style value tags; Enter-to-add).
+    - `_variants/variants-table.tsx` — table on md+, card-list on
+      mobile (mirrors P2-T08's mobile-first pattern).
+    - `_tabs/variants.tsx` — orchestrator. Three independent save
+      tracks: options (replace-semantics), variants (per-row updates),
+      default/soft-delete (eager mutations with own actions).
+      `generate` triggers a full page reload because the new variants
+      have server-assigned ids the client doesn't know.
+
+Caveats / follow-ups:
+
+  - **DnD reorder** for option-values isn't wired up — the data layer
+    accepts `sort_order` but the UI doesn't let you re-order. Punted
+    because @dnd-kit isn't in deps yet and the reorder UX lands in
+    P2-T16 (images) anyway; we can share the lib.
+
+  - **No bulk SKU edit / no Cartesian preview before generate.** Generate
+    just runs; the owner sees the result on reload. Acceptable for MVP.
+
+  - **Soft-deleting the lone default** strands the product without one.
+    The data layer allows it (clears is_default on the way out); a
+    future variant or generate-all will fill the slot. The UI's
+    confirm prompt is the only friction.
+
+  - The product editor's load-time fetch now does **6 parallel queries**
+    after the initial product-fetch (was 5). `getVariantsBundle`
+    itself runs 2 round-trips when options exist, 1 otherwise.

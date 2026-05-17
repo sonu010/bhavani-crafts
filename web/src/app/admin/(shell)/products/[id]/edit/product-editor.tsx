@@ -13,6 +13,7 @@ import type {
   AttributeDefinition,
   ProductAttributeRow,
 } from "@/lib/db/attributes";
+import type { VariantsBundle } from "@/lib/db/admin/variants";
 import type { CategoryTreeNode } from "@/lib/schemas/category";
 import { AttributesTab } from "./_tabs/attributes";
 import { CategoryTab } from "./_tabs/category";
@@ -40,6 +41,7 @@ export function ProductEditor({
   currentTags,
   attributeDefs,
   attributeValues,
+  variantsBundle,
   initialTab,
   backHref,
 }: {
@@ -49,6 +51,7 @@ export function ProductEditor({
   currentTags: CategoryBadge[];
   attributeDefs: AttributeDefinition[];
   attributeValues: ProductAttributeRow[];
+  variantsBundle: VariantsBundle;
   initialTab: EditorTab;
   backHref: string;
 }) {
@@ -131,7 +134,13 @@ export function ProductEditor({
           />
         </TabsContent>
         <TabsContent value="variants">
-          <VariantsTab />
+          <VariantsTab
+            productId={product.id}
+            productSku={product.sku ?? ""}
+            initialBundle={variantsBundle}
+            onDirty={markDirty}
+            onClean={markClean}
+          />
         </TabsContent>
         <TabsContent value="images">
           <ImagesTab />

@@ -8,6 +8,7 @@ import {
   getProductAttributes,
   listApplicableAttributes,
 } from "@/lib/db/attributes";
+import { getVariantsBundle } from "@/lib/db/admin/variants";
 import { getCategoryTree } from "@/lib/db/categories";
 import { perfStart } from "@/lib/perf";
 import { ProductEditor } from "./product-editor";
@@ -67,6 +68,7 @@ export default async function ProductEditPage({
     currentTags,
     attributeDefs,
     attributeValues,
+    variantsBundle,
   ] = await Promise.all([
     getCategoryTree(admin),
     admin
@@ -77,6 +79,7 @@ export default async function ProductEditPage({
     listTagsForProduct(admin, id),
     listApplicableAttributes(admin, product.category_id),
     getProductAttributes(admin, id),
+    getVariantsBundle(admin, id),
   ]);
   if (allTagsRes.error) {
     throw new Error(`load tags: ${allTagsRes.error.message}`);
@@ -103,6 +106,7 @@ export default async function ProductEditPage({
       currentTags={currentTags}
       attributeDefs={attributeDefs}
       attributeValues={attributeValues}
+      variantsBundle={variantsBundle}
       initialTab={initialTab}
       backHref={backHref}
     />
