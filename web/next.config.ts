@@ -86,6 +86,18 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      {
+        // Layer 8 of the 10-layer admin-login defense
+        // (SESSION-RESUME §"Admin login"). The /login `metadata.robots`
+        // meta tag covers HTML-page indexing; this header covers other
+        // content types and crawlers that read headers (Googlebot).
+        source: "/login",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/auth/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

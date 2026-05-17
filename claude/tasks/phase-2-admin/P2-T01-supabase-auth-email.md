@@ -2,11 +2,11 @@
 id: P2-T01
 phase: 2
 title: Supabase Auth (email + password)
-status: not_started
+status: in_progress
 depends_on: [P2-T00]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-16
+last_updated: 2026-05-17
 ---
 
 # Goal
@@ -230,4 +230,48 @@ pnpm exec vitest run __tests__/auth/
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — in_progress.** Landed the core sign-in flow + audit logging + indexing-block. Three of the ten defense layers are deferred until owner provisions external credentials. TOTP routes (layer 5 implementation, not just enforcement) deferred to a sibling task.
+
+**What landed in this sub-commit:**
+- `lib/auth/audit.ts` — `recordAuthAttempt(admin, input)` + `ANONYMOUS_AUTH_ENTITY_ID` sentinel (audit_logs.entity_id is `uuid NOT NULL`; the sentinel covers pre-identification failures and we put `attempted_email` in `after_json` for forensics)
+- `app/login/page.tsx` + `login-form.tsx` + `layout.tsx` (noindex via `metadata.robots`) + `actions.ts`
+- `app/auth/forgot-password/page.tsx` — placeholder so the link from `/login` isn't broken; real reset flow is a follow-up
+- `next.config.ts` — `X-Robots-Tag: noindex, nofollow` for `/login` and `/auth/*`
+- `eslint.config.mjs` — extended the service-role allowed-importers list with `app/login/**`, `app/auth/**`, `lib/auth/audit.ts`
+- `__tests__/auth/audit.test.ts` — 4 integration tests against live `audit_logs`
+
+**Defense-layer status (per [SESSION-RESUME §"Admin login"](../../SESSION-RESUME.md)):**
+
+| # | Layer | Status |
+|---|---|---|
+| 1 | Supabase email + password | ✅ |
+| 2 | Generic error string + constant 200ms minimum failure delay | ✅ |
+| 3 | Rate limit (Upstash) | ⏸ deferred — needs `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` |
+| 4 | hCaptcha | ⏸ deferred — needs `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` + `HCAPTCHA_SECRET` |
+| 5 | TOTP enforcement — proxy redirect logic | ✅ (T04c) |
+| 5 | TOTP enrollment + verification routes | ⏸ deferred — sibling task |
+| 6 | HttpOnly/Secure/SameSite=Lax cookies | ✅ (via `@supabase/ssr`) |
+| 7 | CSP `frame-ancestors 'none'` | ✅ (already in next.config.ts from P0) |
+| 8 | `X-Robots-Tag: noindex, nofollow` + `<meta robots>` | ✅ |
+| 9 | Zero storefront links to /login | ✅ (verified by grep; only `/auth/forgot-password` links inward, which is itself in the auth flow) |
+| 10 | Audit log on every attempt | ✅ |
+
+**Smoke verified in dev:**
+- `curl -sI http://localhost:3000/login` → `X-Robots-Tag: noindex, nofollow`
+- `curl -s http://localhost:3000/login` → contains `<meta name="robots" content="noindex, nofollow">`
+- `curl -sI http://localhost:3000/admin` → 307 redirect (proxy.ts gate)
+- Layer 9 grep: no `href="/login"` outside `app/login`, `app/auth`, `app/admin`
+
+**audit_logs schema gotcha (documented for future agents):** `entity_id` is `uuid NOT NULL`. Failed sign-ins don't have a user yet, so they use `ANONYMOUS_AUTH_ENTITY_ID` (zero UUID) + stash the attempted email in `after_json.attempted_email`. The types.gen.ts says `entity_id: string` which masks this — Postgres validates the uuid format and rejects email strings. If you generalize this helper for non-auth audit calls, the UUID requirement still applies; either use the entity's real id or the zero UUID.
+
+**Constant 200ms minimum failure delay** keeps "user not found" and "user exists, password wrong" indistinguishable by timing. No jitter — the slowest legitimate failure sets the bar.
+
+**What's still pending for full P2-T01 done:**
+1. **Captcha + rate-limit hardening sub-commit** — requires the four env vars listed above. Owner needs to provision hCaptcha (free) + Upstash (free tier). hCaptcha test keys can be used in dev as a stopgap; Upstash needs real credentials. Code path will throw at module load if credentials missing — fail-fast per engineering principles.
+2. **TOTP enrollment + verification routes** — `/admin/2fa-setup` (enroll), `/auth/verify-2fa` (verify factor on subsequent sign-ins). The proxy already redirects AAL1 sessions to these routes; they currently 404. End-to-end smoke is blocked until they land.
+3. **P2-T03 verification** — after #2 ships, the owner can run `user/09-promote-owner-account.md` end-to-end and that task flips to `done`.
+
+**For the next agent picking up the rest of T01:**
+- The owner promote flow needs `/admin/2fa-setup` to ship before the runbook works end-to-end. That sub-commit is highest priority.
+- Captcha + rate-limit can ship as a separate hardening commit AFTER credentials land. Don't block on them — the basic flow + Supabase platform rate-limit is sufficient for owner-only single-user MVP.
+- The `MFANotVerifiedError` path in `require.ts` is already tested against an AAL1 session in `__tests__/auth/require.test.ts`. After TOTP enrollment ships, add an AAL2-success test there.

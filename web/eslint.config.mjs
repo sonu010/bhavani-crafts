@@ -5,8 +5,11 @@ import nextTs from "eslint-config-next/typescript";
 /**
  * The service-role Supabase client lives at @/lib/db/admin. It bypasses RLS,
  * so it must only be imported from:
- *   - app/admin/**          (admin routes — protected by middleware)
+ *   - app/admin/**          (admin routes — protected by the proxy)
  *   - app/api/admin/**      (admin API routes)
+ *   - app/login/**          (sign-in flow; writes to audit_logs as anon)
+ *   - app/auth/**           (TOTP enroll + verify; writes to audit_logs)
+ *   - lib/auth/audit.ts     (the helper that wraps the audit_logs insert)
  *   - scripts/**            (one-off seeders/migrations run from CLI)
  *
  * The rule below blocks the import everywhere else. If you trip it, fix the
@@ -19,6 +22,9 @@ const restrictAdminClient = {
   ignores: [
     "src/app/admin/**",
     "src/app/api/admin/**",
+    "src/app/login/**",
+    "src/app/auth/**",
+    "src/lib/auth/audit.ts",
     "src/lib/db/admin.ts",
   ],
   rules: {
