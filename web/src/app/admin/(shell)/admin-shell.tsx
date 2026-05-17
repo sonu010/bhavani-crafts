@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/sonner";
 import { ADMIN_NAV, isActiveNav } from "./nav-tree";
 import { UserMenu } from "./user-menu";
 
@@ -134,6 +135,11 @@ export function AdminShell({
           {children}
         </main>
       </div>
+
+      {/* Sonner mount point. Lives inside the admin shell because toasts
+         are only relevant on /admin/*. richColors keeps success/error
+         tints aligned with the design tokens (teal/brick respectively). */}
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

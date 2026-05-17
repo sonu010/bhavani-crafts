@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdminContext } from "@/lib/db/admin-context";
-import { getProductByIdBasic } from "@/lib/db/products";
+import { getProductForEditing } from "@/lib/db/admin/products";
 import { perfStart } from "@/lib/perf";
 import { ProductEditor } from "./product-editor";
 import { pickTab } from "./tabs-config";
@@ -44,7 +44,10 @@ export default async function ProductEditPage({
   const { admin } = await requireAdminContext();
   t.mark("auth");
 
-  const product = await getProductByIdBasic(admin, id);
+  // Full editable shape — the General tab's form needs every field;
+  // other tabs ignore the extras. One query is faster than gating per
+  // tab with its own fetch.
+  const product = await getProductForEditing(admin, id);
   t.mark("fetch");
   t.end();
 

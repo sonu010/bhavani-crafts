@@ -2,7 +2,7 @@
 id: P2-T11
 phase: 2
 title: Product editor — basic fields
-status: not_started
+status: done
 depends_on: [P2-T10]
 estimate_hours: 3
 owner: ai
@@ -131,4 +131,43 @@ None — `react-markdown`, `rehype-sanitize`, `react-hook-form`, `@hookform/reso
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Three sub-commits:
+- `ba9e1f6` — schema (ProductEditInputSchema, slugifyForProduct, SLUG/SKU regexes) + data layer (getProductForEditing, updateProductGeneral with typed error map) + 7 integration tests
+- `02e4412` — `saveProductGeneral` server action: gate + update + audit_logs + revalidation
+- this commit — GeneralTab form UI + MarkdownEditor + sticky save bar + Toaster mount
+
+**Two Next 16 API gotchas surfaced, both documented inline:**
+
+1. `revalidateTag(tag)` now requires a second `profile: string | CacheLifeConfig` arg. For server-action read-your-own-writes the new API is `updateTag(tag)`. Architecture spec still says "revalidateTag" — left it that way since the doc is about the conceptual map; code uses `updateTag` and notes why.
+
+2. The React Compiler's `react-hooks/incompatible-library` rule rejects `form.watch()` (the rule's message names react-hook-form explicitly). Switched to `useWatch({ control, name })` for the slug-derive + stock-status subscriptions. Plain refs are also rejected when passed through callback options (the `react-hooks/refs` rule fires on `{ onChange: refMutatingFn }`); converted `slugTouchedRef` to `useState`.
+
+**Field set + constraints all match the task spec.** Cross-field rules (compare > base, max >= min) in `.superRefine`. `.strict()` blocks unknown keys at the server boundary — category_id, images, variants can never tunnel through this action.
+
+**Sonner mounted in `(shell)/admin-shell.tsx`** as `<Toaster position="top-right" richColors />`. Toasts only fire inside `/admin/*` (intended).
+
+**Save flow:**
+- `react-hook-form` + Zod resolver, mode: `onBlur`
+- Submit calls `saveProductGeneral(id, values)`
+- On success: `toast.success`, `form.reset(values)` so isDirty drops, `onClean()` on parent
+- On validation: `setError` per issue path; surfaces inline below each field
+- On `slug_in_use` / `sku_in_use`: setError on those specific paths
+- On `constraint`: toast.error with message (DB rejected after Zod passed — e.g., a check we don't mirror in the schema)
+
+**Slug auto-derive:** the initial-touched heuristic is `slugifyForProduct(name) !== slug` — products that came in with a manual slug pattern (e.g., `wpk-14` for the seeded data) start with slugTouched=true so the first name edit doesn't clobber them.
+
+**Sticky save bar:** `fixed inset-x-0 bottom-0 z-40`, offset by `md:left-56` so it doesn't sit under the desktop sidebar. Inside is a flex with status text on the left ("Unsaved changes" / "All changes saved" / inline error) and the Save button on the right. Button disabled when not dirty.
+
+**Form padding-bottom is `pb-24`** so the sticky bar doesn't cover the last fieldset.
+
+**Smoke verified live:** GET `/admin/products/<id>/edit` returns 200, all five expected form ids present in the HTML. Warm 707ms wall-clock from the TOTP-authenticated probe. Server-side `[perf]` total ~470-585ms.
+
+**Other tabs (Category, Attributes, Variants, Images, Publish) still placeholders.** They don't accept `product` props yet — when their content tasks (T12-T17) land, they'll do the same prop-drill pattern: `(product, onDirty, onClean)` from ProductEditor.
+
+**Audit log shape ships as designed:** every successful save inserts `audit_logs(action='product.update', entity_type='product', entity_id, before_json, after_json, request_id, actor_id)`. P2-T26 (audit log viewer) can render these directly.
+
+**Revalidation map covered:**
+- `updateTag('products')` — admin list cache + storefront listing
+- `revalidatePath('/p/' + oldSlug)` when slug changed
+- `revalidatePath('/p/' + newSlug)` always
+- `revalidatePath('/c/' + category_slug)` when product has a category

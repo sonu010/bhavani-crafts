@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AdminProductBasic } from "@/lib/db/products";
+import type { AdminProductForEditing } from "@/lib/db/admin/products";
 import { AttributesTab } from "./_tabs/attributes";
 import { CategoryTab } from "./_tabs/category";
 import { GeneralTab } from "./_tabs/general";
@@ -30,16 +30,13 @@ export function ProductEditor({
   initialTab,
   backHref,
 }: {
-  product: AdminProductBasic;
+  product: AdminProductForEditing;
   initialTab: EditorTab;
   backHref: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // markDirty / markClean will be prop-drilled into tab components in
-  // P2-T11+ (auto-save). Pulling only `isDirty` here keeps the editor
-  // shell visibly using the guard hook now; the rest wires in then.
-  const { isDirty } = useDirtyGuard();
+  const { isDirty, markDirty, markClean } = useDirtyGuard();
 
   const onTabChange = useCallback(
     (value: string | number | null) => {
@@ -89,7 +86,11 @@ export function ProductEditor({
         </TabsList>
 
         <TabsContent value="general">
-          <GeneralTab />
+          <GeneralTab
+            product={product}
+            onDirty={markDirty}
+            onClean={markClean}
+          />
         </TabsContent>
         <TabsContent value="category">
           <CategoryTab />
