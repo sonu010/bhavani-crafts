@@ -249,7 +249,7 @@ pnpm exec vitest run __tests__/auth/
 | 3 | Rate limit (Upstash) | ⏸ deferred — needs `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` |
 | 4 | hCaptcha | ⏸ deferred — needs `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` + `HCAPTCHA_SECRET` |
 | 5 | TOTP enforcement — proxy redirect logic | ✅ (T04c) |
-| 5 | TOTP enrollment + verification routes | ⏸ deferred — sibling task |
+| 5 | TOTP enrollment + verification routes | ✅ (this commit) |
 | 6 | HttpOnly/Secure/SameSite=Lax cookies | ✅ (via `@supabase/ssr`) |
 | 7 | CSP `frame-ancestors 'none'` | ✅ (already in next.config.ts from P0) |
 | 8 | `X-Robots-Tag: noindex, nofollow` + `<meta robots>` | ✅ |
@@ -267,11 +267,17 @@ pnpm exec vitest run __tests__/auth/
 **Constant 200ms minimum failure delay** keeps "user not found" and "user exists, password wrong" indistinguishable by timing. No jitter — the slowest legitimate failure sets the bar.
 
 **What's still pending for full P2-T01 done:**
-1. **Captcha + rate-limit hardening sub-commit** — requires the four env vars listed above. Owner needs to provision hCaptcha (free) + Upstash (free tier). hCaptcha test keys can be used in dev as a stopgap; Upstash needs real credentials. Code path will throw at module load if credentials missing — fail-fast per engineering principles.
-2. **TOTP enrollment + verification routes** — `/admin/2fa-setup` (enroll), `/auth/verify-2fa` (verify factor on subsequent sign-ins). The proxy already redirects AAL1 sessions to these routes; they currently 404. End-to-end smoke is blocked until they land.
-3. **P2-T03 verification** — after #2 ships, the owner can run `user/09-promote-owner-account.md` end-to-end and that task flips to `done`.
+1. **Captcha + rate-limit hardening sub-commit** — requires the four env vars listed above. Owner needs to provision hCaptcha (free) + Upstash (free tier). hCaptcha test keys can be used in dev as a stopgap; Upstash needs real credentials. Code path should throw at module load if credentials missing — fail-fast per engineering principles.
+2. **End-to-end smoke** — owner promotes themselves via `user/09-promote-owner-account.md`, signs in, completes TOTP enrollment, lands on `/admin`. After this lands, P2-T03 also flips to `done`.
+3. **AAL2-success tests** — add an integration test that drives `mfa.enroll` → `mfa.challenge` → `mfa.verify` with a correct code, then asserts `requireAAL2` passes. Needs a TOTP library (e.g. `otplib`) as a devDependency to compute the expected code. Marginal automated coverage win; manual smoke is sufficient for now.
+
+**TOTP routes landed in part-b sub-commit:**
+- `app/admin/2fa-setup/page.tsx` + `enroll-form.tsx` + `actions.ts`. Enrollment renders QR + manual-secret fallback; submit calls `mfa.challenge` + `mfa.verify`; audit log on success and failure; redirect to `/admin` on success.
+- `app/auth/verify-2fa/page.tsx` + `verify-form.tsx` + `actions.ts`. Subsequent sign-in: finds the verified factor and challenges it with the user's TOTP code.
+- Both pages bounce already-AAL2 sessions to `/admin` and unauthenticated sessions to `/login`. Belt + suspenders on top of the proxy gate.
+- Orphan unverified factors on `/admin/2fa-setup` are auto-cleaned on each page load (Supabase doesn't re-emit the QR for an existing factor; cleanest path is unenroll-then-enroll fresh on every render). Trade-off: a stale tab and a fresh tab will end up holding different factor ids; the action validates the factor id from the form against the current factor list at verify time.
 
 **For the next agent picking up the rest of T01:**
-- The owner promote flow needs `/admin/2fa-setup` to ship before the runbook works end-to-end. That sub-commit is highest priority.
 - Captcha + rate-limit can ship as a separate hardening commit AFTER credentials land. Don't block on them — the basic flow + Supabase platform rate-limit is sufficient for owner-only single-user MVP.
-- The `MFANotVerifiedError` path in `require.ts` is already tested against an AAL1 session in `__tests__/auth/require.test.ts`. After TOTP enrollment ships, add an AAL2-success test there.
+- The `MFANotVerifiedError` path in `require.ts` is already tested against an AAL1 session. AAL2-success test wants a TOTP lib; defer.
+- After the owner verifies the full enroll+verify flow once, mark T01 `done` and flip P2-T03 `done` in the same pass.
