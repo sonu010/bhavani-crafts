@@ -115,10 +115,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           EOF
 
-      - name: Data-layer integration tests
+      - name: Integration tests (db + auth)
         if: steps.check-secrets.outputs.configured == 'true'
         working-directory: web
-        run: pnpm exec vitest run __tests__/db/
+        # All __tests__/ trees — db + auth. Adding a new __tests__/<area>/
+        # tree should automatically get CI coverage; we don't want to
+        # silently leave entire subtrees out.
+        run: pnpm exec vitest run
 
       - name: Launch-blockers (deploy gate)
         if: steps.check-secrets.outputs.configured == 'true'
