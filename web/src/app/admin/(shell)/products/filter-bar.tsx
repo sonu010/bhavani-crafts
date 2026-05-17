@@ -19,7 +19,7 @@ import type { AdminFilterOptions } from "@/lib/db/admin/products";
 type StockOpt = "" | "in_stock" | "low_stock" | "out_of_stock" | "made_to_order" | "unknown";
 
 const SELECT_BASE_CLASS =
-  "h-9 rounded-md border border-husk-200 bg-paper-0 px-2 text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30";
+  "h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30 sm:w-auto";
 
 const DEBOUNCE_MS = 300;
 
@@ -86,9 +86,9 @@ export function FilterBar({ options }: { options: AdminFilterOptions }) {
     q || categoryId || stock || selectedTags.size > 0;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Search */}
-      <div className="min-w-[200px] flex-1 md:max-w-xs">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      {/* Search — full-width on mobile, capped on sm+ */}
+      <div className="w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
         <Input
           key={q}
           aria-label="Search products"
@@ -130,11 +130,15 @@ export function FilterBar({ options }: { options: AdminFilterOptions }) {
         <option value="unknown">Unknown</option>
       </select>
 
-      {/* Tags (multi) */}
+      {/* Tags (multi) — full-width trigger on mobile so it lines up with the selects above */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-full justify-between gap-2 sm:w-auto"
+            >
               <span>
                 Tags
                 {selectedTags.size > 0 ? (

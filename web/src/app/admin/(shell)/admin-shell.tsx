@@ -68,7 +68,7 @@ export function AdminShell({
 
       {/* Main column */}
       <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-husk-200 bg-paper-0 px-4">
+        <header className="flex h-14 items-center justify-between gap-2 border-b border-husk-200 bg-paper-0 px-3 sm:px-4">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -113,7 +113,7 @@ export function AdminShell({
                 </nav>
               </SheetContent>
             </Sheet>
-            <span className="font-display italic text-clay-600 md:hidden">
+            <span className="truncate font-display italic text-clay-600 md:hidden">
               Bhavani Crafts
             </span>
           </div>
@@ -121,7 +121,7 @@ export function AdminShell({
           <UserMenu email={user.email} role={user.role} />
         </header>
 
-        <main className="flex-1 px-6 py-6">{children}</main>
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );

@@ -35,7 +35,11 @@ export function StatusChips({
   return (
     <nav
       aria-label="Filter products by status"
-      className="flex flex-wrap items-center gap-2"
+      // Mobile-first: single-row horizontal scroll. `-mx-3` bleeds the
+      // scroll edges out to the shell's mobile padding so users see chip
+      // edges instead of a hard cut. `sm:flex-wrap` restores wrapping
+      // once we have horizontal room.
+      className="-mx-3 flex items-center gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-x-visible sm:px-0 sm:pb-0"
     >
       {CHIP_ORDER.map(({ status, label }) => {
         const isActive = status === active;
@@ -51,13 +55,13 @@ export function StatusChips({
             href={`/admin/products?${search.toString()}`}
             aria-current={isActive ? "page" : undefined}
             className={
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition-colors " +
+              "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-sm transition-colors " +
               (isActive
                 ? "border-teal-800 bg-teal-800/5 text-bark-900"
                 : "border-husk-200 text-stone-500 hover:bg-husk-100 hover:text-bark-900")
             }
           >
-            <span className="text-sm">{label}</span>
+            <span>{label}</span>
             <span className="font-mono text-xs tabular-nums text-stone-500">
               {counts[status].toLocaleString()}
             </span>

@@ -141,8 +141,9 @@ export default async function AdminProductsPage({
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl text-bark-900">Products</h1>
-        <p className="text-sm text-stone-500">
+        <h1 className="font-display text-2xl text-bark-900 sm:text-3xl">Products</h1>
+        {/* Helper copy is desk-only — mobile starts with the controls. */}
+        <p className="hidden text-sm text-stone-500 sm:block">
           Imported rows live under{" "}
           <span className="font-mono text-bark-900">Needs review</span>. Work
           the queue down; the default filter flips to{" "}
