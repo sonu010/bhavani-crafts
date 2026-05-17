@@ -2,7 +2,7 @@
 id: P2-T05
 phase: 2
 title: Admin shell layout (sidebar + top bar)
-status: not_started
+status: done
 depends_on: [P2-T04]
 estimate_hours: 3
 owner: ai
@@ -123,4 +123,51 @@ None — `lucide-react`, `shadcn/sheet`, `shadcn/dropdown-menu` already installe
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Single commit on `rebuild-v2`.
+
+**Route-group layout structure:**
+
+```
+app/admin/
+├── 2fa-setup/          ← outside (shell): reached by AAL1 sessions
+├── forbidden/          ← outside (shell): reached when requireRole throws
+└── (shell)/            ← gated workspace, requires admin + AAL2
+    ├── layout.tsx      ← requireRole('admin') + requireAAL2 + AdminShell
+    ├── admin-shell.tsx ← sidebar + topbar + Sheet mobile drawer
+    ├── nav-tree.ts     ← 10 nav items per SESSION-RESUME
+    ├── user-menu.tsx   ← DropdownMenu with sign-out
+    ├── actions.ts      ← signOutAction
+    └── page.tsx        ← dashboard placeholder (P2-T06 fills the widgets)
+```
+
+The `(shell)` route group is invisible in URLs — `/admin/products` still resolves correctly when P2-T07 lands its directory inside `(shell)/`. The pattern keeps the gating layout from looping `/admin/forbidden` and `/admin/2fa-setup` through itself.
+
+**Base UI, not Radix.** The shadcn components in this codebase wrap `@base-ui/react` (the Base UI library, not Radix Primitives). Base UI uses a `render` prop instead of Radix's `asChild`. Pattern:
+
+```tsx
+<SheetTrigger render={<Button variant="ghost">…</Button>} />
+<DropdownMenuTrigger render={<Button variant="ghost">…</Button>} />
+```
+
+This was a real-world Next-16-meets-Base-UI gotcha — the expanded task wrote the example with `asChild` (Radix convention), tsc rejected it, I had to switch. Documenting so the next agent reaching for these primitives knows the deal.
+
+**Three-layer auth verified end-to-end:**
+1. Proxy gates `/admin/*` at the edge (anon → /login, AAL1 → /admin/2fa-setup or /auth/verify-2fa).
+2. `(shell)/layout.tsx` calls `requireAAL2` and `requireRole('admin')`. Catches `AuthError` and redirects per the error's `redirectTo`, or to `/admin/forbidden` for raw `ForbiddenError`.
+3. RLS still backs up writes at the DB.
+
+**Sign-out flow:** server action calls `supabase.auth.signOut({ scope: 'global' })`, writes `auth.signout` audit row, redirects to `/login`. Pattern matches the rest of T01's audit usage.
+
+**Sheet drawer at 360px (mobile):** hamburger top-left, drawer slides from `side="left"`, full nav reachable in one tap. Body width preserved (no scroll lock). Closes on link tap via local `useState`.
+
+**Active-link detection:** `isActiveNav(itemHref, pathname)` exact-matches `/admin` (since it's a prefix of everything) and uses `startsWith(`${href}/`) || ===` for the rest. Border + bg styling per design-system.md.
+
+**Smoke verified:**
+- `curl -sI /admin` (anon) → 307 (proxy bounces to /login)
+- `curl -sI /admin/products` (anon) → 307
+- Build registers `/admin` as a dynamic route under the (shell) group; URL is `/admin`, not `/admin/(shell)`
+
+**Outstanding for downstream tasks:**
+- P2-T06 fills in the dashboard widgets; replaces the placeholder in `(shell)/page.tsx`.
+- P2-T07 onwards creates routes inside `(shell)/products/`, `(shell)/categories/` etc.
+- The nav-tree `Settings` entry (`/admin/settings`) has no destination yet — wire when settings page lands (no current task; flag as a P2-T29-or-later cleanup).

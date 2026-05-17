@@ -1,0 +1,128 @@
+"use client";
+
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ADMIN_NAV, isActiveNav } from "./nav-tree";
+import { UserMenu } from "./user-menu";
+
+/**
+ * Admin chrome — sidebar (≥md) + top bar + content slot.
+ *
+ * Mobile pattern (locked in SESSION-RESUME §"Admin mobile shape"): the
+ * sidebar collapses, a hamburger appears in the top bar, and a shadcn
+ * Sheet slides in from the left with the same nav.
+ */
+export function AdminShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: { email: string; role: string };
+}) {
+  const pathname = usePathname();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Desktop sidebar */}
+      <aside className="hidden w-56 shrink-0 border-r border-husk-200 bg-cream-50 md:flex md:flex-col">
+        <div className="flex h-14 items-center px-4">
+          <Link href="/admin" className="font-display text-lg italic text-clay-600">
+            Bhavani Crafts
+          </Link>
+        </div>
+        <nav className="flex-1 px-2 py-2">
+          <ul className="space-y-1">
+            {ADMIN_NAV.map((item) => {
+              const active = isActiveNav(item.href, pathname);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors " +
+                      (active
+                        ? "border-l-[3px] border-teal-800 bg-husk-100 text-bark-900"
+                        : "text-stone-500 hover:bg-husk-100 hover:text-bark-900")
+                    }
+                  >
+                    <item.icon className="size-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main column */}
+      <div className="flex flex-1 flex-col">
+        <header className="flex h-14 items-center justify-between border-b border-husk-200 bg-paper-0 px-4">
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger
+                aria-label="Open navigation"
+                className="md:hidden"
+                render={
+                  <Button variant="ghost" size="icon">
+                    <Menu className="size-5" />
+                  </Button>
+                }
+              />
+              <SheetContent side="left" className="w-72 p-0">
+                <SheetHeader className="border-b border-husk-200 px-4 py-3">
+                  <SheetTitle className="font-display italic text-clay-600">
+                    Bhavani Crafts
+                  </SheetTitle>
+                </SheetHeader>
+                <nav className="px-2 py-2">
+                  <ul className="space-y-1">
+                    {ADMIN_NAV.map((item) => {
+                      const active = isActiveNav(item.href, pathname);
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={() => setSheetOpen(false)}
+                            className={
+                              "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors " +
+                              (active
+                                ? "border-l-[3px] border-teal-800 bg-husk-100 text-bark-900"
+                                : "text-stone-500 hover:bg-husk-100 hover:text-bark-900")
+                            }
+                          >
+                            <item.icon className="size-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <span className="font-display italic text-clay-600 md:hidden">
+              Bhavani Crafts
+            </span>
+          </div>
+
+          <UserMenu email={user.email} role={user.role} />
+        </header>
+
+        <main className="flex-1 px-6 py-6">{children}</main>
+      </div>
+    </div>
+  );
+}
