@@ -28,6 +28,17 @@ import {
   updateProductGeneral,
   type AttributeValueInput,
 } from "@/lib/db/admin/products";
+import {
+  generateAllVariants,
+  getVariantsBundle,
+  setDefaultVariant,
+  setProductOptions,
+  setProductVariants,
+  softDeleteVariant,
+  type OptionInput,
+  type VariantInput,
+  type VariantsError,
+} from "@/lib/db/admin/variants";
 
 export type SaveProductGeneralResult =
   | { ok: true }
@@ -240,4 +251,202 @@ export async function saveProductAttributes(
   updateTag("products");
   if (prod) revalidatePath(`/p/${prod.slug}`);
   return { ok: true };
+}
+
+// ─── Variants tab (P2-T14) ──────────────────────────────────────────
+
+export type SaveProductOptionsResult =
+  | { ok: true }
+  | { ok: false; error: VariantsError };
+
+export async function saveProductOptions(
+  id: string,
+  options: OptionInput[],
+): Promise<SaveProductOptionsResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await getVariantsBundle(admin, id);
+  const result = await setProductOptions(admin, id, options);
+  if (!result.ok) return result;
+
+  const after = await getVariantsBundle(admin, id);
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.set_options",
+    entity_type: "product",
+    entity_id: id,
+    before_json: { options: before.options } as never,
+    after_json: { options: after.options } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`saveProductOptions audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, id);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type SaveProductVariantsResult =
+  | { ok: true }
+  | { ok: false; error: VariantsError };
+
+export async function saveProductVariants(
+  id: string,
+  variants: VariantInput[],
+): Promise<SaveProductVariantsResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await getVariantsBundle(admin, id);
+  const result = await setProductVariants(admin, id, variants);
+  if (!result.ok) return result;
+
+  const after = await getVariantsBundle(admin, id);
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.set_variants",
+    entity_type: "product",
+    entity_id: id,
+    before_json: { variants: before.variants } as never,
+    after_json: { variants: after.variants } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`saveProductVariants audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, id);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type SoftDeleteVariantResult =
+  | { ok: true }
+  | { ok: false; error: VariantsError };
+
+export async function softDeleteVariantAction(
+  productId: string,
+  variantId: string,
+): Promise<SoftDeleteVariantResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  // Capture the row pre-delete so the audit log preserves it.
+  const before = await admin
+    .from("product_variants")
+    .select(
+      "id, sku, name, price_inr, stock_status, stock_quantity, is_default",
+    )
+    .eq("id", variantId)
+    .maybeSingle();
+
+  const result = await softDeleteVariant(admin, variantId, user.id);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.soft_delete_variant",
+    entity_type: "product_variant",
+    entity_id: variantId,
+    before_json: (before.data ?? null) as never,
+    after_json: { deleted_at: new Date().toISOString() } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`softDeleteVariant audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type SetDefaultVariantResult =
+  | { ok: true }
+  | { ok: false; error: VariantsError };
+
+export async function setDefaultVariantAction(
+  productId: string,
+  variantId: string,
+): Promise<SetDefaultVariantResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await admin
+    .from("product_variants")
+    .select("id, is_default")
+    .eq("product_id", productId)
+    .is("deleted_at", null);
+
+  const result = await setDefaultVariant(admin, productId, variantId);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.set_default_variant",
+    entity_type: "product",
+    entity_id: productId,
+    before_json: { variants: before.data ?? [] } as never,
+    after_json: { default_variant_id: variantId } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`setDefaultVariant audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type GenerateVariantsActionResult =
+  | { ok: true; created: number }
+  | { ok: false; error: VariantsError };
+
+export async function generateAllVariantsAction(
+  productId: string,
+): Promise<GenerateVariantsActionResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await getVariantsBundle(admin, productId);
+  const result = await generateAllVariants(admin, productId);
+  if (!result.ok) return result;
+
+  // No-op generates (already in sync) still get a 0-row audit entry —
+  // useful for "did the owner press the button" forensics.
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.generate_variants",
+    entity_type: "product",
+    entity_id: productId,
+    before_json: { variant_count: before.variants.length } as never,
+    after_json: { created: result.created } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`generateAllVariants audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true, created: result.created };
 }
