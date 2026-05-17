@@ -24,10 +24,13 @@ export function StatusChips({
   counts,
   active,
   sort,
+  extraParams,
 }: {
   counts: ProductStatusCounts;
   active: AdminProductStatus;
   sort: string;
+  /** Filter params to preserve when swapping the status chip (q, category, tags, stock, source). */
+  extraParams?: Record<string, string>;
 }) {
   return (
     <nav
@@ -39,6 +42,9 @@ export function StatusChips({
         const search = new URLSearchParams();
         search.set("status", status);
         search.set("sort", sort);
+        for (const [k, v] of Object.entries(extraParams ?? {})) {
+          if (v) search.set(k, v);
+        }
         return (
           <Link
             key={status}

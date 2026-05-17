@@ -11,16 +11,21 @@ export function LoadMore({
   cursor,
   status,
   sort,
+  extraParams,
 }: {
   cursor: AdminCursor | null;
   status: string;
   sort: string;
+  extraParams?: Record<string, string>;
 }) {
   if (!cursor) return null;
   const search = new URLSearchParams();
   search.set("status", status);
   search.set("sort", sort);
   search.set("cursor", encodeCursor(cursor));
+  for (const [k, v] of Object.entries(extraParams ?? {})) {
+    if (v) search.set(k, v);
+  }
   return (
     <div className="flex justify-center pt-2">
       <Link

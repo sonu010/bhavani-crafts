@@ -2,7 +2,7 @@
 id: P2-T08
 phase: 2
 title: Products list filters + admin search
-status: not_started
+status: done
 depends_on: [P2-T07]
 estimate_hours: 2
 owner: ai
@@ -97,4 +97,33 @@ None — shadcn `Command` is part of the existing UI kit.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Two sub-commits on `rebuild-v2`:
+- `a128db8` (T08a) — filter axes in `listProductsAdmin` + `getAdminFilterOptions` + 7 integration tests
+- this commit (T08b) — `filter-bar.tsx` client component, page wiring, chip/load-more preservation of filter state
+
+**Simplification from the original spec — `shadcn Command` is not installed in this repo.** Used what we have:
+- Search: `<Input>` (existing) — uncontrolled with `key={q}` so URL writes reset the value externally
+- Category: native `<select>` — top-level categories only. The full tree picker lands in P2-T12 (product editor) where the depth matters; for filtering, top-level + descendant expansion (via `getDescendantIds`) is sufficient.
+- Tags: shadcn `<DropdownMenu>` with `<DropdownMenuCheckboxItem>` — multi-select, scrollable, OR-semantics across selections
+- Stock + source: native `<select>` for simplicity
+- Clear filters: `<Link href="/admin/products">` — full reset
+
+**URL is the state.** No client React state for filter values; `useSearchParams` reads, `useRouter.replace` writes. Filter changes always clear `?cursor=` (paging mid-set is undefined). Status chips + load-more were updated to take an `extraParams` map so they preserve `q/category/tags/stock/source` across chip switches and cursor advances.
+
+**Uncontrolled search input + debounce pattern.** React Compiler's `react-hooks/set-state-in-effect` rule rejects the obvious "controlled-input + URL sync" approach. Switched to `<Input key={q} defaultValue={q}>` + a `useRef` debounce timer. The `key={q}` ensures the DOM input remounts (and resets) when the URL `q` changes externally (Clear filters, back button). Documented in code so the next agent doesn't refactor it back into the broken pattern.
+
+**Acceptance criteria all green:**
+- Five filter controls render ✓
+- Search (300ms debounce) → `?q=` → table re-renders ✓
+- Category picker → narrows by descendants ✓ (T08a test)
+- Tags multi-select → ANY-match ✓ (T08a test)
+- Stock + source narrow ✓ (T08a test)
+- Compose with status chip ✓ (chip URLs preserve `extraParams`)
+- Clear filters ✓
+- FTS + slug + sku partial match — slug + sku via ILIKE; FTS via `products.fts @@ tsquery` with the existing `buildTsquery`/`tokenize` helpers from `lib/db/search.ts`. T08a test pins a partial-SKU match ✓
+- 77/77 tests pass (was 70, +7 from T08a)
+- Smoke: anon GET with all filters in query → 307 ✓
+
+**Cursor invalidation on filter change** — explicit in `pushFilters({...patch})`: `next.delete("cursor")` before applying the patch. Filter changes always start from page 1.
+
+**Performance:** filter-bar render-time is bound by the size of the tags dropdown (currently 458 tags on live, ~430 expected post-reseed). Rendering 458 `DropdownMenuCheckboxItem`s is fine for shadcn's primitive; if it ever feels slow, add a text-filter input inside the dropdown — straightforward but unnecessary now.

@@ -2,26 +2,30 @@ import { createAdminClient } from "@/lib/db/admin";
 import {
   countProductsByStatus,
   decodeCursor,
+  getAdminFilterOptions,
   listProductsAdmin,
   type AdminProductSort,
   type AdminProductStatus,
 } from "@/lib/db/admin/products";
+import { FilterBar } from "./filter-bar";
 import { LoadMore } from "./load-more";
 import { ProductsTable } from "./products-table";
 import { StatusChips } from "./status-chips";
+import type { Database } from "@/lib/db/types.gen";
 
 export const dynamic = "force-dynamic";
 
 /**
  * /admin/products
  *
- * Default filter: `?status=needs_review&sort=newest` — the seeded
- * 5,804 products are the owner's import queue. Locked in
+ * Default filter: `?status=needs_review&sort=newest` — the cleaned
+ * fixture's 5,804 products are the owner's import queue. Locked in
  * SESSION-RESUME §"Admin products-list default filter"; flip the
  * constants below when `needs_review` count drops < 50 (steady state).
  *
- * 25 rows per page (matches ADMIN_LIST_DEFAULT_PER_PAGE). "Load more"
- * appends ?cursor= and re-renders.
+ * 25 rows per page. "Load more" appends ?cursor= and re-renders.
+ * Filters (q, category, tags, stock, source) compose AND with the
+ * status chip via the URL — no client-side filter state.
  */
 const DEFAULT_STATUS: AdminProductStatus = "needs_review";
 const DEFAULT_SORT: AdminProductSort = "newest";
@@ -38,19 +42,46 @@ const VALID_SORTS: readonly AdminProductSort[] = [
   "updated_at_desc",
   "name_asc",
 ];
+const VALID_STOCK: readonly Database["public"]["Enums"]["stock_status"][] = [
+  "in_stock",
+  "low_stock",
+  "out_of_stock",
+  "made_to_order",
+  "unknown",
+];
+const VALID_SOURCE: readonly Database["public"]["Enums"]["product_source"][] = [
+  "manual",
+  "justkraft_seed",
+  "csv_import",
+  "ai_assisted",
+];
+
+function pickOne<T extends string>(
+  raw: string | string[] | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return v && allowed.includes(v as T) ? (v as T) : undefined;
+}
 
 function pickStatus(raw: string | string[] | undefined): AdminProductStatus {
-  const v = Array.isArray(raw) ? raw[0] : raw;
-  return VALID_STATUSES.includes(v as AdminProductStatus)
-    ? (v as AdminProductStatus)
-    : DEFAULT_STATUS;
+  return pickOne(raw, VALID_STATUSES) ?? DEFAULT_STATUS;
 }
 
 function pickSort(raw: string | string[] | undefined): AdminProductSort {
+  return pickOne(raw, VALID_SORTS) ?? DEFAULT_SORT;
+}
+
+function pickString(raw: string | string[] | undefined): string | undefined {
   const v = Array.isArray(raw) ? raw[0] : raw;
-  return VALID_SORTS.includes(v as AdminProductSort)
-    ? (v as AdminProductSort)
-    : DEFAULT_SORT;
+  return v && v.length > 0 ? v : undefined;
+}
+
+function pickTagList(raw: string | string[] | undefined): string[] | undefined {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (!v) return undefined;
+  const parts = v.split(",").map((s) => s.trim()).filter(Boolean);
+  return parts.length > 0 ? parts : undefined;
 }
 
 export default async function AdminProductsPage({
@@ -60,26 +91,55 @@ export default async function AdminProductsPage({
     status?: string | string[];
     sort?: string | string[];
     cursor?: string | string[];
+    q?: string | string[];
+    category?: string | string[];
+    tags?: string | string[];
+    stock?: string | string[];
+    source?: string | string[];
   }>;
 }) {
   const params = await searchParams;
   const status = pickStatus(params.status);
   const sort = pickSort(params.sort);
-  const cursorRaw = Array.isArray(params.cursor) ? params.cursor[0] : params.cursor;
-  const cursor = decodeCursor(cursorRaw);
+  const cursor = decodeCursor(
+    Array.isArray(params.cursor) ? params.cursor[0] : params.cursor,
+  );
+  const q = pickString(params.q);
+  const categoryId = pickString(params.category);
+  const tagSlugs = pickTagList(params.tags);
+  const stock = pickOne(params.stock, VALID_STOCK);
+  const source = pickOne(params.source, VALID_SOURCE);
 
   const supabase = createAdminClient();
-  const [counts, page] = await Promise.all([
+  const [counts, page, filterOptions] = await Promise.all([
     countProductsByStatus(supabase),
-    listProductsAdmin(supabase, { status, sort, cursor }),
+    listProductsAdmin(supabase, {
+      status,
+      sort,
+      cursor,
+      q,
+      categoryId,
+      tagSlugs,
+      stock,
+      source,
+    }),
+    getAdminFilterOptions(supabase),
   ]);
+
+  // Preserve filter params on chip + load-more URL construction.
+  const baseParams: Record<string, string> = {};
+  if (q) baseParams.q = q;
+  if (categoryId) baseParams.category = categoryId;
+  if (tagSlugs && tagSlugs.length > 0) baseParams.tags = tagSlugs.join(",");
+  if (stock) baseParams.stock = stock;
+  if (source) baseParams.source = source;
 
   return (
     <div className="space-y-4">
       <header className="space-y-1">
         <h1 className="font-display text-3xl text-bark-900">Products</h1>
         <p className="text-sm text-stone-500">
-          The 5,804 imported rows live under{" "}
+          Imported rows live under{" "}
           <span className="font-mono text-bark-900">Needs review</span>. Work
           the queue down; the default filter flips to{" "}
           <span className="font-mono text-bark-900">Published</span> once the
@@ -87,11 +147,18 @@ export default async function AdminProductsPage({
         </p>
       </header>
 
-      <StatusChips counts={counts} active={status} sort={sort} />
+      <FilterBar options={filterOptions} />
+
+      <StatusChips counts={counts} active={status} sort={sort} extraParams={baseParams} />
 
       <ProductsTable rows={page.items} />
 
-      <LoadMore cursor={page.nextCursor} status={status} sort={sort} />
+      <LoadMore
+        cursor={page.nextCursor}
+        status={status}
+        sort={sort}
+        extraParams={baseParams}
+      />
     </div>
   );
 }
