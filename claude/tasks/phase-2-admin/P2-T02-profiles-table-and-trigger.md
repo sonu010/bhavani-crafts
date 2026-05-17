@@ -2,11 +2,11 @@
 id: P2-T02
 phase: 2
 title: profiles table + sign-up trigger
-status: not_started
+status: done
 depends_on: [P2-T01]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-16
+last_updated: 2026-05-17
 ---
 
 # Goal
@@ -70,4 +70,17 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** 3/3 tests pass against live Supabase in 5.8s.
+
+**Schema was already correct** from `0001_init.sql` — no migration needed. The task reduced to writing the test that pins the contract.
+
+**Trigger contract verified end-to-end:**
+- `auth.admin.createUser` → exactly one `profiles` row appears with `role='viewer'`, `full_name=null`, `created_at` within 30s.
+- `auth.admin.deleteUser` → FK `ON DELETE CASCADE` removes the `profiles` row.
+- `is_admin()` correctness: a fresh viewer JWT gets `false`; promoting the row to `admin` via service-role and recalling `is_admin()` from the same JWT returns `true`. Confirms the function's `STABLE` + `SECURITY DEFINER` posture works as documented.
+
+**One inline clarification documented in the test:** Postgres marks `is_admin()` as `STABLE`, which lets the planner cache the result *within a single statement*. In the test we issue two separate `rpc()` calls, so caching doesn't interfere — the second call re-reads `profiles.role` and returns `true` after promotion. If a future caller batches multiple `is_admin()` checks inside one statement, expect the cached pre-promotion value. Documented in the test body for the next reader.
+
+**`claude/runbooks/promote-admin-user.md` already existed** — no work needed on the runbook side. T03 picks up the verification + the owner-facing one-pager.
+
+**Fixture cleanup is two-layer:** each test deletes its user via `auth.admin.deleteUser` on the success path; `afterAll` catches any leak from a thrown assertion. Verified no `zzz-fixture-%@bhavani.test` users remain after the suite.
