@@ -2,7 +2,7 @@
 id: P2-T06
 phase: 2
 title: Admin dashboard (counts + widgets)
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 2
 owner: ai
@@ -114,4 +114,25 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Two sub-commits on `rebuild-v2`:
+- `a0964a4` (T06a) — `lib/db/admin/dashboard.ts` + 6 integration tests against live DB
+- this commit (T06b) — six widgets + page wiring
+
+**Layout matches the locked spec verbatim.** Grid is 1-col under sm, 2-col at sm-lg, 3-col lg+. The expanded task's ASCII art said "2×3" — on lg the grid is 3 columns × 2 rows (still six cells); on sm/md it stacks 2×3 then 1-col. Six cells total either way.
+
+**Design tokens used (all from `globals.css`):** `bark-900`, `stone-500`, `husk-200`, `teal-800`, `clay-700`, `saffron-500`, `moss-600`, `brick-600`. Numerics use `font-mono` (JetBrains Mono per design-system.md). Titles use the small-caps Manrope pattern (`text-xs uppercase tracking-wide text-stone-500`).
+
+**AI-spend tint thresholds (also in code):**
+- < 80% → `teal-800` bar + `moss-600 "ok"` label
+- 80–99% → `saffron-500` bar + `clay-700 "near budget"` label
+- ≥ 100% → `brick-600` bar + `brick-600 "over budget"` label
+
+**Service-role at the call site.** `page.tsx` uses `createAdminClient()` per the locked spec — audit_logs / search_logs / ai_generations have admin-only-RLS, and using service-role keeps the read posture explicit. (An admin-authenticated client via `createServerClient()` would also work because `is_admin()` returns true; we picked service-role for consistency with the rest of /admin.)
+
+**Verified end-to-end:** anon `curl -sI /admin` → 307 (proxy gate); 63/63 tests still pass (was 57, +6); tsc, lint, build clean. The page renders in the build output as `ƒ /admin` (dynamic). Lighthouse + page-load smoke is a manual step once the owner finishes 2FA enrollment.
+
+**Performance budget held:** six queries via `Promise.all`. Catalog uses 4 parallel head-counts; mutations + zero-result-searches do bounded fetch + in-memory tally (`.limit(2000)`/`.limit(5000)`). If audit_logs grows past a few thousand rows/week, migrate to a Postgres GROUP BY via RPC; see T06a commit message for the trade-off rationale.
+
+**Empty states ship for all six widgets:** "No empty searches in the last 14 days", "No catalog edits this week", "No running or queued jobs", broken-images stays at `0`, AI spend stays at `$0.00`. None hide the card — they keep the layout deterministic.
+
+**Broken-images widget linkifies "Review →" to `/admin/products?filter=broken-images`** as the natural deep-link target. That route doesn't exist yet — lands in P2-T08 (products list filters). For now the link 404s if clicked; acceptable until T08 ships and we wire the filter parameter.
