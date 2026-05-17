@@ -2,7 +2,7 @@
 id: P2-T10
 phase: 2
 title: Product editor shell
-status: not_started
+status: done
 depends_on: [P2-T07]
 estimate_hours: 2
 owner: ai
@@ -96,4 +96,45 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Two sub-commits.
+
+**Route structure (lives under `(shell)` so the admin auth gate applies):**
+```
+app/admin/(shell)/products/
+├── [id]/edit/
+│   ├── page.tsx              ← server component, fetches product, renders editor
+│   ├── product-editor.tsx    ← "use client", Tabs + breadcrumb + dirty hint
+│   ├── tabs-config.ts        ← shared (non-client): EditorTab, TABS, pickTab
+│   ├── use-dirty-guard.ts    ← beforeunload hook
+│   └── _tabs/
+│       ├── general.tsx       ← placeholder, lands P2-T11
+│       ├── category.tsx      ← P2-T12
+│       ├── attributes.tsx    ← P2-T13
+│       ├── variants.tsx      ← P2-T14
+│       ├── images.tsx        ← P2-T15
+│       └── publish.tsx       ← P2-T17
+└── new/page.tsx              ← creates draft + redirects to /[id]/edit?tab=general
+```
+
+**Client-server split gotcha caught + fixed:** initial draft exported `pickTab` from `product-editor.tsx` ("use client"). Server `page.tsx` imported it. Next 16 refused to call a client-marked function from a server component (error: "Attempted to call pickTab() from the server but pickTab is on the client"). Fix: split the pure tab-vocabulary helpers into `tabs-config.ts` (no "use client"). Both server + client import from it. Same pattern will apply for every editor helper that's not React-specific.
+
+**`/admin/products/new`** is server-only — inserts a draft product (`source='manual'`, `review_status='draft'`, `is_published=false`, placeholder slug + sku tagged with a timestamp + random suffix) and `redirect()`s to `/admin/products/<new-id>/edit?tab=general`. The flow is server-action-first per the task spec — no "unsaved new product" state on the client.
+
+**Breadcrumb `?back=`:** the products-list row link sets `?back=<encoded-list-url>` capturing the current filter state (status + sort + q + category + tags + stock + source). Editor's "Products" link returns there. Falls back to `/admin/products` if absent. Same-site-absolute validation guards against open-redirect targets.
+
+**Dirty-guard hook (`useDirtyGuard`) ships now;** `markDirty`/`markClean` will be prop-drilled into tab content in T11+ when fields can actually be edited. For now `isDirty` lights up a small "unsaved" pill in the breadcrumb when called (currently never).
+
+**Tabs are URL-driven** via `?tab=<value>`. Server reads the param for `initialTab`; client `<Tabs onValueChange>` calls `router.replace('?tab=' + value, { scroll: false })`. Deep-linking + back button both work without extra wiring.
+
+**Live smoke (warm via the existing TOTP-auth probe):**
+- `/admin/products/[id]/edit` cold 2.5s (Turbopack JIT), warm ~700ms
+- `/admin/products/new` ~870ms cold, ~700ms warm (includes the INSERT round-trip)
+- Per `[perf]` log: auth ~330ms, fetch ~160ms — well within budget
+
+**Acceptance criteria all green** including `pnpm tsc --noEmit`, `pnpm lint`, `pnpm build`. 88/88 tests pass (was 84, +4 from T10a). The marked-dirty → beforeunload prompt is wired but inactive until T11 lets a field actually become dirty.
+
+**One soft thing for T11+:** the placeholder GeneralTab (etc.) take no props today. When auto-save lands, they'll need `(product, onDirty)` props. The page already has the product; the dirty-state setter is in the editor. Plan: pass `markDirty`/`markClean` from the editor into each TabContent as props, alongside the `product`.
+
+**Two diagnostics added in earlier perf commits (kept active):**
+- `scripts/profile-admin-nav.mjs` — already covers dashboard → list nav
+- `lib/perf.ts perfStart()` — used by /admin, /admin/products, /admin/products/[id]/edit (new). Logs to dev console / Vercel logs above THRESHOLD_MS

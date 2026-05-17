@@ -61,7 +61,16 @@ const STATUS_BADGE_VARIANT: Record<
  * Spacing scales lightly with breakpoint: thumbnail 48px on mobile,
  * 56px from sm+; meta line wraps tighter on the narrowest screens.
  */
-export function ProductsTable({ rows }: { rows: AdminProductRow[] }) {
+export function ProductsTable({
+  rows,
+  /** Encoded current URL (path + search) so the editor's "Products"
+   *  breadcrumb returns to the same filter state. Constructed by the
+   *  page server component. */
+  backHref,
+}: {
+  rows: AdminProductRow[];
+  backHref?: string;
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-husk-200 bg-paper-0 p-6 text-center text-sm text-stone-500 sm:p-8">
@@ -79,10 +88,14 @@ export function ProductsTable({ rows }: { rows: AdminProductRow[] }) {
         if (row.sku) meta.push(row.sku);
         meta.push(relativeDays(row.created_at));
 
+        const editHref = backHref
+          ? `/admin/products/${row.id}/edit?back=${encodeURIComponent(backHref)}`
+          : `/admin/products/${row.id}/edit`;
+
         return (
           <li key={row.id}>
             <Link
-              href={`/admin/products/${row.id}/edit`}
+              href={editHref}
               className="group flex items-center gap-3 px-3 py-3 transition-colors hover:bg-husk-100 sm:gap-4 sm:px-4"
             >
               {/* Thumbnail */}

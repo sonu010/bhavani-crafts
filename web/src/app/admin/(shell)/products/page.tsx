@@ -118,35 +118,19 @@ export default async function AdminProductsPage({
   // the data-access boundary.
   const { admin } = await requireAdminContext();
   t.mark("auth");
-  // Time each query independently so the slow one is identifiable.
-  const tCounts = Date.now();
-  const countsP = countProductsByStatus(admin).then((v) => {
-    console.log(`[perf]   countProductsByStatus=${Date.now() - tCounts}ms`);
-    return v;
-  });
-  const tList = Date.now();
-  const pageP = listProductsAdmin(admin, {
-    status,
-    sort,
-    cursor,
-    q,
-    categoryId,
-    tagSlugs,
-    stock,
-    source,
-  }).then((v) => {
-    console.log(`[perf]   listProductsAdmin=${Date.now() - tList}ms`);
-    return v;
-  });
-  const tFilters = Date.now();
-  const filterOptionsP = getAdminFilterOptions(admin).then((v) => {
-    console.log(`[perf]   getAdminFilterOptions=${Date.now() - tFilters}ms`);
-    return v;
-  });
   const [counts, page, filterOptions] = await Promise.all([
-    countsP,
-    pageP,
-    filterOptionsP,
+    countProductsByStatus(admin),
+    listProductsAdmin(admin, {
+      status,
+      sort,
+      cursor,
+      q,
+      categoryId,
+      tagSlugs,
+      stock,
+      source,
+    }),
+    getAdminFilterOptions(admin),
   ]);
   t.mark("queries");
   t.end();
@@ -158,6 +142,16 @@ export default async function AdminProductsPage({
   if (tagSlugs && tagSlugs.length > 0) baseParams.tags = tagSlugs.join(",");
   if (stock) baseParams.stock = stock;
   if (source) baseParams.source = source;
+
+  // backHref captures the current filter state so the editor breadcrumb
+  // returns the user to the same view. Status + sort stay in the URL
+  // even at defaults so the editor never bounces back to ?status=
+  // needs_review when the user filtered to something else.
+  const listParams = new URLSearchParams();
+  listParams.set("status", status);
+  listParams.set("sort", sort);
+  for (const [k, v] of Object.entries(baseParams)) listParams.set(k, v);
+  const backHref = `/admin/products?${listParams.toString()}`;
 
   return (
     <div className="space-y-4">
@@ -177,7 +171,7 @@ export default async function AdminProductsPage({
 
       <StatusChips counts={counts} active={status} sort={sort} extraParams={baseParams} />
 
-      <ProductsTable rows={page.items} />
+      <ProductsTable rows={page.items} backHref={backHref} />
 
       <LoadMore
         cursor={page.nextCursor}
