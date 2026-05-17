@@ -19,8 +19,16 @@ import "server-only";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
+import { getDescendantIds } from "@/lib/db/categories";
+import { buildTsquery, tokenize } from "@/lib/db/search";
 
 type SC = SupabaseClient<Database>;
+type StockStatus = Database["public"]["Enums"]["stock_status"];
+type ProductSource = Database["public"]["Enums"]["product_source"];
+
+/** Hard cap on candidate IDs returned by the search clause. Admin search is
+ *  for "find me one row to edit", not for paging through thousands. */
+const SEARCH_CANDIDATE_LIMIT = 500;
 
 export const ADMIN_LIST_DEFAULT_PER_PAGE = 25;
 export const ADMIN_LIST_MAX_PER_PAGE = 100;
@@ -76,6 +84,15 @@ export interface ListProductsAdminOpts {
   sort?: AdminProductSort;
   cursor?: AdminCursor | null;
   perPage?: number;
+  /** Free-text search; matches FTS + slug ILIKE + sku ILIKE (OR'd). */
+  q?: string;
+  /** Narrow to a category AND all its descendants (uses 0007's view). */
+  categoryId?: string;
+  /** OR-semantics: products matching ANY of these tag slugs. */
+  tagSlugs?: string[];
+  /** Single-value enum filters. */
+  stock?: StockStatus;
+  source?: ProductSource;
 }
 
 export interface ListProductsAdminResult {
@@ -118,12 +135,106 @@ export function decodeCursor(token: string | null | undefined): AdminCursor | nu
   }
 }
 
+/**
+ * Compute the candidate product IDs that match the free-text query.
+ * Combines three sources: FTS on `products.fts`, slug ILIKE, sku ILIKE.
+ * Each source caps at SEARCH_CANDIDATE_LIMIT; the union is capped at
+ * the same limit. Returns an empty array when the query matches nothing.
+ */
+async function candidateIdsForQuery(supabase: SC, q: string): Promise<string[]> {
+  const tokens = tokenize(q);
+  const tsquery = tokens.length > 0 ? buildTsquery(tokens, new Map()) : "";
+
+  const slugRes = await supabase
+    .from("products")
+    .select("id")
+    .is("deleted_at", null)
+    .ilike("slug", `%${q}%`)
+    .limit(SEARCH_CANDIDATE_LIMIT);
+  if (slugRes.error) throw new Error(`candidateIdsForQuery (slug): ${slugRes.error.message}`);
+
+  const skuRes = await supabase
+    .from("products")
+    .select("id")
+    .is("deleted_at", null)
+    .ilike("sku", `%${q}%`)
+    .limit(SEARCH_CANDIDATE_LIMIT);
+  if (skuRes.error) throw new Error(`candidateIdsForQuery (sku): ${skuRes.error.message}`);
+
+  const ftsRes = tsquery
+    ? await supabase
+        .from("products")
+        .select("id")
+        .is("deleted_at", null)
+        .textSearch("fts", tsquery, { config: "english" })
+        .limit(SEARCH_CANDIDATE_LIMIT)
+    : { data: [] as Array<{ id: string }>, error: null as null | { message: string } };
+  if (ftsRes.error) throw new Error(`candidateIdsForQuery (fts): ${ftsRes.error.message}`);
+
+  const set = new Set<string>();
+  for (const r of [slugRes, skuRes, ftsRes]) {
+    for (const row of r.data ?? []) {
+      if (set.size >= SEARCH_CANDIDATE_LIMIT) break;
+      set.add(row.id);
+    }
+  }
+  return [...set];
+}
+
+/**
+ * Compute the candidate product IDs that have at least one of the given
+ * tag slugs. OR-semantics. Capped at SEARCH_CANDIDATE_LIMIT.
+ */
+async function candidateIdsForTags(
+  supabase: SC,
+  tagSlugs: string[],
+): Promise<string[]> {
+  if (tagSlugs.length === 0) return [];
+  const { data, error } = await supabase
+    .from("product_tags")
+    .select("product_id, tag:tags!inner(slug)")
+    .in("tag.slug" as never, tagSlugs)
+    .limit(SEARCH_CANDIDATE_LIMIT);
+  if (error) throw new Error(`candidateIdsForTags: ${error.message}`);
+  const set = new Set<string>();
+  for (const row of (data as Array<{ product_id: string }>) ?? []) {
+    if (set.size >= SEARCH_CANDIDATE_LIMIT) break;
+    set.add(row.product_id);
+  }
+  return [...set];
+}
+
 export async function listProductsAdmin(
   supabase: SC,
   opts: ListProductsAdminOpts = {},
 ): Promise<ListProductsAdminResult> {
   const perPage = clampPerPage(opts.perPage);
   const sort = opts.sort ?? "newest";
+
+  // Compute id-set narrowing from q + tagSlugs in parallel. Intersect when
+  // both are set; falls through to no-filter when neither is.
+  const [searchIds, tagIds, categoryDescendantIds] = await Promise.all([
+    opts.q && opts.q.trim() ? candidateIdsForQuery(supabase, opts.q.trim()) : Promise.resolve(null),
+    opts.tagSlugs && opts.tagSlugs.length > 0
+      ? candidateIdsForTags(supabase, opts.tagSlugs)
+      : Promise.resolve(null),
+    opts.categoryId ? getDescendantIds(supabase, opts.categoryId) : Promise.resolve(null),
+  ]);
+
+  // Search and tag results intersect (both AND-combined into the page).
+  let idFilter: string[] | null = null;
+  if (searchIds && tagIds) {
+    const tagSet = new Set(tagIds);
+    idFilter = searchIds.filter((id) => tagSet.has(id));
+  } else if (searchIds) {
+    idFilter = searchIds;
+  } else if (tagIds) {
+    idFilter = tagIds;
+  }
+  // If a filter narrowed to an empty set, short-circuit.
+  if (idFilter && idFilter.length === 0) {
+    return { items: [], nextCursor: null };
+  }
 
   let q = supabase
     .from("products")
@@ -139,6 +250,22 @@ export async function listProductsAdmin(
 
   if (opts.status) {
     q = q.eq("review_status", opts.status);
+  }
+  if (opts.stock) {
+    q = q.eq("stock_status", opts.stock);
+  }
+  if (opts.source) {
+    q = q.eq("source", opts.source);
+  }
+  if (categoryDescendantIds && categoryDescendantIds.length > 0) {
+    q = q.in("category_id", categoryDescendantIds);
+  } else if (categoryDescendantIds && categoryDescendantIds.length === 0) {
+    // Category id didn't resolve to any descendants (shouldn't happen for
+    // valid input, but guard anyway).
+    return { items: [], nextCursor: null };
+  }
+  if (idFilter) {
+    q = q.in("id", idFilter);
   }
 
   // Apply sort + cursor (forward-only).
@@ -214,6 +341,37 @@ export async function listProductsAdmin(
     nextCursor = { primary, id: last.id };
   }
   return { items, nextCursor };
+}
+
+export interface AdminFilterOptions {
+  categories: Array<{ id: string; slug: string; name: string }>;
+  tags: Array<{ slug: string; name: string }>;
+}
+
+/**
+ * Data for the filter bar: top-level categories + every tag. Cheap; both
+ * tables are small (353 + ~458 rows).
+ */
+export async function getAdminFilterOptions(supabase: SC): Promise<AdminFilterOptions> {
+  const [catsRes, tagsRes] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, slug, name")
+      .is("parent_id", null)
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    supabase
+      .from("tags")
+      .select("slug, name")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+  ]);
+  if (catsRes.error) throw new Error(`getAdminFilterOptions(categories): ${catsRes.error.message}`);
+  if (tagsRes.error) throw new Error(`getAdminFilterOptions(tags): ${tagsRes.error.message}`);
+  return {
+    categories: catsRes.data ?? [],
+    tags: tagsRes.data ?? [],
+  };
 }
 
 export type ProductStatusCounts = Record<AdminProductStatus, number>;
