@@ -78,19 +78,39 @@ const supa = createClient(SUPABASE_URL, SERVICE_ROLE, {
 // Tags themselves and search_synonyms are preserved.
 console.log("▶ Cleanup: removing prior justkraft_seed rows (cascade) ...");
 {
-  // Page through deletion to avoid hitting Supabase's row limit per query.
-  let totalDeleted = 0;
+  // A single DELETE WHERE source='justkraft_seed' hit Supabase's
+  // statement_timeout — CASCADE has to delete ~15K images + ~8K
+  // variants in one statement. Chunked-by-id keeps each statement's
+  // CASCADE workload small enough to clear the 60s timeout.
+  const CLEANUP_CHUNK = 200;
+  // Fetch matching IDs up front. PostgREST defaults to a 1000-row
+  // window so we page via .range until exhausted.
+  const allIds = [];
+  let from = 0;
   while (true) {
     const { data, error } = await supa
       .from("products")
-      .delete()
+      .select("id")
       .eq("source", "justkraft_seed")
-      .select("id", { count: "exact" })
-      .limit(1000);
-    if (error) throw new Error(`cleanup delete failed: ${error.message}`);
+      .order("id", { ascending: true })
+      .range(from, from + 999);
+    if (error) throw new Error(`cleanup id-list failed: ${error.message}`);
     if (!data || data.length === 0) break;
-    totalDeleted += data.length;
+    for (const row of data) allIds.push(row.id);
     if (data.length < 1000) break;
+    from += 1000;
+  }
+  console.log(`  scanned ${allIds.length} rows to delete; chunking @ ${CLEANUP_CHUNK}`);
+
+  let totalDeleted = 0;
+  for (let i = 0; i < allIds.length; i += CLEANUP_CHUNK) {
+    const chunk = allIds.slice(i, i + CLEANUP_CHUNK);
+    const { error } = await supa.from("products").delete().in("id", chunk);
+    if (error) throw new Error(`cleanup delete chunk failed: ${error.message}`);
+    totalDeleted += chunk.length;
+    if ((i / CLEANUP_CHUNK) % 5 === 0) {
+      process.stdout.write(`  ... ${totalDeleted}/${allIds.length}\r`);
+    }
   }
   console.log(`  done: ${totalDeleted} seed product rows removed (and their children via CASCADE)`);
 }
