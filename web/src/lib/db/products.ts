@@ -182,6 +182,52 @@ export async function getProductBySlug(
   });
 }
 
+/**
+ * Fetch one product by primary key for the admin editor shell.
+ *
+ * Lean shape on purpose — just the row's own columns, no joins. The
+ * editor's tab pages fetch their own joined data (images, variants,
+ * attributes, etc.) lazily, so the shell render isn't blocked on data
+ * the user may never look at.
+ *
+ * RLS posture: the admin pages pass a service-role client (via
+ * requireAdminContext), so unpublished + non-deleted rows are visible.
+ * Soft-deleted rows are always excluded; the Trash view (P2-T28) is the
+ * only consumer of those.
+ *
+ * Returns null when no row matches — callers render a 404 boundary.
+ */
+export interface AdminProductBasic {
+  id: string;
+  sku: string | null;
+  slug: string;
+  name: string;
+  short_description: string | null;
+  review_status: "draft" | "needs_review" | "ready_to_publish" | "published" | "archived";
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getProductByIdBasic(
+  supabase: SC,
+  id: string,
+): Promise<AdminProductBasic | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      "id, sku, slug, name, short_description, review_status, is_published, created_at, updated_at",
+    )
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getProductByIdBasic(${id}) failed: ${error.message}`);
+  }
+  return data;
+}
+
 function clampPerPage(input?: number): number {
   if (typeof input !== "number" || !Number.isFinite(input) || input <= 0) {
     return LIST_DEFAULT_PER_PAGE;
