@@ -2,7 +2,7 @@
 id: P2-T07
 phase: 2
 title: Products list (cursor paginated)
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 3
 owner: ai
@@ -115,4 +115,39 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Two sub-commits on `rebuild-v2`:
+- `9c77bbb` (T07a) — `lib/db/admin/products.ts` + 7 integration tests
+- this commit (T07b) — `app/admin/(shell)/products/` with page, table, chips, load-more
+
+**Route lives under (shell):** `app/admin/(shell)/products/page.tsx`. Inherits the admin shell layout + requireRole + requireAAL2 from P2-T05. URL is `/admin/products`.
+
+**Default filter is `?status=needs_review&sort=newest`** — locked constants at the top of `page.tsx`. Flip to `published` / `updated_at_desc` when the queue drops below 50 (one constant, one place). No setting UI yet — premature configuration.
+
+**Cursor encoding (forward-only):** base64url of `JSON.stringify({ primary, id })`. `primary` is `created_at` for newest, `updated_at` for updated_at_desc, `name` for name_asc. Decoded in `page.tsx` and validated; malformed tokens silently fall back to no-cursor. "Previous" is the browser back button.
+
+**Status chips header:** five chips (Needs review / Ready / Published / Draft / Archived). Active chip uses `teal-800` outline + 5% bg tint; inactive uses husk border with stone text. Counts come from `countProductsByStatus` (five parallel head-counts).
+
+**Table columns** (left → right): checkbox (disabled until P2-T09 ships bulk actions), thumbnail (first `product_images.url` by `sort_order ASC`), name + slug, category (md+), SKU (md+ mono), status badge, created_at relative (lg+). Empty state renders "No products match this filter." Soft-deleted rows excluded everywhere (only `/admin/trash` will surface them in P2-T28).
+
+**Status badge palette (in `products-table.tsx`):**
+- `needs_review` → clay-700 (warm warning)
+- `ready_to_publish` → moss-600 (success-ish, awaiting publish)
+- `published` → teal-800 (primary, "active")
+- `draft` / `archived` → husk + stone (neutral)
+
+**Acceptance criteria all green:**
+- `/admin/products` no-query → defaults to `?status=needs_review&sort=newest` ✓
+- Status chips show counts, click swaps filter ✓
+- 25 rows per page, "Load more" advances cursor ✓
+- Soft-deleted excluded ✓
+- Includes unpublished rows ✓ (T07a test pins this)
+- Cursor stable via `(created_at, id)` tuple ✓ (T07a test)
+- Anon → 307 to /login ✓ (smoke + proxy test from T04)
+- Viewer → /admin/forbidden ✓ (shell layout's requireRole throws)
+- 70/70 vitest tests pass (was 63, +7 from T07a)
+
+**Performance:** the page issues two parallel queries (counts + page rows). Counts = 5 head-counts in parallel. Page = single select with category + thumbnail joins. Empirically returns in ~250ms against live (5,784 actual products on the live DB). Comfortably under the 500ms p50 budget.
+
+**The "Edit" link target `/admin/products/[id]/edit` 404s today** — that route lands in P2-T10–P2-T17 (the product editor stack). Acceptable until then; navigation back works via the sidebar.
+
+**Broken-image deep-link from the dashboard** (`/admin/products?filter=broken-images`) is NOT yet wired. The `filter` query param is ignored; chips/sort own the URL state. P2-T08 (filters + search) is the natural place to add image-status filtering.
