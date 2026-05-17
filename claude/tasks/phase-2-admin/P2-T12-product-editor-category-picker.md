@@ -2,7 +2,7 @@
 id: P2-T12
 phase: 2
 title: Product editor — category picker
-status: not_started
+status: done
 depends_on: [P2-T11]
 estimate_hours: 2
 owner: ai
@@ -88,4 +88,43 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Three sub-commits:
+- `1caa9c3` T12a — data layer (`updateProductCategory`, `setProductTags`, `listTagsForProduct`) + 9 integration tests
+- `8949943` T12b — server actions (`saveProductCategory`, `saveProductTags`)
+- this commit T12c — pickers (Dialog-based) + CategoryTab wiring + page data plumb
+
+**shadcn `Command` is not installed in this repo.** Built hand-rolled Dialog-based pickers instead — same pattern T08 (filter bar) used for the absence of Command. Both pickers use the existing Dialog primitive + a search Input + a scrollable list. Filter is client-side over the full set (362 categories + ~458 tags), which is fine for this scale.
+
+**Category picker (single-select):**
+- Trigger button shows current name (or "No category")
+- Dialog opens with search input + a flattened tree (depth-indented via `padding-left`)
+- "No category" sentinel always at the top → clears `category_id`
+- Searching shows the ancestor path inline so duplicates disambiguate (e.g., two "Brushes" under different parents)
+
+**Tags picker (multi-select):**
+- Trigger button shows "first, second, +N" or "No tags"
+- Dialog opens with search + checkbox rows
+- Selected tags float to the top inside the dialog
+- Selected tags also render as removable badges below the trigger (one-tap remove without opening the dialog)
+- Inline-create-new-tag is deferred — flagged at the top of the file. T21 owns the tags table and will add that flow.
+
+**Independent save:** Category section + Tags section have their own save buttons. Each section's dirty state is computed against its `savedX` baseline (advances on successful save) so the buttons disable correctly after save without a server refetch.
+
+**Data plumb (page → editor → tab):**
+- `page.tsx` adds three parallel fetches to its `Promise.all`: `getCategoryTree`, `listTagsForProduct`, and a thin `tags.select(slug, name)` for the picker options. The four queries together still beat per-tab-on-mount fetching — they share connection-pool capacity, and 362 categories + 458 tags ships in ~50KB.
+- `product-editor.tsx` accepts new props `categoryTree`, `allTags`, `currentTags` and forwards them to `CategoryTab`.
+- `AdminProductForEditing` gained a `category_id` field so the picker knows the current selection without a slug → id lookup.
+
+**Smoke results (warm):**
+- /admin/products/[id]/edit cold: 2212ms (Turbopack JIT, dev-only)
+- /admin/products/[id]/edit warm: ~500-590ms wall-clock
+- Server-side `[perf] fetch=188ms` (was 158ms before the extra two queries) — Promise.all keeps the marginal cost ~30ms
+
+**Acceptance criteria all green** including tsc, lint, build. 104/104 tests pass (was 95, +9 from T12a).
+
+**Inline-create-new-tag — deferred to T21:**
+When P2-T21 ships the Tags management page, it should:
+1. Add a `createTag(supabase, slug, name)` helper to `lib/db/admin/tags.ts`
+2. Add a `createTagAction(slug, name)` server action
+3. In the TagsPicker, surface a "Create '<query>'" row at the bottom when the query has 3+ chars and matches zero existing tags
+4. After successful creation, refetch the tags list + auto-select the new one

@@ -436,6 +436,7 @@ export async function countProductsByStatus(
  */
 export type AdminProductForEditing = ProductEditInput & {
   id: string;
+  category_id: string | null;
   category_slug: string | null;
 };
 
@@ -443,7 +444,7 @@ const PRODUCT_EDIT_SELECT =
   "id, name, slug, sku, short_description, description, base_price_inr, " +
   "compare_at_price_inr, stock_status, stock_quantity, low_stock_threshold, " +
   "allow_backorder, min_order_qty, max_order_qty, meta_title, meta_description, " +
-  "category:categories(slug)";
+  "category_id, category:categories(slug)";
 
 type RawEditingRow = {
   id: string;
@@ -462,6 +463,7 @@ type RawEditingRow = {
   max_order_qty: number | null;
   meta_title: string | null;
   meta_description: string | null;
+  category_id: string | null;
   category: { slug: string } | null;
 };
 
@@ -483,6 +485,7 @@ function rowToEditing(raw: RawEditingRow): AdminProductForEditing {
     max_order_qty: raw.max_order_qty,
     meta_title: raw.meta_title,
     meta_description: raw.meta_description,
+    category_id: raw.category_id,
     category_slug: raw.category?.slug ?? null,
   };
 }

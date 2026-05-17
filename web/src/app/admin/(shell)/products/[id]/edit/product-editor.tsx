@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AdminProductForEditing } from "@/lib/db/admin/products";
+import type {
+  AdminProductForEditing,
+  CategoryBadge,
+} from "@/lib/db/admin/products";
+import type { CategoryTreeNode } from "@/lib/schemas/category";
 import { AttributesTab } from "./_tabs/attributes";
 import { CategoryTab } from "./_tabs/category";
 import { GeneralTab } from "./_tabs/general";
@@ -27,10 +31,16 @@ import { useDirtyGuard } from "./use-dirty-guard";
  */
 export function ProductEditor({
   product,
+  categoryTree,
+  allTags,
+  currentTags,
   initialTab,
   backHref,
 }: {
   product: AdminProductForEditing;
+  categoryTree: CategoryTreeNode[];
+  allTags: Array<{ slug: string; name: string }>;
+  currentTags: CategoryBadge[];
   initialTab: EditorTab;
   backHref: string;
 }) {
@@ -93,7 +103,14 @@ export function ProductEditor({
           />
         </TabsContent>
         <TabsContent value="category">
-          <CategoryTab />
+          <CategoryTab
+            product={product}
+            categoryTree={categoryTree}
+            allTags={allTags}
+            currentTags={currentTags}
+            onDirty={markDirty}
+            onClean={markClean}
+          />
         </TabsContent>
         <TabsContent value="attributes">
           <AttributesTab />

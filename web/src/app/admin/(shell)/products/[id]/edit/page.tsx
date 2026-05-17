@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { requireAdminContext } from "@/lib/db/admin-context";
-import { getProductForEditing } from "@/lib/db/admin/products";
+import {
+  getProductForEditing,
+  listTagsForProduct,
+} from "@/lib/db/admin/products";
+import { getCategoryTree } from "@/lib/db/categories";
 import { perfStart } from "@/lib/perf";
 import { ProductEditor } from "./product-editor";
 import { pickTab } from "./tabs-config";
@@ -44,10 +48,24 @@ export default async function ProductEditPage({
   const { admin } = await requireAdminContext();
   t.mark("auth");
 
-  // Full editable shape — the General tab's form needs every field;
-  // other tabs ignore the extras. One query is faster than gating per
-  // tab with its own fetch.
-  const product = await getProductForEditing(admin, id);
+  // Full editable shape + Category-tab data in parallel. The four
+  // queries together still beat a per-tab-on-mount fetch model since
+  // they share connection-pool capacity. 362 categories + ~458 tags is
+  // small enough to ship to the client wholesale.
+  const [product, categoryTree, allTagsRes, currentTags] = await Promise.all([
+    getProductForEditing(admin, id),
+    getCategoryTree(admin),
+    admin
+      .from("tags")
+      .select("slug, name")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    listTagsForProduct(admin, id),
+  ]);
+  if (allTagsRes.error) {
+    throw new Error(`load tags: ${allTagsRes.error.message}`);
+  }
+  const allTags = allTagsRes.data ?? [];
   t.mark("fetch");
   t.end();
 
@@ -68,6 +86,9 @@ export default async function ProductEditPage({
   return (
     <ProductEditor
       product={product}
+      categoryTree={categoryTree}
+      allTags={allTags}
+      currentTags={currentTags}
       initialTab={initialTab}
       backHref={backHref}
     />
