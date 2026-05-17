@@ -149,6 +149,54 @@ describe("listProductsAdmin filters", () => {
     expect(r2.items.find((p) => p.id === inStock)).toBeUndefined();
   });
 
+  it("q matches across more rows than any single page (no 500-cap silent truncation)", async () => {
+    // 30 fixture rows all sharing a needle that's unlikely to match any
+    // existing product. Search for it; paginate; assert we see all 30
+    // across cursor advances. With the old candidate-id intersection at
+    // limit=500 this would still pass for 30, but a future re-cap would
+    // trip a similar test at a higher N. Here we mainly want to verify
+    // the new server-side .or() clause actually narrows correctly and
+    // composes with cursor pagination.
+    const needle = `q-${Math.random().toString(36).slice(2, 10)}-needle`;
+    const cat = await makeCategory();
+    await Promise.all(
+      Array.from({ length: 30 }, (_, i) =>
+        makeProduct({
+          categoryId: cat,
+          slug: `${FIXTURE_PREFIX}${needle}-${i.toString(36)}`,
+        }),
+      ),
+    );
+
+    const seen = new Set<string>();
+    let cursor: import("@/lib/db/admin/products").AdminCursor | null = null;
+    let safety = 10;
+    do {
+      const page = await listProductsAdmin(srv, {
+        q: needle,
+        sort: "newest",
+        perPage: 7,
+        cursor,
+      });
+      for (const item of page.items) seen.add(item.id);
+      cursor = page.nextCursor;
+      safety -= 1;
+    } while (cursor && safety > 0);
+
+    expect(seen.size).toBe(30);
+  });
+
+  it("q with special PostgREST grammar chars (commas, parens, quotes) doesn't break .or()", async () => {
+    // Each query contains a char that PostgREST treats specially inside
+    // .or() — comma is the clause separator, parens nest, double-quote
+    // is the literal wrapper. quoteForOr() should escape them so the
+    // request succeeds (returns 0 rows; we just need the URL to parse).
+    for (const q of [`zzz,never-match`, `zzz(never-match`, `zzz"never-match`, `zzz never match`]) {
+      const r = await listProductsAdmin(srv, { q, perPage: 5 });
+      expect(Array.isArray(r.items), `q="${q}"`).toBe(true);
+    }
+  });
+
   it("filters compose: q + tagSlugs intersect (AND across axes, OR within tag axis)", async () => {
     const tag = Math.random().toString(36).slice(2, 8);
     const tagOnly = await makeTag(`needle-${tag}`);

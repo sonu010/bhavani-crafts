@@ -26,9 +26,27 @@ type SC = SupabaseClient<Database>;
 type StockStatus = Database["public"]["Enums"]["stock_status"];
 type ProductSource = Database["public"]["Enums"]["product_source"];
 
-/** Hard cap on candidate IDs returned by the search clause. Admin search is
- *  for "find me one row to edit", not for paging through thousands. */
-const SEARCH_CANDIDATE_LIMIT = 500;
+/**
+ * Tag filter still goes through a candidate-id intersection (PostgREST
+ * can't filter a query on an unembedded EXISTS sub-clause in one hop).
+ * Cap is set high enough to cover any single tag's product set in
+ * the cleaned fixture (~5.8K products total, ~458 tags); revisit only
+ * if a single tag ever exceeds this.
+ */
+const TAG_CANDIDATE_LIMIT = 10_000;
+
+/**
+ * Escape a value for inclusion inside a PostgREST `.or()` clause.
+ * Values containing the URL-grammar separators (comma, colon, parens,
+ * quotes) get wrapped in double quotes; embedded quotes get backslash-
+ * escaped.
+ */
+function quoteForOr(value: string): string {
+  if (/[,():"\s]/.test(value)) {
+    return `"${value.replace(/"/g, '\\"')}"`;
+  }
+  return value;
+}
 
 export const ADMIN_LIST_DEFAULT_PER_PAGE = 25;
 export const ADMIN_LIST_MAX_PER_PAGE = 100;
@@ -136,58 +154,48 @@ export function decodeCursor(token: string | null | undefined): AdminCursor | nu
 }
 
 /**
- * Compute the candidate product IDs that match the free-text query.
- * Combines three sources: FTS on `products.fts`, slug ILIKE, sku ILIKE.
- * Each source caps at SEARCH_CANDIDATE_LIMIT; the union is capped at
- * the same limit. Returns an empty array when the query matches nothing.
+ * Build the PostgREST `.or()` clause for free-text search:
+ *
+ *     fts @@ tsquery OR slug ILIKE %q% OR sku ILIKE %q%
+ *
+ * Returns null when the query is empty. The clause is applied directly
+ * on the main listProductsAdmin query so other filters (status, stock,
+ * source, category) compose server-side — no candidate-id cap, full
+ * paging through the result set.
+ *
+ * Inside `.or()`, PostgREST uses `*` (not `%`) as the ILIKE wildcard
+ * and uses `,` as a clause separator + `:`/`(`/`)`/`"` as grammar
+ * tokens. quoteForOr() wraps tsquery + ilike values in double-quotes
+ * when they contain any of those.
  */
-async function candidateIdsForQuery(supabase: SC, q: string): Promise<string[]> {
-  const tokens = tokenize(q);
-  // Synonyms — fetched bidirectionally so variant-spellings ("mold" vs
-  // "mould") expand both ways. Matches what the public storefront search
-  // does in lib/db/search.ts.
+async function buildSearchOrClause(
+  supabase: SC,
+  q: string,
+): Promise<string | null> {
+  const trimmed = q.trim();
+  if (!trimmed) return null;
+
+  const tokens = tokenize(trimmed);
+  // Synonyms — fetched bidirectionally so variant-spellings ("mold"
+  // vs "mould") expand both ways. Same path the storefront uses.
   const synonymMap = await fetchSynonyms(supabase, tokens);
   const tsquery = tokens.length > 0 ? buildTsquery(tokens, synonymMap) : "";
 
-  const slugRes = await supabase
-    .from("products")
-    .select("id")
-    .is("deleted_at", null)
-    .ilike("slug", `%${q}%`)
-    .limit(SEARCH_CANDIDATE_LIMIT);
-  if (slugRes.error) throw new Error(`candidateIdsForQuery (slug): ${slugRes.error.message}`);
-
-  const skuRes = await supabase
-    .from("products")
-    .select("id")
-    .is("deleted_at", null)
-    .ilike("sku", `%${q}%`)
-    .limit(SEARCH_CANDIDATE_LIMIT);
-  if (skuRes.error) throw new Error(`candidateIdsForQuery (sku): ${skuRes.error.message}`);
-
-  const ftsRes = tsquery
-    ? await supabase
-        .from("products")
-        .select("id")
-        .is("deleted_at", null)
-        .textSearch("fts", tsquery, { config: "english" })
-        .limit(SEARCH_CANDIDATE_LIMIT)
-    : { data: [] as Array<{ id: string }>, error: null as null | { message: string } };
-  if (ftsRes.error) throw new Error(`candidateIdsForQuery (fts): ${ftsRes.error.message}`);
-
-  const set = new Set<string>();
-  for (const r of [slugRes, skuRes, ftsRes]) {
-    for (const row of r.data ?? []) {
-      if (set.size >= SEARCH_CANDIDATE_LIMIT) break;
-      set.add(row.id);
-    }
+  const ilikePattern = `*${trimmed}*`;
+  const parts: string[] = [];
+  if (tsquery) {
+    parts.push(`fts.fts(english).${quoteForOr(tsquery)}`);
   }
-  return [...set];
+  parts.push(`slug.ilike.${quoteForOr(ilikePattern)}`);
+  parts.push(`sku.ilike.${quoteForOr(ilikePattern)}`);
+  return parts.join(",");
 }
 
 /**
- * Compute the candidate product IDs that have at least one of the given
- * tag slugs. OR-semantics. Capped at SEARCH_CANDIDATE_LIMIT.
+ * Tag-filter candidate IDs (OR-semantics across selected tag slugs).
+ * Kept as a separate query because PostgREST can't express the
+ * EXISTS-on-join filter we want in one hop. Cap is set high enough to
+ * cover the largest plausible single-tag set in the catalog.
  */
 async function candidateIdsForTags(
   supabase: SC,
@@ -198,11 +206,10 @@ async function candidateIdsForTags(
     .from("product_tags")
     .select("product_id, tag:tags!inner(slug)")
     .in("tag.slug" as never, tagSlugs)
-    .limit(SEARCH_CANDIDATE_LIMIT);
+    .limit(TAG_CANDIDATE_LIMIT);
   if (error) throw new Error(`candidateIdsForTags: ${error.message}`);
   const set = new Set<string>();
   for (const row of (data as Array<{ product_id: string }>) ?? []) {
-    if (set.size >= SEARCH_CANDIDATE_LIMIT) break;
     set.add(row.product_id);
   }
   return [...set];
@@ -215,28 +222,20 @@ export async function listProductsAdmin(
   const perPage = clampPerPage(opts.perPage);
   const sort = opts.sort ?? "newest";
 
-  // Compute id-set narrowing from q + tagSlugs in parallel. Intersect when
-  // both are set; falls through to no-filter when neither is.
-  const [searchIds, tagIds, categoryDescendantIds] = await Promise.all([
-    opts.q && opts.q.trim() ? candidateIdsForQuery(supabase, opts.q.trim()) : Promise.resolve(null),
+  // Resolve filter sources in parallel:
+  //   - searchOrClause: server-side or() string (no candidate-id cap)
+  //   - tagIds: candidate-id set from product_tags
+  //   - categoryDescendantIds: id set from the 0007 recursive view
+  const [searchOrClause, tagIds, categoryDescendantIds] = await Promise.all([
+    opts.q ? buildSearchOrClause(supabase, opts.q) : Promise.resolve(null),
     opts.tagSlugs && opts.tagSlugs.length > 0
       ? candidateIdsForTags(supabase, opts.tagSlugs)
       : Promise.resolve(null),
     opts.categoryId ? getDescendantIds(supabase, opts.categoryId) : Promise.resolve(null),
   ]);
 
-  // Search and tag results intersect (both AND-combined into the page).
-  let idFilter: string[] | null = null;
-  if (searchIds && tagIds) {
-    const tagSet = new Set(tagIds);
-    idFilter = searchIds.filter((id) => tagSet.has(id));
-  } else if (searchIds) {
-    idFilter = searchIds;
-  } else if (tagIds) {
-    idFilter = tagIds;
-  }
-  // If a filter narrowed to an empty set, short-circuit.
-  if (idFilter && idFilter.length === 0) {
+  // Tag filter narrowed to an empty set → no rows possible.
+  if (tagIds && tagIds.length === 0) {
     return { items: [], nextCursor: null };
   }
 
@@ -268,8 +267,11 @@ export async function listProductsAdmin(
     // valid input, but guard anyway).
     return { items: [], nextCursor: null };
   }
-  if (idFilter) {
-    q = q.in("id", idFilter);
+  if (tagIds) {
+    q = q.in("id", tagIds);
+  }
+  if (searchOrClause) {
+    q = q.or(searchOrClause);
   }
 
   // Apply sort + cursor (forward-only).
