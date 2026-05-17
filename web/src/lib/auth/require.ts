@@ -9,6 +9,7 @@
  * See claude/architecture/auth-and-roles.md §"Three layers of authorization".
  */
 import "server-only";
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
 import {
@@ -36,31 +37,39 @@ export type CurrentProfile = {
  * exists in auth.users but has no matching profiles row (which shouldn't
  * happen — the on_auth_user_created trigger is supposed to keep them in
  * sync — but we fail closed if it does).
+ *
+ * Wrapped in React's `cache()` so layout + page both calling
+ * requireAdminContext within one render pass share the same getUser +
+ * profile round-trips (≈ 500 ms saved per nav). Caching keys on the
+ * supabase arg; since `createServerClient` is also `cache()`-wrapped,
+ * identity-equality holds across callers in the same request.
  */
-export async function getCurrentProfile(supabase: SC): Promise<CurrentProfile> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    throw new UnauthenticatedError(userErr?.message ?? "no session");
-  }
+export const getCurrentProfile = cache(
+  async (supabase: SC): Promise<CurrentProfile> => {
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
+    if (userErr || !user) {
+      throw new UnauthenticatedError(userErr?.message ?? "no session");
+    }
 
-  const { data: profile, error: profileErr } = await supabase
-    .from("profiles")
-    .select("id, role, full_name")
-    .eq("id", user.id)
-    .single();
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("id, role, full_name")
+      .eq("id", user.id)
+      .single();
 
-  if (profileErr || !profile) {
-    throw new ForbiddenError(`profile not found for user ${user.id}`);
-  }
+    if (profileErr || !profile) {
+      throw new ForbiddenError(`profile not found for user ${user.id}`);
+    }
 
-  return {
-    user: { id: user.id, email: user.email ?? null },
-    profile,
-  };
-}
+    return {
+      user: { id: user.id, email: user.email ?? null },
+      profile,
+    };
+  },
+);
 
 /**
  * First line of every admin server action:
@@ -93,7 +102,7 @@ export async function requireRole(
  * through the proxy redirect to /admin/2fa-setup before reaching this
  * function. By the time you call requireAAL2, you're past enrollment.
  */
-export async function requireAAL2(supabase: SC): Promise<void> {
+export const requireAAL2 = cache(async (supabase: SC): Promise<void> => {
   const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (error) {
     throw new UnauthenticatedError(error.message);
@@ -103,4 +112,4 @@ export async function requireAAL2(supabase: SC): Promise<void> {
       `current AAL is ${data?.currentLevel ?? "unknown"}, need aal2`,
     );
   }
-}
+});

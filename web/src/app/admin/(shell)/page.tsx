@@ -7,6 +7,7 @@ import {
   getZeroResultSearches,
   listRunningJobs,
 } from "@/lib/db/admin/dashboard";
+import { perfStart } from "@/lib/perf";
 import { AISpendMtdWidget } from "./_widgets/ai-spend-mtd";
 import { BrokenImagesWidget } from "./_widgets/broken-images";
 import { CatalogCountsWidget } from "./_widgets/catalog-counts";
@@ -30,11 +31,13 @@ export const dynamic = "force-dynamic";
  * /admin/*).
  */
 export default async function AdminDashboardPage() {
+  const t = perfStart("/admin");
   // Gate: requireAdminContext blocks the service-role read until role +
   // AAL are verified. Without this, Next 16's parallel layout/page
   // fetching means the DB call could fire before the layout's redirect
   // wins (security boundary in the wrong layer).
   const { admin } = await requireAdminContext();
+  t.mark("auth");
   const [
     catalog,
     zeroResultSearches,
@@ -50,6 +53,8 @@ export default async function AdminDashboardPage() {
     getBrokenImagesCount(admin),
     listRunningJobs(admin),
   ]);
+  t.mark("queries");
+  t.end();
 
   return (
     <div className="space-y-6">

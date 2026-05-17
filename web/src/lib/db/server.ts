@@ -9,11 +9,23 @@
  *
  * See claude/architecture/auth-and-roles.md and security.md.
  */
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import type { Database } from "./types.gen";
 
-export async function createServerClient() {
+/**
+ * Wrapped in React's `cache()`: every server-side caller within a single
+ * request renders gets the SAME client instance. Without this, the
+ * (shell) layout and the route page each constructed their own cookie-
+ * bound client, then each ran its own getUser() round-trip. Sharing the
+ * client lets `getAuthUser`/`getCurrentProfile` (also cached below)
+ * actually dedupe their network calls.
+ *
+ * `cache()` keys on argument identity; no args → one instance per
+ * request lifecycle.
+ */
+export const createServerClient = cache(async () => {
   const cookieStore = await cookies();
   return createSupabaseServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,4 +56,4 @@ export async function createServerClient() {
       },
     },
   );
-}
+});

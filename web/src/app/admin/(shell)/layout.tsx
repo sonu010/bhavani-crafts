@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { requireAAL2, requireRole } from "@/lib/auth/require";
-import { isAuthError } from "@/lib/auth/errors";
-import { createServerClient } from "@/lib/db/server";
-import { redirect } from "next/navigation";
+import { requireAdminContext } from "@/lib/db/admin-context";
 import { AdminShell } from "./admin-shell";
 
 export const dynamic = "force-dynamic";
@@ -15,46 +12,29 @@ export const metadata: Metadata = {
 /**
  * Top layout for the gated admin workspace. Everything inside the
  * `(shell)` route group requires:
- *   - role ≥ admin (the storefront has no concept of editor/viewer-only
- *     pages yet; we keep the bar at admin for MVP)
+ *   - role ≥ admin
  *   - AAL2 session (TOTP verified)
  *
- * Failures bounce to /admin/forbidden (or /login if no session). Both
- * targets are SIBLINGS of `(shell)`, so they don't recursively re-hit
- * this layout's checks.
+ * Implementation goes through `requireAdminContext()` — the same helper
+ * the pages inside this group use. Because `createServerClient`,
+ * `getCurrentProfile`, and `requireAAL2` are all wrapped in React's
+ * `cache()`, the layout's auth round-trips and the page's auth round-
+ * trips dedupe within a single render pass. Saves ~500ms per nav.
+ *
+ * AuthError → redirect handling lives inside requireAdminContext (it
+ * inspects `err.redirectTo` / `err.code === "forbidden"` and calls
+ * Next's `redirect()` directly). That keeps the layout free of the
+ * try/catch ladder that previously duplicated the page's mapping.
  */
 export default async function GatedAdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServerClient();
-
-  try {
-    await requireAAL2(supabase);
-  } catch (err) {
-    // The proxy normally catches AAL1 before we get here, but the layout
-    // is the backstop for cases where the proxy was bypassed or the
-    // session became AAL1 mid-flight (forced re-auth, factor unenroll).
-    if (isAuthError(err) && err.redirectTo) {
-      redirect(err.redirectTo);
-    }
-    throw err;
-  }
-
-  let user: { email: string; role: string };
-  try {
-    const { user: u, profile } = await requireRole(supabase, "admin");
-    user = { email: u.email ?? "", role: profile.role };
-  } catch (err) {
-    if (isAuthError(err) && err.code === "forbidden") {
-      redirect("/admin/forbidden");
-    }
-    if (isAuthError(err) && err.redirectTo) {
-      redirect(err.redirectTo);
-    }
-    throw err;
-  }
-
-  return <AdminShell user={user}>{children}</AdminShell>;
+  const { user, profile } = await requireAdminContext();
+  return (
+    <AdminShell user={{ email: user.email ?? "", role: profile.role }}>
+      {children}
+    </AdminShell>
+  );
 }

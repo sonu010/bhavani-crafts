@@ -7,6 +7,7 @@ import {
   type AdminProductSort,
   type AdminProductStatus,
 } from "@/lib/db/admin/products";
+import { perfStart } from "@/lib/perf";
 import { FilterBar } from "./filter-bar";
 import { LoadMore } from "./load-more";
 import { ProductsTable } from "./products-table";
@@ -110,25 +111,45 @@ export default async function AdminProductsPage({
   const stock = pickOne(params.stock, VALID_STOCK);
   const source = pickOne(params.source, VALID_SOURCE);
 
+  const t = perfStart("/admin/products");
   // Gate before any service-role read. See lib/db/admin-context.ts —
   // Next 16's parallel layout/page fetching means a check in the parent
   // layout doesn't block the page's DB calls. Authorization belongs at
   // the data-access boundary.
   const { admin } = await requireAdminContext();
+  t.mark("auth");
+  // Time each query independently so the slow one is identifiable.
+  const tCounts = Date.now();
+  const countsP = countProductsByStatus(admin).then((v) => {
+    console.log(`[perf]   countProductsByStatus=${Date.now() - tCounts}ms`);
+    return v;
+  });
+  const tList = Date.now();
+  const pageP = listProductsAdmin(admin, {
+    status,
+    sort,
+    cursor,
+    q,
+    categoryId,
+    tagSlugs,
+    stock,
+    source,
+  }).then((v) => {
+    console.log(`[perf]   listProductsAdmin=${Date.now() - tList}ms`);
+    return v;
+  });
+  const tFilters = Date.now();
+  const filterOptionsP = getAdminFilterOptions(admin).then((v) => {
+    console.log(`[perf]   getAdminFilterOptions=${Date.now() - tFilters}ms`);
+    return v;
+  });
   const [counts, page, filterOptions] = await Promise.all([
-    countProductsByStatus(admin),
-    listProductsAdmin(admin, {
-      status,
-      sort,
-      cursor,
-      q,
-      categoryId,
-      tagSlugs,
-      stock,
-      source,
-    }),
-    getAdminFilterOptions(admin),
+    countsP,
+    pageP,
+    filterOptionsP,
   ]);
+  t.mark("queries");
+  t.end();
 
   // Preserve filter params on chip + load-more URL construction.
   const baseParams: Record<string, string> = {};
