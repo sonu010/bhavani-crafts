@@ -63,9 +63,17 @@ export async function requireAdminContext(
   // handles (no session → /login, AAL1 → /admin/2fa-setup or /auth/verify-2fa).
   // ForbiddenError has redirectTo=null and goes to /admin/forbidden via the
   // global error boundary.
+  //
+  // requireAAL2 (one mfa-AAL fetch) and requireRole (getUser + profile
+  // SELECT) are independent — neither needs the other's result. Run them
+  // in parallel to save one Supabase round-trip per admin nav. Promise.all
+  // rejects on first rejection, so the auth-error → redirect flow below
+  // stays correct.
   try {
-    await requireAAL2(supabase);
-    const { user, profile } = await requireRole(supabase, requiredRole);
+    const [, { user, profile }] = await Promise.all([
+      requireAAL2(supabase),
+      requireRole(supabase, requiredRole),
+    ]);
     const admin = createAdminClient();
     return { admin, supabase, user, profile };
   } catch (err) {
