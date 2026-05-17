@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -96,28 +97,30 @@ export function ProductsTable({ rows }: { rows: AdminProductRow[] }) {
                 <div className="size-12 shrink-0 rounded-md border border-husk-200 bg-husk-100 sm:size-14" />
               )}
 
-              {/* Title + meta */}
-              <div className="min-w-0 flex-1">
+              {/* Title + meta. min-w-0 lets this flex child shrink so
+                 truncate actually clamps; overflow-hidden is a belt to
+                 the suspenders for any descendant that escapes its
+                 own truncate. */}
+              <div className="min-w-0 flex-1 overflow-hidden">
                 <div
                   className="truncate text-sm font-medium text-bark-900 group-hover:underline sm:text-base"
                   title={row.name}
                 >
                   {row.name}
                 </div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500">
+                {/* Meta is one block-level line with whitespace-nowrap +
+                   overflow ellipsis. The earlier nested-flex layout
+                   meant individual truncate spans never shrank — they
+                   all wanted their intrinsic width and the row blew
+                   past the viewport on long category + SKU pairs. */}
+                <div className="mt-0.5 truncate text-xs text-stone-500">
                   {meta.map((m, i) => (
-                    <span key={i} className="flex items-center gap-1.5 truncate">
-                      {i > 0 ? <span aria-hidden>·</span> : null}
-                      {/* SKU rendered in mono; everything else in the body face */}
-                      <span
-                        className={
-                          (i === 1 && row.sku ? "font-mono " : "") +
-                          "truncate"
-                        }
-                      >
+                    <Fragment key={i}>
+                      {i > 0 ? <span aria-hidden> · </span> : null}
+                      <span className={i === 1 && row.sku ? "font-mono" : ""}>
                         {m}
                       </span>
-                    </span>
+                    </Fragment>
                   ))}
                 </div>
               </div>

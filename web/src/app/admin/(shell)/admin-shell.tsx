@@ -66,10 +66,16 @@ export function AdminShell({
         </nav>
       </aside>
 
-      {/* Main column */}
-      <div className="flex flex-1 flex-col">
+      {/* Main column. min-w-0 lets this flex child shrink below its
+         intrinsic content width — without it, any wide descendant
+         (long category names, long SKUs, etc.) pushes the page past
+         the viewport and the body picks up a horizontal scrollbar. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-2 border-b border-husk-200 bg-paper-0 px-3 sm:px-4">
-          <div className="flex items-center gap-3">
+          {/* Left cluster: hamburger + brand wordmark. min-w-0 so the
+             wordmark can truncate instead of pushing past the user
+             menu. */}
+          <div className="flex min-w-0 items-center gap-3">
             {/* Mobile hamburger */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger
@@ -121,7 +127,12 @@ export function AdminShell({
           <UserMenu email={user.email} role={user.role} />
         </header>
 
-        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6">{children}</main>
+        {/* min-w-0 again — `<main>` is the flex-col child that
+           actually holds page content, and the same shrink rule
+           applies. */}
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 sm:py-6">
+          {children}
+        </main>
       </div>
     </div>
   );
