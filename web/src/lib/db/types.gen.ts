@@ -999,6 +999,13 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      products_status_counts: {
+        Args: never
+        Returns: {
+          count: number
+          review_status: Database["public"]["Enums"]["review_status"]
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }

@@ -385,30 +385,22 @@ export type ProductStatusCounts = Record<AdminProductStatus, number>;
 export async function countProductsByStatus(
   supabase: SC,
 ): Promise<ProductStatusCounts> {
-  // Five parallel head-count queries — PostgREST doesn't support
-  // count(*) FILTER (WHERE …) directly. Acceptable: each is indexed by
-  // (review_status, deleted_at) and runs ~ms.
-  const statuses: AdminProductStatus[] = [
-    "draft",
-    "needs_review",
-    "ready_to_publish",
-    "published",
-    "archived",
-  ];
-  const counts = await Promise.all(
-    statuses.map((s) =>
-      supabase
-        .from("products")
-        .select("*", { count: "exact", head: true })
-        .is("deleted_at", null)
-        .eq("review_status", s),
-    ),
-  );
-  const out = {} as ProductStatusCounts;
-  for (let i = 0; i < statuses.length; i++) {
-    const { count, error } = counts[i];
-    if (error) throw new Error(`countProductsByStatus(${statuses[i]}): ${error.message}`);
-    out[statuses[i]] = count ?? 0;
+  // Single round-trip via the products_status_counts() RPC (0009). The
+  // previous implementation issued five parallel head-count queries,
+  // each paying the ~250ms Supabase network floor; one RPC trims the
+  // chip header off the page's critical path.
+  const { data, error } = await supabase.rpc("products_status_counts");
+  if (error) throw new Error(`countProductsByStatus: ${error.message}`);
+
+  const out: ProductStatusCounts = {
+    draft: 0,
+    needs_review: 0,
+    ready_to_publish: 0,
+    published: 0,
+    archived: 0,
+  };
+  for (const row of data ?? []) {
+    out[row.review_status as AdminProductStatus] = Number(row.count);
   }
   return out;
 }
