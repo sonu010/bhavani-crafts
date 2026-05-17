@@ -24,7 +24,11 @@ Last updated: 2026-05-16
 0007_indexes_views.sql           9 catalog indexes + category_with_descendants recursive view
 
 Live schema: 11 enums · 20 tables · 43 indexes · 36 functions
-Seed data:   7,780 products · 362 categories · 458 tags · 14,964 images · 8,181 variants
+
+Catalog (cleaned-fixture, source-of-truth target):
+             5,804 products · 353 categories · 14,969 images · 7,802 variants
+Live now (pre-cleaner; reseed pending — see follow-ups):
+             7,780 products · 362 categories · 14,964 images · 8,181 variants · 458 tags
              All is_published=false, source='justkraft_seed', RLS-blocked from anon
 ```
 

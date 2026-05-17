@@ -146,7 +146,7 @@ None.
 - Viewer → /admin/forbidden ✓ (shell layout's requireRole throws)
 - 70/70 vitest tests pass (was 63, +7 from T07a)
 
-**Performance:** the page issues two parallel queries (counts + page rows). Counts = 5 head-counts in parallel. Page = single select with category + thumbnail joins. Empirically returns in ~250ms against live (5,784 actual products on the live DB). Comfortably under the 500ms p50 budget.
+**Performance:** the page issues two parallel queries (counts + page rows). Counts = 5 head-counts in parallel. Page = single select with category + thumbnail joins. Empirically returns in ~250ms against live (7,780 products pre-cleaner — the figure will drop to 5,804 once the owner runs the reseed; cleaned fixture is in `data/justkraft-inventory/justkraft_products.cleaned.json`). Comfortably under the 500ms p50 budget.
 
 **The "Edit" link target `/admin/products/[id]/edit` 404s today** — that route lands in P2-T10–P2-T17 (the product editor stack). Acceptable until then; navigation back works via the sidebar.
 

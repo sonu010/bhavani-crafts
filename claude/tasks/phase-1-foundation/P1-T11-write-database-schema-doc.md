@@ -63,7 +63,7 @@ So instead: `web/scripts/dump-live-schema.mjs` queries what's reachable via the 
 - 20 tables present and accounted for
 - Enum values in use match the enum definitions (no orphan or stale values)
 - 7 migration files in `web/supabase/migrations/`, totals to ~87 KB of SQL
-- Seed counts: 7,780 products, 362 categories, 458 tags, 14,964 images, 8,181 variants
+- Seed counts (pre-cleaner snapshot): 7,780 products, 362 categories, 458 tags, 14,964 images, 8,181 variants. Cleaned-fixture target is 5,804 / 353 / — / 14,969 / 7,802 — reseed pending per `claude/progress.md` §"Follow-ups".
 
 For deeper structural verification (pg_indexes contents, pg_policies definitions, trigger code), `pnpm validate:migrations` re-applies the full chain against pglite Postgres 17 and asserts via smoke blocks in each migration. That's the closest thing we have to a "compare against pg_dump" without DB password access. Currently green: 7/7 migrations, 11 enums, 20 tables, 43 indexes, 36 functions.
 

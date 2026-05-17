@@ -401,6 +401,15 @@ By: web/scripts/dump-live-schema.mjs
 
 ## Row counts
 
+> **Snapshot — pre-cleaner.** Auto-generated 2026-05-16. The cleaned
+> fixture (`data/justkraft-inventory/justkraft_products.cleaned.json`,
+> 5,804 products / 353 categories / 14,969 images / 7,802 variants) is
+> the source-of-truth target; live still shows the pre-cleaner numbers
+> below until the owner runs the reseed (`node scripts/seed-from-
+> justkraft.mjs` from `web/`). Tracked in `claude/progress.md`
+> §"Follow-ups". Re-run `web/scripts/dump-live-schema.mjs` after reseed
+> to refresh this section.
+
 | Table | Rows |
 |---|---|
 | `profiles` | 0 |
