@@ -2,11 +2,11 @@
 id: P2-T03
 phase: 2
 title: Promote owner runbook (verified end-to-end)
-status: not_started
+status: in_progress
 depends_on: [P2-T02]
 estimate_hours: 0.5
 owner: ai
-last_updated: 2026-05-16
+last_updated: 2026-05-17
 ---
 
 # Goal
@@ -22,7 +22,7 @@ After this task, the owner can promote a freshly-signed-up account to `role='own
 # Files to touch
 
 - `claude/runbooks/promote-admin-user.md` (modified or new) — the verified runbook
-- `user/06-promote-owner-account.md` (new) — owner-facing one-pager that links into the runbook with hand-holding screenshots/labels
+- `user/09-promote-owner-account.md` (new) — owner-facing one-pager that links into the runbook with hand-holding screenshots/labels (slot `06-` was already taken by an earlier owner doc)
 
 # Implementation notes
 
@@ -64,4 +64,14 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — in_progress.** Doc deliverables landed; end-to-end browser verification is deferred until P2-T01 ships the actual sign-in flow.
+
+**What landed:**
+- `claude/runbooks/promote-admin-user.md` already existed from an earlier phase and matches the procedure. No edits needed.
+- `user/09-promote-owner-account.md` (this task) — owner-facing one-pager with the 60-second SQL procedure, role-table reference, and a troubleshooting checklist for the most-likely failure modes (no row, NULL role, stale cookie, TOTP loop).
+
+**Why `09-` and not `06-`:** the `user/` directory was numbered 00–08 before this task. The expanded P2-T00 referenced `06-promote-owner-account.md` from memory; in reality slot `06` is `06-next-steps-vercel-and-supabase.md`. Used the next free slot.
+
+**SQL portion already proven by P2-T02.** The runbook's load-bearing step is `UPDATE public.profiles SET role = 'owner' WHERE id = ...`. The P2-T02 test exercises the same UPDATE shape via service-role and confirms `profiles.role` flips + `is_admin()` returns the new role. So the SQL itself is verified — what isn't yet is the *owner's* browser flow (sign in → land on /admin/2fa-setup → enroll TOTP → land on /admin). That sequence needs T01 + T04 + T05 to exist before the owner can run it.
+
+**Flip to `done` when:** the owner has executed the runbook against the live project once after T01 ships and confirmed they land on `/admin` with role=owner and AAL2. Capture the verification timestamp (anonymized — no email) in this section before flipping.
