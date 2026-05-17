@@ -577,3 +577,156 @@ export async function updateProductGeneral(
     after: rowToEditing(data as unknown as RawEditingRow),
   };
 }
+
+// ─── Product editor — Category tab (P2-T12) ─────────────────────────
+
+export interface CategoryBadge {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export type UpdateProductCategoryResult =
+  | {
+      ok: true;
+      before: { categoryId: string | null; categorySlug: string | null };
+      after: { categoryId: string | null; categorySlug: string | null };
+    }
+  | { ok: false; error: { code: "not_found" | "category_not_found" } };
+
+/**
+ * Set or clear a product's category.
+ *
+ * Returns before/after { id, slug } so the caller can build the audit
+ * log + revalidate both the old + new category pages.
+ */
+export async function updateProductCategory(
+  supabase: SC,
+  productId: string,
+  categoryId: string | null,
+  actorId: string | null,
+): Promise<UpdateProductCategoryResult> {
+  // Lookup current category for the audit before-state.
+  const { data: current, error: curErr } = await supabase
+    .from("products")
+    .select("category_id, category:categories(slug)")
+    .eq("id", productId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (curErr) throw new Error(`updateProductCategory (lookup): ${curErr.message}`);
+  if (!current) return { ok: false, error: { code: "not_found" } };
+
+  type CurRow = { category_id: string | null; category: { slug: string } | null };
+  const cur = current as unknown as CurRow;
+  const beforeId = cur.category_id;
+  const beforeSlug = cur.category?.slug ?? null;
+
+  // If non-null, verify the target category exists + isn't soft-deleted.
+  let afterSlug: string | null = null;
+  if (categoryId !== null) {
+    const { data: target, error: tgtErr } = await supabase
+      .from("categories")
+      .select("slug")
+      .eq("id", categoryId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (tgtErr) throw new Error(`updateProductCategory (target): ${tgtErr.message}`);
+    if (!target) return { ok: false, error: { code: "category_not_found" } };
+    afterSlug = target.slug;
+  }
+
+  const { error: updErr } = await supabase
+    .from("products")
+    .update({ category_id: categoryId, updated_by: actorId })
+    .eq("id", productId);
+  if (updErr) throw new Error(`updateProductCategory (update): ${updErr.message}`);
+
+  return {
+    ok: true,
+    before: { categoryId: beforeId, categorySlug: beforeSlug },
+    after: { categoryId, categorySlug: afterSlug },
+  };
+}
+
+// ─── Tags helpers ───────────────────────────────────────────────────
+
+/** Current tags on a product. Returned sorted by slug for stable diffs. */
+export async function listTagsForProduct(
+  supabase: SC,
+  productId: string,
+): Promise<CategoryBadge[]> {
+  const { data, error } = await supabase
+    .from("product_tags")
+    .select("tag:tags!inner(id, slug, name)")
+    .eq("product_id", productId);
+  if (error) throw new Error(`listTagsForProduct: ${error.message}`);
+  const rows = (data as unknown as Array<{ tag: CategoryBadge }>) ?? [];
+  return rows
+    .map((r) => r.tag)
+    .filter((t) => t != null)
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+export type SetProductTagsResult =
+  | { ok: true; before: CategoryBadge[]; after: CategoryBadge[] }
+  | { ok: false; error: { code: "tag_not_found"; missingSlugs: string[] } };
+
+/**
+ * Replace a product's tag set with the given slugs.
+ *
+ * Diff-then-apply: compute current set, compute target set, INSERT
+ * additions, DELETE removals, leave unchanged ones alone. One audit
+ * log entry covers the whole swap; the caller does the insert.
+ */
+export async function setProductTags(
+  supabase: SC,
+  productId: string,
+  targetSlugs: string[],
+): Promise<SetProductTagsResult> {
+  const unique = Array.from(new Set(targetSlugs.map((s) => s.toLowerCase())));
+
+  // Resolve target slugs → tag rows.
+  let target: CategoryBadge[] = [];
+  if (unique.length > 0) {
+    const { data, error } = await supabase
+      .from("tags")
+      .select("id, slug, name")
+      .in("slug", unique)
+      .is("deleted_at", null);
+    if (error) throw new Error(`setProductTags (resolve): ${error.message}`);
+    target = (data ?? []) as CategoryBadge[];
+
+    const found = new Set(target.map((t) => t.slug));
+    const missing = unique.filter((s) => !found.has(s));
+    if (missing.length > 0) {
+      return { ok: false, error: { code: "tag_not_found", missingSlugs: missing } };
+    }
+  }
+
+  const before = await listTagsForProduct(supabase, productId);
+  const beforeIds = new Set(before.map((t) => t.id));
+  const afterIds = new Set(target.map((t) => t.id));
+
+  const toAdd = target.filter((t) => !beforeIds.has(t.id));
+  const toRemove = before.filter((t) => !afterIds.has(t.id));
+
+  if (toRemove.length > 0) {
+    const { error } = await supabase
+      .from("product_tags")
+      .delete()
+      .eq("product_id", productId)
+      .in(
+        "tag_id",
+        toRemove.map((t) => t.id),
+      );
+    if (error) throw new Error(`setProductTags (delete): ${error.message}`);
+  }
+  if (toAdd.length > 0) {
+    const rows = toAdd.map((t) => ({ product_id: productId, tag_id: t.id }));
+    const { error } = await supabase.from("product_tags").insert(rows);
+    if (error) throw new Error(`setProductTags (insert): ${error.message}`);
+  }
+
+  const after = target.slice().sort((a, b) => a.slug.localeCompare(b.slug));
+  return { ok: true, before, after };
+}
