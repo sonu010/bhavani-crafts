@@ -10,8 +10,8 @@
 - **Live preview:** https://bhavani-crafts-6cg92t4ki-sonu010s-projects.vercel.app/ (placeholder + `/api/health` green + `/design` 404 in prod)
 - **Production:** https://bhavani-crafts.vercel.app/ — legacy prototype, untouched
 - **CI:** both jobs green (`static` + `live`); secrets configured; runs on every push to `rebuild-v2`
-- **Live Supabase schema:** 11 enums · 20 tables · 43 indexes · 36 functions
-- **Catalog (cleaned-fixture, source of truth):** 5,804 products · 353 categories · 14,969 images · 7,802 variants. Live DB still shows the pre-cleaner 7,780 / 362 / 14,964 / 8,181 until owner runs the reseed (non-blocking; all rows unpublished + RLS-blocked).
+- **Live Supabase schema:** 11 enums · 20 tables · 45 indexes · 37 functions (after 0008 search indexes + 0009 status-count RPC)
+- **Catalog:** seeded from `data/justkraft-inventory/justkraft_products.cleaned.json` (~5.8K products). For exact live counts run `node web/scripts/count-live-products.mjs`; for the most-recent reseed totals see `data/justkraft-inventory/seed_report.json`. All rows are `is_published=false`, RLS-blocked from anon.
 
 ```
 rebuild-v2 head:  db75720  fix(ci): bump runner Node 20 → 22

@@ -23,13 +23,18 @@ Last updated: 2026-05-16
 0006_rls.sql                     RLS on all 20 tables; 33 policies; child-parent EXISTS pattern
 0007_indexes_views.sql           9 catalog indexes + category_with_descendants recursive view
 
-Live schema: 11 enums · 20 tables · 43 indexes · 36 functions
+Live schema: 11 enums · 20 tables · 45 indexes · 37 functions
+             (0008 added slug trigram + review_status index;
+              0009 added products_status_counts() RPC)
 
-Catalog (cleaned-fixture, source-of-truth target):
-             5,804 products · 353 categories · 14,969 images · 7,802 variants
-Live now (pre-cleaner; reseed pending — see follow-ups):
-             7,780 products · 362 categories · 14,964 images · 8,181 variants · 458 tags
-             All is_published=false, source='justkraft_seed', RLS-blocked from anon
+Catalog:     seeded from data/justkraft-inventory/justkraft_products.cleaned.json
+             (~5.8K products). All rows is_published=false, source='justkraft_seed',
+             RLS-blocked from anon.
+
+             Exact current counts:
+               node web/scripts/count-live-products.mjs       — live row counts
+               data/justkraft-inventory/seed_report.json      — last reseed totals
+               node web/scripts/dump-live-schema.mjs          — full schema snapshot
 ```
 
 ### Phase 1.5 — Continuous Integration
@@ -87,7 +92,7 @@ e40a3d8  P0-T02 + P0-T04: archive legacy prototype, scaffold fresh Next.js 16 ap
 
 ## Non-blocking follow-ups
 
-- **Re-seed live with the cleaned fixture.** A new `scripts/clean-justkraft-inventory.mjs` rejects 2,701 scrape-failure rows, normalizes 44 SKUs, repairs 16 mojibake names, dedupes 4 duplicates → **5,804 cleaned products** in `data/justkraft-inventory/justkraft_products.cleaned.json`. Live still has the **7,780 pre-cleaner products** from 2026-05-15. The seed script (`web/scripts/seed-from-justkraft.mjs`) is already pointed at the cleaned fixture; one `node scripts/seed-from-justkraft.mjs` from `web/` will wipe-and-reseed. Not urgent — all rows are unpublished + RLS-blocked, so the discrepancy doesn't affect the storefront. Schedule before P3 storefront work begins.
+- _(resolved 2026-05-17)_ ~~Re-seed live with the cleaned fixture.~~ Done — `scripts/clean-justkraft-inventory.mjs` rejected the scrape-failure rows + normalized SKUs into `data/justkraft-inventory/justkraft_products.cleaned.json`; the seed script chunked its cleanup pass to clear Supabase's statement timeout (commit `309826f`); live now reflects the cleaned fixture.
 
 ## Next 3 to work (Phase 2)
 

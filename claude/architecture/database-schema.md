@@ -396,42 +396,25 @@ See [security.md](security.md) §"RLS" for the full policies and the child-paren
 
 # Verified live state — Supabase project `lyycugadkxjtevmugqol`
 
-Generated: 2026-05-16T08:07:56.322Z
+Generated: 2026-05-16T08:07:56.322Z (structural appendix only — row
+counts moved out so they don't go stale).
 By: web/scripts/dump-live-schema.mjs
 
 ## Row counts
 
-> **Snapshot — pre-cleaner.** Auto-generated 2026-05-16. The cleaned
-> fixture (`data/justkraft-inventory/justkraft_products.cleaned.json`,
-> 5,804 products / 353 categories / 14,969 images / 7,802 variants) is
-> the source-of-truth target; live still shows the pre-cleaner numbers
-> below until the owner runs the reseed (`node scripts/seed-from-
-> justkraft.mjs` from `web/`). Tracked in `claude/progress.md`
-> §"Follow-ups". Re-run `web/scripts/dump-live-schema.mjs` after reseed
-> to refresh this section.
+Snapshot row counts are not pinned in this doc — they go stale every
+time the catalog gets edited and don't add value over running the live
+query. Use the diagnostics:
 
-| Table | Rows |
-|---|---|
-| `profiles` | 0 |
-| `categories` | 362 |
-| `products` | 7780 |
-| `attribute_definitions` | 7 |
-| `product_attributes` | 0 |
-| `product_images` | 14964 |
-| `product_options` | 0 |
-| `product_option_values` | 0 |
-| `product_variants` | 8181 |
-| `variant_option_values` | 0 |
-| `tags` | 458 |
-| `product_tags` | 7971 |
-| `audit_logs` | 0 |
-| `background_jobs` | 0 |
-| `job_events` | 0 |
-| `import_runs` | 0 |
-| `import_run_rows` | 0 |
-| `ai_generations` | 0 |
-| `search_synonyms` | 7 |
-| `search_logs` | 0 |
+```bash
+node web/scripts/count-live-products.mjs     # catalog tables, single page
+node web/scripts/dump-live-schema.mjs        # full inventory (every table + enum + index + policy)
+```
+
+Fixed-shape rows (don't change without a migration):
+- `attribute_definitions`: 7 seeded definitions (see 0002)
+- `search_synonyms`: 7 seeded groups (see 0005)
+- `profiles`: one row per `auth.users` row via `on_auth_user_created`
 
 ## Sample distinct values per enum column
 
