@@ -82,6 +82,93 @@ export const TagBadgeSchema = z.object({
 });
 export type TagBadge = z.infer<typeof TagBadgeSchema>;
 
+/**
+ * Slug regex — mirrors the CHECK constraint in 0001_init.sql.
+ * Lowercase alphanumeric + dashes, 1–80 chars, must start with [a-z0-9].
+ */
+export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{0,79}$/;
+
+/**
+ * SKU regex — uppercase letters/digits + dashes. Not enforced by the DB
+ * (the column is just `text NOT NULL UNIQUE`), but the admin form
+ * normalizes input to this shape so SKUs render predictably.
+ */
+export const SKU_REGEX = /^[A-Z0-9][A-Z0-9-]*$/;
+
+/**
+ * Editable-fields shape for the General tab (P2-T11).
+ *
+ * `.strict()` rejects unknown keys — category_id, images, variants,
+ * attributes belong to the other tabs and should never tunnel through
+ * the General save action.
+ *
+ * Cross-field rules (compare_at > base price, max_order >= min_order)
+ * apply via `.superRefine` on the exported wrapped schema.
+ */
+export const ProductEditInputSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .max(200, "Name must be 200 characters or fewer"),
+    slug: z
+      .string()
+      .min(1, "Slug is required")
+      .max(80, "Slug must be 80 characters or fewer")
+      .regex(SLUG_REGEX, "Lowercase letters, digits, and dashes only"),
+    sku: z
+      .string()
+      .min(1, "SKU is required")
+      .regex(SKU_REGEX, "Uppercase letters, digits, and dashes only"),
+    short_description: z
+      .string()
+      .max(280, "Short description must be 280 characters or fewer")
+      .nullable(),
+    description: z.string().nullable(),
+    base_price_inr: z.number().int().nonnegative().nullable(),
+    compare_at_price_inr: z.number().int().nonnegative().nullable(),
+    stock_status: StockStatusSchema,
+    stock_quantity: z.number().int().nonnegative().nullable(),
+    low_stock_threshold: z.number().int().nonnegative(),
+    allow_backorder: z.boolean(),
+    min_order_qty: z.number().int().positive(),
+    max_order_qty: z.number().int().positive().nullable(),
+    meta_title: z.string().max(60).nullable(),
+    meta_description: z.string().max(160).nullable(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (
+      data.base_price_inr != null &&
+      data.compare_at_price_inr != null &&
+      data.compare_at_price_inr <= data.base_price_inr
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Compare-at price must be greater than the base price",
+        path: ["compare_at_price_inr"],
+      });
+    }
+    if (data.max_order_qty != null && data.max_order_qty < data.min_order_qty) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Max order qty must be at least the min order qty",
+        path: ["max_order_qty"],
+      });
+    }
+  });
+
+export type ProductEditInput = z.infer<typeof ProductEditInputSchema>;
+
+/** Helper — slugify a name into the canonical admin slug shape. */
+export function slugifyForProduct(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 /** Full product detail (PDP). Embeds category, images, variants, tags. */
 export const ProductDetailSchema = z.object({
   id: z.string().uuid(),

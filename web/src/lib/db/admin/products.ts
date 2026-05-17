@@ -21,6 +21,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
 import { getDescendantIds } from "@/lib/db/categories";
 import { buildTsquery, fetchSynonyms, tokenize } from "@/lib/db/search";
+import {
+  ProductEditInputSchema,
+  type ProductEditInput,
+} from "@/lib/schemas/product";
 
 type SC = SupabaseClient<Database>;
 type StockStatus = Database["public"]["Enums"]["stock_status"];
@@ -421,4 +425,155 @@ export async function countProductsByStatus(
     out[row.review_status as AdminProductStatus] = Number(row.count);
   }
   return out;
+}
+
+// ─── Product editor — General tab (P2-T11) ──────────────────────────
+
+/**
+ * Editable shape returned to the General tab. Mirrors
+ * ProductEditInputSchema's keys + adds id/category_slug for the
+ * revalidation path lookup.
+ */
+export type AdminProductForEditing = ProductEditInput & {
+  id: string;
+  category_slug: string | null;
+};
+
+const PRODUCT_EDIT_SELECT =
+  "id, name, slug, sku, short_description, description, base_price_inr, " +
+  "compare_at_price_inr, stock_status, stock_quantity, low_stock_threshold, " +
+  "allow_backorder, min_order_qty, max_order_qty, meta_title, meta_description, " +
+  "category:categories(slug)";
+
+type RawEditingRow = {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  short_description: string | null;
+  description: string | null;
+  base_price_inr: number | null;
+  compare_at_price_inr: number | null;
+  stock_status: Database["public"]["Enums"]["stock_status"];
+  stock_quantity: number | null;
+  low_stock_threshold: number;
+  allow_backorder: boolean;
+  min_order_qty: number;
+  max_order_qty: number | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  category: { slug: string } | null;
+};
+
+function rowToEditing(raw: RawEditingRow): AdminProductForEditing {
+  return {
+    id: raw.id,
+    name: raw.name,
+    slug: raw.slug,
+    sku: raw.sku,
+    short_description: raw.short_description,
+    description: raw.description,
+    base_price_inr: raw.base_price_inr,
+    compare_at_price_inr: raw.compare_at_price_inr,
+    stock_status: raw.stock_status,
+    stock_quantity: raw.stock_quantity,
+    low_stock_threshold: raw.low_stock_threshold,
+    allow_backorder: raw.allow_backorder,
+    min_order_qty: raw.min_order_qty,
+    max_order_qty: raw.max_order_qty,
+    meta_title: raw.meta_title,
+    meta_description: raw.meta_description,
+    category_slug: raw.category?.slug ?? null,
+  };
+}
+
+/**
+ * Fetch a product's editable fields. Used by the General tab on render
+ * and again inside the save action to capture the `before_json` for
+ * audit logging.
+ */
+export async function getProductForEditing(
+  supabase: SC,
+  id: string,
+): Promise<AdminProductForEditing | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_EDIT_SELECT)
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw new Error(`getProductForEditing(${id}): ${error.message}`);
+  if (!data) return null;
+  return rowToEditing(data as unknown as RawEditingRow);
+}
+
+export type UpdateProductError =
+  | { code: "validation"; issues: import("zod").ZodIssue[] }
+  | { code: "not_found" }
+  | { code: "slug_in_use" }
+  | { code: "sku_in_use" }
+  | { code: "constraint"; message: string };
+
+export type UpdateProductResult =
+  | { ok: true; before: AdminProductForEditing; after: AdminProductForEditing }
+  | { ok: false; error: UpdateProductError };
+
+/**
+ * Update a product's General-tab fields.
+ *
+ * - Validates `patch` through ProductEditInputSchema (server-side; never
+ *   trust the client). Cross-field rules (compare > base, max >= min)
+ *   are part of the schema.
+ * - SELECTs the row first to capture the audit-log `before_json`.
+ * - UPDATEs with the patch + actor stamp.
+ * - Maps Postgres errors (23505 unique, 23514 check) to typed result
+ *   shapes the caller can render as inline field errors.
+ *
+ * Caller is responsible for the audit_logs INSERT and revalidation.
+ * Splitting this keeps the function pure-ish: one table, one update.
+ */
+export async function updateProductGeneral(
+  supabase: SC,
+  id: string,
+  patch: unknown,
+  /** Profile id of the actor. Null is allowed (FK is ON DELETE SET NULL),
+   *  but production callers always have an id from requireAdminContext. */
+  actorId: string | null,
+): Promise<UpdateProductResult> {
+  const parsed = ProductEditInputSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: { code: "validation", issues: parsed.error.issues } };
+  }
+  const input = parsed.data;
+
+  const before = await getProductForEditing(supabase, id);
+  if (!before) {
+    return { ok: false, error: { code: "not_found" } };
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .update({ ...input, updated_by: actorId })
+    .eq("id", id)
+    .select(PRODUCT_EDIT_SELECT)
+    .single();
+
+  if (error) {
+    // Postgres SQLSTATE on Supabase responses comes through as `code`.
+    if (error.code === "23505") {
+      const m = (error.message || "").toLowerCase();
+      if (m.includes("slug")) return { ok: false, error: { code: "slug_in_use" } };
+      if (m.includes("sku")) return { ok: false, error: { code: "sku_in_use" } };
+    }
+    if (error.code === "23514") {
+      return { ok: false, error: { code: "constraint", message: error.message } };
+    }
+    throw new Error(`updateProductGeneral: ${error.message}`);
+  }
+
+  return {
+    ok: true,
+    before,
+    after: rowToEditing(data as unknown as RawEditingRow),
+  };
 }
