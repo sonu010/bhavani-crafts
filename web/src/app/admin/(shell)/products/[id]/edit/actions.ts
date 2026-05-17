@@ -22,9 +22,11 @@ import {
   getProductByIdBasic,
 } from "@/lib/db/products";
 import {
+  setProductAttributes,
   setProductTags,
   updateProductCategory,
   updateProductGeneral,
+  type AttributeValueInput,
 } from "@/lib/db/admin/products";
 
 export type SaveProductGeneralResult =
@@ -194,5 +196,48 @@ export async function saveProductTags(
   updateTag("products");
   if (prod) revalidatePath(`/p/${prod.slug}`);
 
+  return { ok: true };
+}
+
+// ─── Attributes tab (P2-T13) ────────────────────────────────────────
+
+export type SaveProductAttributesResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error:
+        | { code: "validation"; issues: Array<{ attribute_id: string; message: string }> }
+        | { code: "definition_not_found"; missingIds: string[] }
+        | { code: "select_value_invalid"; attributeId: string; allowed: string[]; got: string };
+    };
+
+export async function saveProductAttributes(
+  id: string,
+  attrs: AttributeValueInput[],
+): Promise<SaveProductAttributesResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await setProductAttributes(admin, id, attrs);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.set_attributes",
+    entity_type: "product",
+    entity_id: id,
+    before_json: result.before as never,
+    after_json: result.after as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`saveProductAttributes audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, id);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
   return { ok: true };
 }

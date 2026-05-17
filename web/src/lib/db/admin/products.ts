@@ -733,3 +733,231 @@ export async function setProductTags(
   const after = target.slice().sort((a, b) => a.slug.localeCompare(b.slug));
   return { ok: true, before, after };
 }
+
+// ─── Product editor — Attributes tab (P2-T13) ───────────────────────
+
+/**
+ * One attribute value as submitted from the form.
+ *
+ * For text/select: pass `value_text`. For number: `value_number`. For
+ * boolean: `value_boolean`. Empty/null means "remove this attribute"
+ * — the row gets deleted, never stored as a null-valued row.
+ */
+export interface AttributeValueInput {
+  attribute_id: string;
+  value_text?: string | null;
+  value_number?: number | null;
+  value_boolean?: boolean | null;
+}
+
+export interface ResolvedAttributeRow {
+  attribute_id: string;
+  attribute_slug: string;
+  attribute_name: string;
+  attribute_type: import("@/lib/db/attributes").AttributeType;
+  value_text: string | null;
+  value_number: number | null;
+  value_boolean: boolean | null;
+}
+
+export type SetProductAttributesError =
+  | { code: "validation"; issues: Array<{ attribute_id: string; message: string }> }
+  | { code: "definition_not_found"; missingIds: string[] }
+  | { code: "select_value_invalid"; attributeId: string; allowed: string[]; got: string };
+
+export type SetProductAttributesResult =
+  | {
+      ok: true;
+      before: ResolvedAttributeRow[];
+      after: ResolvedAttributeRow[];
+    }
+  | { ok: false; error: SetProductAttributesError };
+
+/**
+ * Validate + replace a product's attribute set.
+ *
+ * Algorithm:
+ *   1. Resolve definitions for every attribute_id in `attrs` so we can
+ *      validate each value against its declared type + options_json.
+ *   2. Reject unknowns + type/option mismatches before any write — no
+ *      partial application.
+ *   3. Split into rows that are present-with-value (UPSERT-shape) and
+ *      "should not exist" (those with all-null values → DELETE).
+ *   4. Delete the not-present + the not-mentioned existing rows.
+ *   5. Upsert the present-with-value rows.
+ *   6. Re-read the joined view for the audit log's after-shape.
+ *
+ * Replace-semantics, like setProductTags: attributes not mentioned in
+ * the call are removed.
+ */
+export async function setProductAttributes(
+  supabase: SC,
+  productId: string,
+  attrs: AttributeValueInput[],
+): Promise<SetProductAttributesResult> {
+  if (attrs.length === 0) {
+    // Replace with nothing → delete everything for this product.
+    const before = await readProductAttributesResolved(supabase, productId);
+    const { error } = await supabase
+      .from("product_attributes")
+      .delete()
+      .eq("product_id", productId);
+    if (error) throw new Error(`setProductAttributes (delete-all): ${error.message}`);
+    return { ok: true, before, after: [] };
+  }
+
+  // 1. Resolve definitions for each attribute_id.
+  const ids = Array.from(new Set(attrs.map((a) => a.attribute_id)));
+  const { data: defsData, error: defsErr } = await supabase
+    .from("attribute_definitions")
+    .select("id, slug, name, type, options_json")
+    .in("id", ids);
+  if (defsErr) throw new Error(`setProductAttributes (defs): ${defsErr.message}`);
+  const defs = defsData ?? [];
+
+  const foundIds = new Set(defs.map((d) => d.id));
+  const missingIds = ids.filter((id) => !foundIds.has(id));
+  if (missingIds.length > 0) {
+    return { ok: false, error: { code: "definition_not_found", missingIds } };
+  }
+
+  // 2. Validate each attribute value against its type.
+  const defById = new Map(defs.map((d) => [d.id, d]));
+  const issues: Array<{ attribute_id: string; message: string }> = [];
+
+  // Rows to insert/upsert; null-valued attrs are dropped entirely.
+  const toUpsert: Array<{
+    product_id: string;
+    attribute_id: string;
+    value_text: string | null;
+    value_number: number | null;
+    value_boolean: boolean | null;
+  }> = [];
+
+  for (const input of attrs) {
+    const def = defById.get(input.attribute_id);
+    if (!def) continue; // already covered by missingIds above
+
+    const isEmpty =
+      (input.value_text == null || input.value_text === "") &&
+      input.value_number == null &&
+      input.value_boolean == null;
+    if (isEmpty) continue; // skip — will be removed via the delete pass
+
+    const row = {
+      product_id: productId,
+      attribute_id: input.attribute_id,
+      value_text: null as string | null,
+      value_number: null as number | null,
+      value_boolean: null as boolean | null,
+    };
+
+    if (def.type === "text") {
+      if (typeof input.value_text !== "string") {
+        issues.push({ attribute_id: def.id, message: "Expected text" });
+        continue;
+      }
+      if (input.value_text.length > 500) {
+        issues.push({ attribute_id: def.id, message: "Text must be 500 characters or fewer" });
+        continue;
+      }
+      row.value_text = input.value_text;
+    } else if (def.type === "number") {
+      const n = input.value_number;
+      if (n == null || !Number.isFinite(n)) {
+        issues.push({ attribute_id: def.id, message: "Expected a finite number" });
+        continue;
+      }
+      row.value_number = n;
+    } else if (def.type === "boolean") {
+      if (typeof input.value_boolean !== "boolean") {
+        issues.push({ attribute_id: def.id, message: "Expected a boolean" });
+        continue;
+      }
+      row.value_boolean = input.value_boolean;
+    } else if (def.type === "select") {
+      const allowed = Array.isArray(def.options_json)
+        ? (def.options_json as string[])
+        : [];
+      const v = input.value_text;
+      if (typeof v !== "string" || !allowed.includes(v)) {
+        return {
+          ok: false,
+          error: {
+            code: "select_value_invalid",
+            attributeId: def.id,
+            allowed,
+            got: v ?? "",
+          },
+        };
+      }
+      row.value_text = v;
+    }
+
+    toUpsert.push(row);
+  }
+
+  if (issues.length > 0) {
+    return { ok: false, error: { code: "validation", issues } };
+  }
+
+  const before = await readProductAttributesResolved(supabase, productId);
+
+  // 3. Delete: every existing row whose attribute_id isn't in our
+  // upsert set goes away. Replace-semantics.
+  const keepIds = new Set(toUpsert.map((r) => r.attribute_id));
+  const toDeleteIds = before
+    .filter((r) => !keepIds.has(r.attribute_id))
+    .map((r) => r.attribute_id);
+  if (toDeleteIds.length > 0) {
+    const { error } = await supabase
+      .from("product_attributes")
+      .delete()
+      .eq("product_id", productId)
+      .in("attribute_id", toDeleteIds);
+    if (error) throw new Error(`setProductAttributes (delete): ${error.message}`);
+  }
+
+  if (toUpsert.length > 0) {
+    const { error } = await supabase
+      .from("product_attributes")
+      .upsert(toUpsert, { onConflict: "product_id,attribute_id" });
+    if (error) throw new Error(`setProductAttributes (upsert): ${error.message}`);
+  }
+
+  const after = await readProductAttributesResolved(supabase, productId);
+  return { ok: true, before, after };
+}
+
+async function readProductAttributesResolved(
+  supabase: SC,
+  productId: string,
+): Promise<ResolvedAttributeRow[]> {
+  const { data, error } = await supabase
+    .from("product_attributes")
+    .select(
+      "attribute_id, value_text, value_number, value_boolean, definition:attribute_definitions!inner(slug, name, type)",
+    )
+    .eq("product_id", productId);
+  if (error) throw new Error(`readProductAttributesResolved: ${error.message}`);
+  type Raw = {
+    attribute_id: string;
+    value_text: string | null;
+    value_number: number | null;
+    value_boolean: boolean | null;
+    definition: { slug: string; name: string; type: import("@/lib/db/attributes").AttributeType } | null;
+  };
+  const rows = (data as unknown as Raw[]) ?? [];
+  return rows
+    .filter((r) => r.definition)
+    .map((r) => ({
+      attribute_id: r.attribute_id,
+      attribute_slug: r.definition!.slug,
+      attribute_name: r.definition!.name,
+      attribute_type: r.definition!.type,
+      value_text: r.value_text,
+      value_number: r.value_number,
+      value_boolean: r.value_boolean,
+    }))
+    .sort((a, b) => a.attribute_slug.localeCompare(b.attribute_slug));
+}
