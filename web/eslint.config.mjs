@@ -26,6 +26,7 @@ const restrictAdminClient = {
     "src/app/auth/**",
     "src/lib/auth/audit.ts",
     "src/lib/db/admin.ts",
+    "src/lib/db/admin-context.ts",
   ],
   rules: {
     "no-restricted-imports": [

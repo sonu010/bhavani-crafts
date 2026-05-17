@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/db/admin";
+import { requireAdminContext } from "@/lib/db/admin-context";
 import {
   countProductsByStatus,
   decodeCursor,
@@ -110,10 +110,14 @@ export default async function AdminProductsPage({
   const stock = pickOne(params.stock, VALID_STOCK);
   const source = pickOne(params.source, VALID_SOURCE);
 
-  const supabase = createAdminClient();
+  // Gate before any service-role read. See lib/db/admin-context.ts —
+  // Next 16's parallel layout/page fetching means a check in the parent
+  // layout doesn't block the page's DB calls. Authorization belongs at
+  // the data-access boundary.
+  const { admin } = await requireAdminContext();
   const [counts, page, filterOptions] = await Promise.all([
-    countProductsByStatus(supabase),
-    listProductsAdmin(supabase, {
+    countProductsByStatus(admin),
+    listProductsAdmin(admin, {
       status,
       sort,
       cursor,
@@ -123,7 +127,7 @@ export default async function AdminProductsPage({
       stock,
       source,
     }),
-    getAdminFilterOptions(supabase),
+    getAdminFilterOptions(admin),
   ]);
 
   // Preserve filter params on chip + load-more URL construction.

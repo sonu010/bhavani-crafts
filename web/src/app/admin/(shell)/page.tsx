@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/db/admin";
+import { requireAdminContext } from "@/lib/db/admin-context";
 import {
   getAISpendMTD,
   getBrokenImagesCount,
@@ -30,7 +30,11 @@ export const dynamic = "force-dynamic";
  * /admin/*).
  */
 export default async function AdminDashboardPage() {
-  const supabase = createAdminClient();
+  // Gate: requireAdminContext blocks the service-role read until role +
+  // AAL are verified. Without this, Next 16's parallel layout/page
+  // fetching means the DB call could fire before the layout's redirect
+  // wins (security boundary in the wrong layer).
+  const { admin } = await requireAdminContext();
   const [
     catalog,
     zeroResultSearches,
@@ -39,12 +43,12 @@ export default async function AdminDashboardPage() {
     brokenImagesCount,
     runningJobs,
   ] = await Promise.all([
-    getCatalogCounts(supabase),
-    getZeroResultSearches(supabase),
-    getMutationsThisWeek(supabase),
-    getAISpendMTD(supabase),
-    getBrokenImagesCount(supabase),
-    listRunningJobs(supabase),
+    getCatalogCounts(admin),
+    getZeroResultSearches(admin),
+    getMutationsThisWeek(admin),
+    getAISpendMTD(admin),
+    getBrokenImagesCount(admin),
+    listRunningJobs(admin),
   ]);
 
   return (
