@@ -2,7 +2,7 @@
 id: P2-T13
 phase: 2
 title: Product editor — attributes
-status: not_started
+status: done
 depends_on: [P2-T11]
 estimate_hours: 3
 owner: ai
@@ -105,4 +105,32 @@ None.
 
 # Notes for next agent
 
-(empty)
+**2026-05-17 — DONE.** Two sub-commits:
+- `2b698e1` (T13a) — `lib/db/attributes.ts` + `setProductAttributes` + `saveProductAttributes` action + 8 integration tests
+- this commit (T13b) — `AttributeInput` (type-discriminated) + `AttributesTab` + page two-stage fetch plumb
+
+**Per-type input rendering (`_attrs/attribute-input.tsx`):**
+- text → shadcn `Input`
+- number → `Input type="number"` with `unit` suffix label rendered alongside
+- boolean → native checkbox styled with `accent-teal-800` (the shadcn `Switch` isn't installed)
+- select → native `<select>` populated from `options_json` with a "— Not set —" sentinel that clears the value
+
+The "Yes" / no-checkbox-checked / select-cleared all map to an all-null `AttributeValue` which the data layer drops (no null-valued rows in `product_attributes`). Replace-semantics throughout.
+
+**Two-stage fetch on the page** — the editor page needs `product.category_id` before it can scope `listApplicableAttributes`. So:
+1. Stage 1: `getProductForEditing(admin, id)` (sequential).
+2. Stage 2: Promise.all over the other 5 queries (`getCategoryTree`, `tags select`, `listTagsForProduct`, `listApplicableAttributes`, `getProductAttributes`).
+
+The extra round-trip vs. one-stage costs ~100ms (server `[perf] fetch` went from 188 → 286-311ms). Still warm wall-clock <1s, well within the budget.
+
+**`AttributesTab` data flow:**
+- Initial `Map<attribute_id, AttributeValue>` derived from `initialValues`.
+- Local `values` state mirrors that; `savedMap` is the baseline that advances on successful save.
+- Per-field error map keyed by `attribute_id`; errors clear on edit.
+- Dirty diff iterates `definitions` (not `values.keys()`) so newly-rendered attribute slots count toward dirtiness correctly.
+
+**Empty state:** when no applicable definitions exist for the product's category + globals, the tab renders a friendly message + a link to `/admin/attributes` (P2-T22's surface). If no category yet, the message says so.
+
+**Smoke (warm):** editor wall-clock 537-755ms, server `[perf] total ~521ms`. 112/112 tests pass; tsc + lint + build all clean.
+
+**Inline-add-from-tab deferred to P2-T22.** Just like T12's tag-inline-create, T13's "create a new attribute on the fly" is left for the dedicated admin in P2-T22.

@@ -4,6 +4,10 @@ import {
   getProductForEditing,
   listTagsForProduct,
 } from "@/lib/db/admin/products";
+import {
+  getProductAttributes,
+  listApplicableAttributes,
+} from "@/lib/db/attributes";
 import { getCategoryTree } from "@/lib/db/categories";
 import { perfStart } from "@/lib/perf";
 import { ProductEditor } from "./product-editor";
@@ -48,12 +52,22 @@ export default async function ProductEditPage({
   const { admin } = await requireAdminContext();
   t.mark("auth");
 
-  // Full editable shape + Category-tab data in parallel. The four
-  // queries together still beat a per-tab-on-mount fetch model since
-  // they share connection-pool capacity. 362 categories + ~458 tags is
-  // small enough to ship to the client wholesale.
-  const [product, categoryTree, allTagsRes, currentTags] = await Promise.all([
-    getProductForEditing(admin, id),
+  // Two-stage fetch: the product first (we need category_id to scope
+  // applicable attribute definitions), then everything else in
+  // parallel. Stage-2 queries don't depend on each other so the cost
+  // is bounded by the slowest single round-trip.
+  const product = await getProductForEditing(admin, id);
+  if (!product) {
+    notFound();
+  }
+
+  const [
+    categoryTree,
+    allTagsRes,
+    currentTags,
+    attributeDefs,
+    attributeValues,
+  ] = await Promise.all([
     getCategoryTree(admin),
     admin
       .from("tags")
@@ -61,6 +75,8 @@ export default async function ProductEditPage({
       .is("deleted_at", null)
       .order("name", { ascending: true }),
     listTagsForProduct(admin, id),
+    listApplicableAttributes(admin, product.category_id),
+    getProductAttributes(admin, id),
   ]);
   if (allTagsRes.error) {
     throw new Error(`load tags: ${allTagsRes.error.message}`);
@@ -68,10 +84,6 @@ export default async function ProductEditPage({
   const allTags = allTagsRes.data ?? [];
   t.mark("fetch");
   t.end();
-
-  if (!product) {
-    notFound();
-  }
 
   const tabRaw = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const initialTab = pickTab(tabRaw ?? null);
@@ -89,6 +101,8 @@ export default async function ProductEditPage({
       categoryTree={categoryTree}
       allTags={allTags}
       currentTags={currentTags}
+      attributeDefs={attributeDefs}
+      attributeValues={attributeValues}
       initialTab={initialTab}
       backHref={backHref}
     />

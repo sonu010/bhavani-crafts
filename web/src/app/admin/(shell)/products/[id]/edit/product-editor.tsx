@@ -9,6 +9,10 @@ import type {
   AdminProductForEditing,
   CategoryBadge,
 } from "@/lib/db/admin/products";
+import type {
+  AttributeDefinition,
+  ProductAttributeRow,
+} from "@/lib/db/attributes";
 import type { CategoryTreeNode } from "@/lib/schemas/category";
 import { AttributesTab } from "./_tabs/attributes";
 import { CategoryTab } from "./_tabs/category";
@@ -34,6 +38,8 @@ export function ProductEditor({
   categoryTree,
   allTags,
   currentTags,
+  attributeDefs,
+  attributeValues,
   initialTab,
   backHref,
 }: {
@@ -41,6 +47,8 @@ export function ProductEditor({
   categoryTree: CategoryTreeNode[];
   allTags: Array<{ slug: string; name: string }>;
   currentTags: CategoryBadge[];
+  attributeDefs: AttributeDefinition[];
+  attributeValues: ProductAttributeRow[];
   initialTab: EditorTab;
   backHref: string;
 }) {
@@ -113,7 +121,14 @@ export function ProductEditor({
           />
         </TabsContent>
         <TabsContent value="attributes">
-          <AttributesTab />
+          <AttributesTab
+            productId={product.id}
+            categorySlug={product.category_slug}
+            definitions={attributeDefs}
+            initialValues={attributeValues}
+            onDirty={markDirty}
+            onClean={markClean}
+          />
         </TabsContent>
         <TabsContent value="variants">
           <VariantsTab />
