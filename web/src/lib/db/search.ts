@@ -91,6 +91,64 @@ export function buildTsquery(
     .join(" & ");
 }
 
+/**
+ * Look up synonyms for the given tokens, bidirectionally.
+ *
+ * search_synonyms rows are equivalence groups: `term` plus every entry
+ * in `synonyms` are all interchangeable. The schema seeded canonical →
+ * variant only (e.g. term="mould", synonyms=["mold", "molds", "moulds"]),
+ * so a token-on-`term` lookup misses queries that use a variant ("mold"
+ * → no row found).
+ *
+ * Fix: query both directions. `.in('term', tokens)` catches canonical
+ * matches; `.overlaps('synonyms', tokens)` catches variant matches.
+ * Merge the rows and, for each token-matching lexeme, map it to the
+ * other members of its equivalence group.
+ *
+ * Returns Map<token, otherLexemes[]>. buildTsquery consumes this shape.
+ */
+export async function fetchSynonyms(
+  supabase: SC,
+  tokens: string[],
+): Promise<Map<string, string[]>> {
+  if (tokens.length === 0) return new Map();
+
+  const [forward, reverse] = await Promise.all([
+    supabase.from("search_synonyms").select("term, synonyms").in("term", tokens),
+    supabase
+      .from("search_synonyms")
+      .select("term, synonyms")
+      .overlaps("synonyms", tokens),
+  ]);
+  if (forward.error) throw new Error(`search_synonyms (forward): ${forward.error.message}`);
+  if (reverse.error) throw new Error(`search_synonyms (reverse): ${reverse.error.message}`);
+
+  // Dedupe rows; `term` is the unique key on the table.
+  const seen = new Set<string>();
+  const groups: Array<{ term: string; synonyms: string[] }> = [];
+  for (const row of [...(forward.data ?? []), ...(reverse.data ?? [])] as Array<{
+    term: string;
+    synonyms: string[];
+  }>) {
+    if (seen.has(row.term)) continue;
+    seen.add(row.term);
+    groups.push(row);
+  }
+
+  const map = new Map<string, string[]>();
+  const tokenSet = new Set(tokens);
+  for (const { term, synonyms } of groups) {
+    const lexemes = [term, ...(synonyms ?? [])];
+    for (const lex of lexemes) {
+      if (!tokenSet.has(lex)) continue;
+      const others = lexemes.filter((x) => x !== lex);
+      const existing = map.get(lex) ?? [];
+      map.set(lex, [...new Set([...existing, ...others])]);
+    }
+  }
+  return map;
+}
+
 export async function searchProducts(
   supabase: SC,
   query: string,
@@ -103,21 +161,7 @@ export async function searchProducts(
     return { query, expanded: "", items: [] };
   }
 
-  // Fetch synonyms for the tokens we actually have.
-  const { data: synonymRows, error: synErr } = await supabase
-    .from("search_synonyms")
-    .select("term, synonyms")
-    .in("term", tokens);
-  if (synErr) {
-    throw new Error(`search_synonyms lookup failed: ${synErr.message}`);
-  }
-  const synonymMap = new Map<string, string[]>();
-  for (const row of (synonymRows ?? []) as Array<{
-    term: string;
-    synonyms: string[];
-  }>) {
-    synonymMap.set(row.term, row.synonyms);
-  }
+  const synonymMap = await fetchSynonyms(supabase, tokens);
 
   const expanded = buildTsquery(tokens, synonymMap);
   if (!expanded) {

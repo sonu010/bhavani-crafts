@@ -20,7 +20,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
 import { getDescendantIds } from "@/lib/db/categories";
-import { buildTsquery, tokenize } from "@/lib/db/search";
+import { buildTsquery, fetchSynonyms, tokenize } from "@/lib/db/search";
 
 type SC = SupabaseClient<Database>;
 type StockStatus = Database["public"]["Enums"]["stock_status"];
@@ -143,7 +143,11 @@ export function decodeCursor(token: string | null | undefined): AdminCursor | nu
  */
 async function candidateIdsForQuery(supabase: SC, q: string): Promise<string[]> {
   const tokens = tokenize(q);
-  const tsquery = tokens.length > 0 ? buildTsquery(tokens, new Map()) : "";
+  // Synonyms — fetched bidirectionally so variant-spellings ("mold" vs
+  // "mould") expand both ways. Matches what the public storefront search
+  // does in lib/db/search.ts.
+  const synonymMap = await fetchSynonyms(supabase, tokens);
+  const tsquery = tokens.length > 0 ? buildTsquery(tokens, synonymMap) : "";
 
   const slugRes = await supabase
     .from("products")
