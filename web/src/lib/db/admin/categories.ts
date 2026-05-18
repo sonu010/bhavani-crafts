@@ -15,6 +15,10 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
+import {
+  CategoryEditInputSchema,
+  type CategoryEditInput,
+} from "@/lib/schemas/category";
 
 type SC = SupabaseClient<Database>;
 
@@ -177,4 +181,208 @@ export async function softDeleteCategory(
     .eq("id", categoryId);
   if (upd.error) throw new Error(`softDeleteCategory (update): ${upd.error.message}`);
   return { ok: true };
+}
+
+export type CategoryEditableRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent_id: string | null;
+  sort_order: number;
+  image_url: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+};
+
+export async function getCategoryForEditing(
+  supabase: SC,
+  id: string,
+): Promise<CategoryEditableRow | null> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select(
+      "id, name, slug, description, parent_id, sort_order, image_url, meta_title, meta_description",
+    )
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw new Error(`getCategoryForEditing: ${error.message}`);
+  return data ?? null;
+}
+
+export type CategoryWriteError =
+  | { code: "validation"; issues: Array<{ path: string[]; message: string }> }
+  | { code: "slug_in_use" }
+  | { code: "invalid_parent"; reason: "self" | "descendant" | "missing" }
+  | { code: "not_found" };
+
+export type CreateCategoryResult =
+  | { ok: true; id: string }
+  | { ok: false; error: CategoryWriteError };
+
+export type UpdateCategoryResult =
+  | { ok: true; before: CategoryEditableRow; after: CategoryEditableRow }
+  | { ok: false; error: CategoryWriteError };
+
+async function validateParent(
+  supabase: SC,
+  parentId: string | null,
+  forCategoryId: string | null,
+): Promise<CategoryWriteError | null> {
+  if (parentId === null) return null;
+  if (parentId === forCategoryId) {
+    return { code: "invalid_parent", reason: "self" };
+  }
+  // Parent must exist + not be soft-deleted.
+  const parent = await supabase
+    .from("categories")
+    .select("id")
+    .eq("id", parentId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (parent.error) {
+    throw new Error(`validateParent (lookup): ${parent.error.message}`);
+  }
+  if (!parent.data) {
+    return { code: "invalid_parent", reason: "missing" };
+  }
+  // Descendant cycle check — only meaningful when editing an existing row.
+  if (forCategoryId) {
+    const cycle = await supabase
+      .from("category_with_descendants" as unknown as never)
+      .select("descendant_id")
+      .eq("ancestor_id", forCategoryId)
+      .eq("descendant_id", parentId)
+      .maybeSingle();
+    if (cycle.error && cycle.error.code !== "PGRST116") {
+      throw new Error(`validateParent (cycle): ${cycle.error.message}`);
+    }
+    if (cycle.data) {
+      return { code: "invalid_parent", reason: "descendant" };
+    }
+  }
+  return null;
+}
+
+async function isSlugInUse(
+  supabase: SC,
+  slug: string,
+  exceptId: string | null,
+): Promise<boolean> {
+  let q = supabase
+    .from("categories")
+    .select("id", { head: true, count: "exact" })
+    .eq("slug", slug)
+    .is("deleted_at", null);
+  if (exceptId) q = q.neq("id", exceptId);
+  const r = await q;
+  if (r.error) throw new Error(`isSlugInUse: ${r.error.message}`);
+  return (r.count ?? 0) > 0;
+}
+
+export async function createCategory(
+  supabase: SC,
+  input: unknown,
+): Promise<CreateCategoryResult> {
+  const parsed = CategoryEditInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: {
+        code: "validation",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.map((p) => String(p)),
+          message: i.message,
+        })),
+      },
+    };
+  }
+  const data = parsed.data;
+  if (await isSlugInUse(supabase, data.slug, null)) {
+    return { ok: false, error: { code: "slug_in_use" } };
+  }
+  const parentErr = await validateParent(supabase, data.parent_id, null);
+  if (parentErr) return { ok: false, error: parentErr };
+
+  const ins = await supabase
+    .from("categories")
+    .insert({
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      parent_id: data.parent_id,
+      sort_order: data.sort_order,
+      image_url: data.image_url,
+      meta_title: data.meta_title,
+      meta_description: data.meta_description,
+    })
+    .select("id")
+    .single();
+  if (ins.error) {
+    if (ins.error.code === "23505") {
+      return { ok: false, error: { code: "slug_in_use" } };
+    }
+    throw new Error(`createCategory (insert): ${ins.error.message}`);
+  }
+  return { ok: true, id: ins.data.id };
+}
+
+export async function updateCategory(
+  supabase: SC,
+  id: string,
+  patch: unknown,
+): Promise<UpdateCategoryResult> {
+  const parsed = CategoryEditInputSchema.safeParse(patch);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: {
+        code: "validation",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.map((p) => String(p)),
+          message: i.message,
+        })),
+      },
+    };
+  }
+  const data: CategoryEditInput = parsed.data;
+  const before = await getCategoryForEditing(supabase, id);
+  if (!before) return { ok: false, error: { code: "not_found" } };
+
+  if (
+    data.slug !== before.slug &&
+    (await isSlugInUse(supabase, data.slug, id))
+  ) {
+    return { ok: false, error: { code: "slug_in_use" } };
+  }
+  if (data.parent_id !== before.parent_id) {
+    const parentErr = await validateParent(supabase, data.parent_id, id);
+    if (parentErr) return { ok: false, error: parentErr };
+  }
+
+  const upd = await supabase
+    .from("categories")
+    .update({
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      parent_id: data.parent_id,
+      sort_order: data.sort_order,
+      image_url: data.image_url,
+      meta_title: data.meta_title,
+      meta_description: data.meta_description,
+    })
+    .eq("id", id)
+    .select(
+      "id, name, slug, description, parent_id, sort_order, image_url, meta_title, meta_description",
+    )
+    .single();
+  if (upd.error) {
+    if (upd.error.code === "23505") {
+      return { ok: false, error: { code: "slug_in_use" } };
+    }
+    throw new Error(`updateCategory (update): ${upd.error.message}`);
+  }
+  return { ok: true, before, after: upd.data };
 }

@@ -2,11 +2,11 @@
 id: P2-T19
 phase: 2
 title: Categories edit + create
-status: not_started
+status: done
 depends_on: [P2-T18]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -99,4 +99,30 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Cover image is a URL input, not an upload.** The task spec
+    talks about extending the image-upload route with a
+    `?context=category-cover` query. Scoped that out — the field is
+    a plain `<input type=url>` that stores into
+    `categories.image_url`. Adding the upload path is a small
+    follow-up: extend `/api/admin/images/upload` to switch the
+    storage prefix based on a `context` param, and swap the input
+    for a Dropzone variant.
+
+  - **Slug auto-derive uses `useWatch` + `useEffect`.** The
+    `slugTouched` state flag stops auto-derive once the owner edits
+    the slug manually. Same pattern as the General tab of the
+    product editor.
+
+  - **Parent picker is a native `<select>`.** No tree-search
+    combobox — 362 nodes is small enough that the flat dropdown
+    with indentation reads fine. If we ever go past ~1000
+    categories, swap to the Command-based picker from T12.
+
+  - **Cycle rejection.** `validateParent()` runs the descendant
+    check via `category_with_descendants`. Self + missing parent
+    are also rejected with discriminated `reason` values that the
+    form maps to inline field errors.
+
+  - **Tests:** 7 cases covering create happy + slug collision +
+    bad-slug validation + missing parent + update + self-cycle +
+    descendant-cycle rejection.
