@@ -15,7 +15,12 @@ function Tabs({
       data-slot="tabs"
       data-orientation={orientation}
       className={cn(
-        "group/tabs flex gap-2 data-horizontal:flex-col",
+        // Stack the list above the panels for horizontal tabs, sit
+        // side-by-side for vertical. The attribute-value selector is
+        // load-bearing — the bare `data-horizontal:` variant did not
+        // match reliably under Tailwind 4 and the list ended up in a
+        // left column next to the panel.
+        "group/tabs flex gap-2 data-[orientation=horizontal]:flex-col",
         className
       )}
       {...props}

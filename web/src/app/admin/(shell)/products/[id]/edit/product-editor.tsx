@@ -101,7 +101,28 @@ export function ProductEditor({
       </nav>
 
       <Tabs value={initialTab} onValueChange={onTabChange}>
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+        {/* Mobile: native select. Drops the row-eating tab strip to a
+           single line that scales down to ~280px without overflow.
+           Desktop (sm+): horizontal tab strip with the "line" variant
+           — underline-only, no pill background. */}
+        <label className="sm:hidden">
+          <span className="sr-only">Section</span>
+          <select
+            value={initialTab}
+            onChange={(e) => onTabChange(e.target.value)}
+            className="h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-sm font-medium text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30"
+          >
+            {TABS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <TabsList
+          variant="line"
+          className="hidden w-fit justify-start sm:inline-flex"
+        >
           {TABS.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
               {t.label}
