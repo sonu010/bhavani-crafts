@@ -2,11 +2,11 @@
 id: P2-T18
 phase: 2
 title: Categories tree view
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -99,4 +99,31 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Action menu links are wired but their pages don't exist.**
+    Edit (`/admin/categories/<id>/edit`), new (`/admin/categories/new`),
+    move (`/admin/categories/<id>/move`) all return 404 until T19/T20
+    land. The icon-link styling pre-stages the muscle memory.
+
+  - **Soft-delete refuses on children or products.** The error
+    surfaces as a toast (`has_children` shows N subcategories,
+    `has_products` shows N products). No bulk recategorize affordance
+    yet — that's T20.
+
+  - **Per-node count uses descendants.** The badge shows the
+    descendants-inclusive count; the badge `title` attribute
+    surfaces both direct and descendants for clarity. Implemented
+    via the `category_with_descendants` recursive view from 0007.
+
+  - **Expand state in URL.** `?expanded=id1,id2,...`. Top-level
+    nodes expand by default if no param is given. The router
+    `replace` call is wrapped in `useTransition` so rapid toggles
+    don't spam history.
+
+  - **No `Button asChild` in the shadcn baseline.** This template
+    uses @base-ui Button which doesn't accept `asChild`. The icon
+    links use a hand-rolled `ICON_LINK_CLASS` that matches the
+    `size=icon variant=outline` Button visually.
+
+  - **`role=treeitem` requires `aria-selected`.** Set to `false`
+    everywhere because the current UX doesn't have a selection model.
+    Revisit if/when we add a "current category" highlight.
