@@ -2,11 +2,11 @@
 id: P2-T15
 phase: 2
 title: Product editor — image upload
-status: not_started
+status: done
 depends_on: [P2-T11]
 estimate_hours: 4
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -119,4 +119,56 @@ exiftool /tmp/uploaded.webp | grep -i 'exif\|gps' && echo "FAIL: EXIF leaked" ||
 
 # Notes for next agent
 
-(empty)
+Landed across four sub-commits:
+
+  - **T15a** — `product-images` bucket via
+    `web/scripts/ensure-product-images-bucket.mjs` (idempotent;
+    re-running updates config). Public bucket with fileSizeLimit
+    5 MiB and allowedMimeTypes webp/jpeg/png/heic/heif. The bucket
+    config is enforced both server-side AND in Supabase Storage
+    itself — belt + braces.
+
+  - **T15b** — `web/src/lib/images/validate.ts` +
+    `web/src/lib/images/pipeline.ts` +
+    `web/src/lib/auth/rate-limit.ts`. 14 unit tests in
+    `__tests__/images/` + `__tests__/auth/unit/rate-limit.test.ts`.
+    Pipeline uses sharp's default metadata-strip (no
+    `.withMetadata()` call) — that's stronger than `withMetadata({
+    exif: {} })` which leaves an empty EXIF section.
+
+  - **T15c** — `web/src/app/api/admin/images/upload/route.ts` +
+    `web/src/lib/db/admin/images.ts`. Route handles its own
+    AuthError → JSON translation (requireAdminContext's default
+    redirect returns HTML which the fetch can't parse).
+
+  - **T15d** — `_images/dropzone.tsx` + reworked
+    `_tabs/images.tsx`. Bounded concurrency (3 simultaneous uploads).
+    Gallery card grid with per-image soft-delete via
+    `softDeleteProductImageAction`. Unverified-license warning band
+    at top of gallery.
+
+Caveats / follow-ups:
+
+  - **No integration test for the HTTP route.** Mocking
+    `requireAdminContext` is brittle and the load-bearing logic
+    (validate/pipeline/rate-limit/insert) is unit-tested directly.
+    The route is glue. Manual smoke test per the Verification block
+    is required after deploy.
+
+  - **Rate limit is process-local.** Upstash adapter lands when
+    P2-T01 hardening sets up the credentials. Until then, a
+    multi-instance deploy means the 30/min limit is per-instance,
+    not global — acceptable for the MVP single-region setup.
+
+  - **No `alt` text editor.** The schema supports it but no UI yet
+    — owner can set it via the DB or via a future T17 publish-tab
+    flow. Inserted rows have `alt: null`.
+
+  - **HEIC requires libheif in the sharp binary.** Vercel's runtime
+    sharp includes it; local dev on M-series Macs may need
+    `pnpm rebuild sharp` if HEIC uploads fail.
+
+  - **`/api/admin/images/upload` is the ONLY upload route** —
+    enforced by the dropzone hitting that URL. Future entry points
+    (CSV import with image URLs) hit a different ingestion path
+    that re-uses `processImage` + `insertProductImage`.

@@ -39,6 +39,7 @@ import {
   type VariantInput,
   type VariantsError,
 } from "@/lib/db/admin/variants";
+import { softDeleteProductImage } from "@/lib/db/admin/images";
 
 export type SaveProductGeneralResult =
   | { ok: true }
@@ -449,4 +450,48 @@ export async function generateAllVariantsAction(
   updateTag("products");
   if (prod) revalidatePath(`/p/${prod.slug}`);
   return { ok: true, created: result.created };
+}
+
+// ─── Images tab (P2-T15) ────────────────────────────────────────────
+
+export type SoftDeleteProductImageResult =
+  | { ok: true }
+  | { ok: false; error: { code: "not_found" } };
+
+export async function softDeleteProductImageAction(
+  productId: string,
+  imageId: string,
+): Promise<SoftDeleteProductImageResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  // Capture pre-delete shape for the audit log.
+  const before = await admin
+    .from("product_images")
+    .select("id, product_id, url, width, height, license_status")
+    .eq("id", imageId)
+    .maybeSingle();
+
+  const result = await softDeleteProductImage(admin, imageId);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.soft_delete_image",
+    entity_type: "product_image",
+    entity_id: imageId,
+    before_json: (before.data ?? null) as never,
+    after_json: { deleted_at: new Date().toISOString() } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`softDeleteProductImage audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
 }

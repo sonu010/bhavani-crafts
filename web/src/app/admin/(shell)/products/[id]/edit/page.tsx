@@ -8,6 +8,7 @@ import {
   getProductAttributes,
   listApplicableAttributes,
 } from "@/lib/db/attributes";
+import { listProductImages } from "@/lib/db/admin/images";
 import { getVariantsBundle } from "@/lib/db/admin/variants";
 import { getCategoryTree } from "@/lib/db/categories";
 import { perfStart } from "@/lib/perf";
@@ -69,6 +70,7 @@ export default async function ProductEditPage({
     attributeDefs,
     attributeValues,
     variantsBundle,
+    images,
   ] = await Promise.all([
     getCategoryTree(admin),
     admin
@@ -80,6 +82,7 @@ export default async function ProductEditPage({
     listApplicableAttributes(admin, product.category_id),
     getProductAttributes(admin, id),
     getVariantsBundle(admin, id),
+    listProductImages(admin, id),
   ]);
   if (allTagsRes.error) {
     throw new Error(`load tags: ${allTagsRes.error.message}`);
@@ -107,6 +110,7 @@ export default async function ProductEditPage({
       attributeDefs={attributeDefs}
       attributeValues={attributeValues}
       variantsBundle={variantsBundle}
+      images={images}
       initialTab={initialTab}
       backHref={backHref}
     />
