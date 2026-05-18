@@ -386,3 +386,151 @@ export async function updateCategory(
   }
   return { ok: true, before, after: upd.data };
 }
+
+/* ────────────────────────────────────────────────────────────────────── *
+ * Bulk move (P2-T20)
+ * ────────────────────────────────────────────────────────────────────── */
+
+export type ReviewStatus = Database["public"]["Enums"]["review_status"];
+
+/**
+ * Narrowing filters for the bulk-move flow.
+ *
+ *   - `statuses` — null/empty means "any". Otherwise only matching
+ *     review_status rows move.
+ *
+ * Scope: this acts on products DIRECTLY in `sourceCategoryId`. Products
+ * in descendant categories stay with their actual category — the move
+ * tool reclassifies misfiled rows, not the whole subtree.
+ */
+export interface BulkMoveFilters {
+  statuses?: ReviewStatus[] | null;
+}
+
+export async function previewMoveCount(
+  supabase: SC,
+  sourceCategoryId: string,
+  filters: BulkMoveFilters,
+): Promise<number> {
+  let q = supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", sourceCategoryId)
+    .is("deleted_at", null);
+  if (filters.statuses && filters.statuses.length > 0) {
+    q = q.in("review_status", filters.statuses);
+  }
+  const r = await q;
+  if (r.error) throw new Error(`previewMoveCount: ${r.error.message}`);
+  return r.count ?? 0;
+}
+
+export type BulkMoveError =
+  | { code: "same_category" }
+  | { code: "target_is_descendant" }
+  | { code: "source_not_found" }
+  | { code: "target_not_found" }
+  | { code: "nothing_to_move" };
+
+export interface BulkMoveResult {
+  moved: number;
+  productIds: string[];
+  sourceSlug: string;
+  targetSlug: string;
+}
+
+/**
+ * Move every matching product from source → target.
+ *
+ * Validates source + target exist (non-deleted), source != target,
+ * and target is NOT a descendant of source (would create the
+ * informal "moving into yourself" footgun).
+ *
+ * Updates run in a single SQL statement scoped by category_id +
+ * optional review_status filter, so the network cost is O(1) regardless
+ * of row count. The caller is responsible for writing audit_log rows
+ * (one per moved product) using the returned `productIds`.
+ */
+export async function moveProductsBetweenCategories(
+  supabase: SC,
+  sourceCategoryId: string,
+  targetCategoryId: string,
+  filters: BulkMoveFilters,
+): Promise<{ ok: true; result: BulkMoveResult } | { ok: false; error: BulkMoveError }> {
+  if (sourceCategoryId === targetCategoryId) {
+    return { ok: false, error: { code: "same_category" } };
+  }
+
+  const [src, tgt] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, slug")
+      .eq("id", sourceCategoryId)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    supabase
+      .from("categories")
+      .select("id, slug")
+      .eq("id", targetCategoryId)
+      .is("deleted_at", null)
+      .maybeSingle(),
+  ]);
+  if (src.error) throw new Error(`bulkMove (source lookup): ${src.error.message}`);
+  if (tgt.error) throw new Error(`bulkMove (target lookup): ${tgt.error.message}`);
+  if (!src.data) return { ok: false, error: { code: "source_not_found" } };
+  if (!tgt.data) return { ok: false, error: { code: "target_not_found" } };
+
+  // Reject moving into source's own subtree.
+  const cycle = await supabase
+    .from("category_with_descendants" as unknown as never)
+    .select("descendant_id")
+    .eq("ancestor_id", sourceCategoryId)
+    .eq("descendant_id", targetCategoryId)
+    .maybeSingle();
+  if (cycle.error && cycle.error.code !== "PGRST116") {
+    throw new Error(`bulkMove (cycle): ${cycle.error.message}`);
+  }
+  if (cycle.data) {
+    return { ok: false, error: { code: "target_is_descendant" } };
+  }
+
+  // Capture the matching id list first so the action layer can write
+  // an audit_log row per moved product. ~6K product ceiling is fine
+  // to read into memory; if catalog scale ever changes, switch to a
+  // batched stream.
+  let idsQ = supabase
+    .from("products")
+    .select("id")
+    .eq("category_id", sourceCategoryId)
+    .is("deleted_at", null);
+  if (filters.statuses && filters.statuses.length > 0) {
+    idsQ = idsQ.in("review_status", filters.statuses);
+  }
+  const ids = await idsQ;
+  if (ids.error) throw new Error(`bulkMove (ids): ${ids.error.message}`);
+  const productIds = (ids.data ?? []).map((r) => r.id);
+  if (productIds.length === 0) {
+    return { ok: false, error: { code: "nothing_to_move" } };
+  }
+
+  let updQ = supabase
+    .from("products")
+    .update({ category_id: targetCategoryId })
+    .eq("category_id", sourceCategoryId)
+    .is("deleted_at", null);
+  if (filters.statuses && filters.statuses.length > 0) {
+    updQ = updQ.in("review_status", filters.statuses);
+  }
+  const upd = await updQ;
+  if (upd.error) throw new Error(`bulkMove (update): ${upd.error.message}`);
+
+  return {
+    ok: true,
+    result: {
+      moved: productIds.length,
+      productIds,
+      sourceSlug: src.data.slug,
+      targetSlug: tgt.data.slug,
+    },
+  };
+}

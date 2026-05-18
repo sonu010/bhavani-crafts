@@ -10,8 +10,12 @@ import { headers } from "next/headers";
 import { requireAdminContext } from "@/lib/db/admin-context";
 import {
   createCategory,
+  moveProductsBetweenCategories,
+  previewMoveCount,
   softDeleteCategory,
   updateCategory,
+  type BulkMoveError,
+  type BulkMoveFilters,
   type CategoryDeleteError,
   type CategoryWriteError,
 } from "@/lib/db/admin/categories";
@@ -142,4 +146,75 @@ export async function updateCategoryAction(
     revalidatePath("/");
   }
   return { ok: true };
+}
+
+// ─── Bulk move (P2-T20) ─────────────────────────────────────────────
+
+export async function previewMoveCountAction(
+  sourceCategoryId: string,
+  filters: BulkMoveFilters,
+): Promise<{ ok: true; count: number }> {
+  const { admin } = await requireAdminContext();
+  const count = await previewMoveCount(admin, sourceCategoryId, filters);
+  return { ok: true, count };
+}
+
+export type BulkMoveResult =
+  | { ok: true; moved: number }
+  | { ok: false; error: BulkMoveError };
+
+/**
+ * Move every matching product from source → target. Writes one
+ * `product.update_category` audit row per affected product so the
+ * activity log mirrors per-row edits. Audit inserts happen in
+ * chunks of 500 to stay inside Supabase's request-payload limit on
+ * large moves.
+ */
+export async function bulkMoveProductsToCategoryAction(
+  sourceCategoryId: string,
+  targetCategoryId: string,
+  filters: BulkMoveFilters,
+): Promise<BulkMoveResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await moveProductsBetweenCategories(
+    admin,
+    sourceCategoryId,
+    targetCategoryId,
+    filters,
+  );
+  if (!result.ok) return result;
+
+  const { productIds, sourceSlug, targetSlug, moved } = result.result;
+
+  // Granular audit log. Chunk so a 1000-product move doesn't try to
+  // ship a 200KB body in one request.
+  const CHUNK = 500;
+  for (let i = 0; i < productIds.length; i += CHUNK) {
+    const slice = productIds.slice(i, i + CHUNK);
+    const rows = slice.map((pid) => ({
+      actor_id: user.id,
+      action: "product.update_category" as const,
+      entity_type: "product" as const,
+      entity_id: pid,
+      before_json: { category_id: sourceCategoryId } as never,
+      after_json: { category_id: targetCategoryId } as never,
+      request_id: requestId,
+    }));
+    const { error } = await admin.from("audit_logs").insert(rows);
+    if (error) {
+      throw new Error(`bulkMove audit insert: ${error.message}`);
+    }
+  }
+
+  updateTag("products");
+  updateTag("categories");
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/products");
+  revalidatePath(`/c/${sourceSlug}`);
+  revalidatePath(`/c/${targetSlug}`);
+  return { ok: true, moved };
 }
