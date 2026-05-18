@@ -39,7 +39,13 @@ import {
   type VariantInput,
   type VariantsError,
 } from "@/lib/db/admin/variants";
-import { softDeleteProductImage } from "@/lib/db/admin/images";
+import {
+  batchUpdateImageOrder,
+  softDeleteProductImage,
+  updateImageAlt,
+  updateImageLicense,
+  type LicenseStatus,
+} from "@/lib/db/admin/images";
 
 export type SaveProductGeneralResult =
   | { ok: true }
@@ -488,6 +494,134 @@ export async function softDeleteProductImageAction(
   });
   if (auditErr) {
     throw new Error(`softDeleteProductImage audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+// ─── Images tab — reorder / alt / license (P2-T16) ────────────────
+
+export type ReorderImagesResult =
+  | { ok: true }
+  | { ok: false; error: { code: "id_mismatch"; missing: string[] } };
+
+export async function reorderImagesAction(
+  productId: string,
+  orderedIds: string[],
+): Promise<ReorderImagesResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await admin
+    .from("product_images")
+    .select("id, sort_order")
+    .eq("product_id", productId)
+    .is("deleted_at", null)
+    .order("sort_order", { ascending: true });
+
+  const result = await batchUpdateImageOrder(admin, productId, orderedIds);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.reorder_images",
+    entity_type: "product",
+    entity_id: productId,
+    before_json: { ordered_ids: (before.data ?? []).map((r) => r.id) } as never,
+    after_json: { ordered_ids: orderedIds } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`reorderImages audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type UpdateImageAltResult =
+  | { ok: true }
+  | { ok: false; error: { code: "not_found" } };
+
+export async function updateImageAltAction(
+  productId: string,
+  imageId: string,
+  alt: string,
+): Promise<UpdateImageAltResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await admin
+    .from("product_images")
+    .select("id, alt")
+    .eq("id", imageId)
+    .maybeSingle();
+
+  const result = await updateImageAlt(admin, imageId, alt);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.update_image_alt",
+    entity_type: "product_image",
+    entity_id: imageId,
+    before_json: { alt: before.data?.alt ?? null } as never,
+    after_json: { alt: alt.trim() || null } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`updateImageAlt audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await getProductByIdBasic(admin, productId);
+  updateTag("products");
+  if (prod) revalidatePath(`/p/${prod.slug}`);
+  return { ok: true };
+}
+
+export type UpdateImageLicenseResult =
+  | { ok: true }
+  | { ok: false; error: { code: "not_found" } };
+
+export async function updateImageLicenseAction(
+  productId: string,
+  imageId: string,
+  licenseStatus: LicenseStatus,
+): Promise<UpdateImageLicenseResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const before = await admin
+    .from("product_images")
+    .select("id, license_status")
+    .eq("id", imageId)
+    .maybeSingle();
+
+  const result = await updateImageLicense(admin, imageId, licenseStatus, user.id);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.update_image_license",
+    entity_type: "product_image",
+    entity_id: imageId,
+    before_json: { license_status: before.data?.license_status ?? null } as never,
+    after_json: { license_status: licenseStatus } as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`updateImageLicense audit insert: ${auditErr.message}`);
   }
 
   const prod = await getProductByIdBasic(admin, productId);

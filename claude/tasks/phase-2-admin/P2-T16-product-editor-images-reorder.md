@@ -2,11 +2,11 @@
 id: P2-T16
 phase: 2
 title: Product editor — image reorder
-status: not_started
+status: done
 depends_on: [P2-T15]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -99,4 +99,36 @@ sleep 4
 
 # Notes for next agent
 
-(empty)
+  - **@dnd-kit installed.** `@dnd-kit/core`, `@dnd-kit/sortable`,
+    `@dnd-kit/utilities` added in this task. Reused for any future
+    reorder UI (option-value reorder in T14, for example).
+
+  - **No RPC for batch reorder.** Loops N UPDATEs through the JS
+    client instead of a VALUES-batch RPC. With ≤ 20 images per
+    product the round-trip cost is fine. If image counts ever climb
+    into the hundreds, swap to an RPC defined in a new migration.
+
+  - **Soft-delete reused from T15.** Already covered by
+    `softDeleteProductImageAction` in actions.ts.
+
+  - **License + alt-text dialogs use `key={imageId}`** to force
+    React to re-mount the dialog on each new target. That sidesteps
+    the React Compiler's `react-hooks/set-state-in-effect` rule
+    (sync-prop-to-state via useEffect is disallowed). Pattern is
+    cleaner anyway — initial useState value from props is
+    authoritative on mount.
+
+  - **Public/private split for images data layer.** `LicenseStatus`
+    + `LICENSE_STATUSES` moved to
+    `web/src/lib/db/admin/images-public.ts` (no `server-only`
+    directive) so client dialogs can import them. The function
+    surface stays in `admin/images.ts` behind `server-only`.
+
+  - **Drag handle visibility:** desktop-only `group-hover` reveal;
+    always visible on touch (mobile has no hover). That keeps
+    desktop thumbnails clean while remaining touch-friendly.
+
+  - **Acceptance gaps:** none of the per-image actions write
+    `updated_at` explicitly — relying on the table trigger. Confirm
+    via psql if the trigger fires for these UPDATEs (it should:
+    `BEFORE UPDATE ON product_images ... set_updated_at`).

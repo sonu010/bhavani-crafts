@@ -12,6 +12,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
+import type { LicenseStatus } from "@/lib/db/admin/images-public";
 
 type SC = SupabaseClient<Database>;
 
@@ -104,6 +105,98 @@ export async function listProductImages(
     .order("sort_order", { ascending: true });
   if (error) throw new Error(`listProductImages: ${error.message}`);
   return data ?? [];
+}
+
+// LicenseStatus type + LICENSE_STATUSES const live in
+// `@/lib/db/admin/images-public` (no `server-only` boundary) so
+// client components can import the runtime const for dropdowns.
+// Re-export the type from here so existing imports keep working.
+export type { LicenseStatus };
+
+/**
+ * Persist a new ordering for a product's images. orderedIds must list
+ * every non-soft-deleted image; missing ids would leave gaps.
+ *
+ * Loops with N UPDATEs rather than a VALUES-batch RPC. Products in
+ * practice have ≤ 20 images so the round-trip cost is bounded; the
+ * RPC path is only worth it if we ever hit triple digits.
+ */
+export async function batchUpdateImageOrder(
+  supabase: SC,
+  productId: string,
+  orderedIds: string[],
+): Promise<{ ok: true } | { ok: false; error: { code: "id_mismatch"; missing: string[] } }> {
+  // Sanity check: every id provided must belong to the product and be
+  // non-deleted. Catch UI bugs before persisting half a write.
+  const cur = await supabase
+    .from("product_images")
+    .select("id")
+    .eq("product_id", productId)
+    .is("deleted_at", null);
+  if (cur.error) throw new Error(`batchUpdateImageOrder (read): ${cur.error.message}`);
+  const known = new Set((cur.data ?? []).map((r) => r.id));
+  const missing = orderedIds.filter((id) => !known.has(id));
+  if (missing.length > 0 || orderedIds.length !== known.size) {
+    return { ok: false, error: { code: "id_mismatch", missing } };
+  }
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    const upd = await supabase
+      .from("product_images")
+      .update({ sort_order: i })
+      .eq("id", orderedIds[i])
+      .eq("product_id", productId);
+    if (upd.error) {
+      throw new Error(`batchUpdateImageOrder (update ${i}): ${upd.error.message}`);
+    }
+  }
+  return { ok: true };
+}
+
+export async function updateImageAlt(
+  supabase: SC,
+  imageId: string,
+  alt: string | null,
+): Promise<{ ok: true } | { ok: false; error: { code: "not_found" } }> {
+  const trimmed = alt?.trim() || null;
+  const upd = await supabase
+    .from("product_images")
+    .update({ alt: trimmed })
+    .eq("id", imageId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (upd.error) throw new Error(`updateImageAlt: ${upd.error.message}`);
+  if (!upd.data) return { ok: false, error: { code: "not_found" } };
+  return { ok: true };
+}
+
+export async function updateImageLicense(
+  supabase: SC,
+  imageId: string,
+  licenseStatus: LicenseStatus,
+  actorId: string,
+): Promise<{ ok: true } | { ok: false; error: { code: "not_found" } }> {
+  const verifiedAt =
+    licenseStatus === "owned" ||
+    licenseStatus === "licensed" ||
+    licenseStatus === "public_domain"
+      ? new Date().toISOString()
+      : null;
+  const upd = await supabase
+    .from("product_images")
+    .update({
+      license_status: licenseStatus,
+      license_verified_by: verifiedAt ? actorId : null,
+      license_verified_at: verifiedAt,
+    })
+    .eq("id", imageId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (upd.error) throw new Error(`updateImageLicense: ${upd.error.message}`);
+  if (!upd.data) return { ok: false, error: { code: "not_found" } };
+  return { ok: true };
 }
 
 /**
