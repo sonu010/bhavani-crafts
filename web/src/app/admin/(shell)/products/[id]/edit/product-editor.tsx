@@ -14,6 +14,7 @@ import type {
   ProductAttributeRow,
 } from "@/lib/db/attributes";
 import type { ProductImageRow } from "@/lib/db/admin/images";
+import type { PreflightResult } from "@/lib/db/admin/publish";
 import type { VariantsBundle } from "@/lib/db/admin/variants";
 import type { CategoryTreeNode } from "@/lib/schemas/category";
 import { AttributesTab } from "./_tabs/attributes";
@@ -44,6 +45,8 @@ export function ProductEditor({
   attributeValues,
   variantsBundle,
   images,
+  publishStatus,
+  preflight,
   initialTab,
   backHref,
 }: {
@@ -55,6 +58,8 @@ export function ProductEditor({
   attributeValues: ProductAttributeRow[];
   variantsBundle: VariantsBundle;
   images: ProductImageRow[];
+  publishStatus: { is_published: boolean; review_status: string };
+  preflight: PreflightResult;
   initialTab: EditorTab;
   backHref: string;
 }) {
@@ -170,7 +175,11 @@ export function ProductEditor({
           <ImagesTab productId={product.id} initialImages={images} />
         </TabsContent>
         <TabsContent value="publish">
-          <PublishTab />
+          <PublishTab
+            productId={product.id}
+            initialPreflight={preflight}
+            initialStatus={publishStatus}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -9,6 +9,7 @@ import {
   listApplicableAttributes,
 } from "@/lib/db/attributes";
 import { listProductImages } from "@/lib/db/admin/images";
+import { runProductPreflight } from "@/lib/db/admin/publish";
 import { getVariantsBundle } from "@/lib/db/admin/variants";
 import { getCategoryTree } from "@/lib/db/categories";
 import { perfStart } from "@/lib/perf";
@@ -71,6 +72,8 @@ export default async function ProductEditPage({
     attributeValues,
     variantsBundle,
     images,
+    publishStatusRes,
+    preflight,
   ] = await Promise.all([
     getCategoryTree(admin),
     admin
@@ -83,11 +86,21 @@ export default async function ProductEditPage({
     getProductAttributes(admin, id),
     getVariantsBundle(admin, id),
     listProductImages(admin, id),
+    admin
+      .from("products")
+      .select("is_published, review_status")
+      .eq("id", id)
+      .single(),
+    runProductPreflight(admin, id),
   ]);
   if (allTagsRes.error) {
     throw new Error(`load tags: ${allTagsRes.error.message}`);
   }
+  if (publishStatusRes.error) {
+    throw new Error(`load publish status: ${publishStatusRes.error.message}`);
+  }
   const allTags = allTagsRes.data ?? [];
+  const publishStatus = publishStatusRes.data;
   t.mark("fetch");
   t.end();
 
@@ -111,6 +124,8 @@ export default async function ProductEditPage({
       attributeValues={attributeValues}
       variantsBundle={variantsBundle}
       images={images}
+      publishStatus={publishStatus}
+      preflight={preflight}
       initialTab={initialTab}
       backHref={backHref}
     />

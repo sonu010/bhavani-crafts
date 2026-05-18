@@ -46,6 +46,12 @@ import {
   updateImageLicense,
   type LicenseStatus,
 } from "@/lib/db/admin/images";
+import {
+  publishProduct,
+  unpublishProduct,
+  type PublishError,
+} from "@/lib/db/admin/publish";
+import { signPreviewToken } from "@/lib/auth/preview-token";
 
 export type SaveProductGeneralResult =
   | { ok: true }
@@ -628,4 +634,110 @@ export async function updateImageLicenseAction(
   updateTag("products");
   if (prod) revalidatePath(`/p/${prod.slug}`);
   return { ok: true };
+}
+
+// ─── Publish tab (P2-T17) ───────────────────────────────────────────
+
+export type PublishProductResult =
+  | { ok: true }
+  | { ok: false; error: PublishError };
+
+export async function publishProductAction(
+  productId: string,
+): Promise<PublishProductResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await publishProduct(admin, productId);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.publish",
+    entity_type: "product",
+    entity_id: productId,
+    before_json: result.result.before as never,
+    after_json: result.result.after as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`publishProduct audit insert: ${auditErr.message}`);
+  }
+
+  // Revalidate everything that might surface the product publicly.
+  const prod = await admin
+    .from("products")
+    .select("slug, is_featured, category:categories(slug)")
+    .eq("id", productId)
+    .single();
+  updateTag("products");
+  if (prod.data) {
+    revalidatePath(`/p/${prod.data.slug}`);
+    const cat = prod.data.category;
+    const catSlug = Array.isArray(cat) ? cat[0]?.slug : cat?.slug;
+    if (catSlug) revalidatePath(`/c/${catSlug}`);
+    if (prod.data.is_featured) revalidatePath("/");
+  }
+  return { ok: true };
+}
+
+export async function unpublishProductAction(
+  productId: string,
+): Promise<PublishProductResult> {
+  const { admin, user } = await requireAdminContext();
+  const h = await headers();
+  const requestId =
+    h.get("x-vercel-id") ?? h.get("x-request-id") ?? crypto.randomUUID();
+
+  const result = await unpublishProduct(admin, productId);
+  if (!result.ok) return result;
+
+  const { error: auditErr } = await admin.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "product.unpublish",
+    entity_type: "product",
+    entity_id: productId,
+    before_json: result.result.before as never,
+    after_json: result.result.after as never,
+    request_id: requestId,
+  });
+  if (auditErr) {
+    throw new Error(`unpublishProduct audit insert: ${auditErr.message}`);
+  }
+
+  const prod = await admin
+    .from("products")
+    .select("slug, is_featured, category:categories(slug)")
+    .eq("id", productId)
+    .single();
+  updateTag("products");
+  if (prod.data) {
+    revalidatePath(`/p/${prod.data.slug}`);
+    const cat = prod.data.category;
+    const catSlug = Array.isArray(cat) ? cat[0]?.slug : cat?.slug;
+    if (catSlug) revalidatePath(`/c/${catSlug}`);
+    if (prod.data.is_featured) revalidatePath("/");
+  }
+  return { ok: true };
+}
+
+export async function generatePreviewLinkAction(
+  productId: string,
+): Promise<{ ok: true; url: string } | { ok: false; error: { code: "not_found" } }> {
+  const { admin } = await requireAdminContext();
+  const prod = await admin
+    .from("products")
+    .select("slug")
+    .eq("id", productId)
+    .maybeSingle();
+  if (prod.error || !prod.data) {
+    return { ok: false, error: { code: "not_found" } };
+  }
+  const token = await signPreviewToken(productId);
+  return {
+    ok: true,
+    url: `/p/${prod.data.slug}?preview=${encodeURIComponent(token)}`,
+  };
 }
