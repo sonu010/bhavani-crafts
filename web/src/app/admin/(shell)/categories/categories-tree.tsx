@@ -202,17 +202,20 @@ function TreeRow({
           >
             <Pencil className="size-3.5" />
           </Link>
+          {/* Tertiary actions hidden on mobile — both reachable from
+             the edit page so the crowded row stays scannable at
+             360px. */}
           <Link
             href={`/admin/categories/new?parent=${node.id}`}
             aria-label="Add child category"
-            className={ICON_LINK_CLASS}
+            className={`${ICON_LINK_CLASS} hidden sm:inline-flex`}
           >
             <FolderPlus className="size-3.5" />
           </Link>
           <Link
             href={`/admin/categories/${node.id}/move`}
             aria-label="Move products out of this category"
-            className={ICON_LINK_CLASS}
+            className={`${ICON_LINK_CLASS} hidden sm:inline-flex`}
           >
             <MoveRight className="size-3.5" />
           </Link>

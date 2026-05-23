@@ -414,7 +414,7 @@ export function GeneralTab({
             <Label htmlFor="general-stock-status">Stock status</Label>
             <select
               id="general-stock-status"
-              className="h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30"
+              className="h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-base md:text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30"
               {...register("stock_status")}
               disabled={busy}
             >

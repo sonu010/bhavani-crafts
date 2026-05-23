@@ -26,7 +26,7 @@ import type { AdminFilterOptions } from "@/lib/db/admin/products";
 type StockOpt = "" | "in_stock" | "low_stock" | "out_of_stock" | "made_to_order" | "unknown";
 
 const SELECT_BASE_CLASS =
-  "h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30 sm:w-auto";
+  "h-9 w-full rounded-md border border-husk-200 bg-paper-0 px-2 text-base md:text-sm text-bark-900 outline-none focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30 sm:w-auto";
 
 const DEBOUNCE_MS = 300;
 
