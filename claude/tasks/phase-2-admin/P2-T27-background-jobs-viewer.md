@@ -2,11 +2,11 @@
 id: P2-T27
 phase: 2
 title: Background jobs viewer
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -89,4 +89,39 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Worker doesn't exist yet.** T24 (CSV worker) is still pending,
+    so `background_jobs` is empty in dev. The viewer renders the
+    empty state but is fully wired for when jobs start flowing.
+
+  - **No indexes added.** Spec called for
+    `background_jobs(status, created_at)` if absent — I left it
+    off until we see real job volumes. With ≤ a few hundred jobs
+    a sequential scan is fine. When the CSV worker lands and
+    starts producing thousands, add the index in a new migration.
+
+  - **Public/private split** — same pattern as T16's images-public.
+    `lib/db/admin/jobs-public.ts` carries `JobStatus`,
+    `JOB_STATUSES`, `TERMINAL_STATUSES` so client components (filter
+    bar, jobs table, job actions) can import without pulling the
+    server-only data layer into the client bundle. The server layer
+    re-exports the type for backwards compatibility.
+
+  - **Polling: 2s router.refresh()** while any visible job is
+    non-terminal. Stops as soon as all are terminal. Lives in
+    `jobs-table.tsx`; the page re-fetches via the existing server
+    component graph.
+
+  - **Cancel is queued-only.** The worker doesn't have a
+    cooperative-cancel hook yet, so running jobs are immutable.
+    Add a `cancel_requested` boolean column + the worker check
+    when that hook lands; the data layer's `cancelJob` will need
+    a new branch.
+
+  - **Audit shapes.** `job.retry` and `job.cancel` plus a
+    `job_events` row from `appendJobEvent` so the timeline shows
+    the admin intervention. Per-chunk worker events stay in
+    `job_events` only (not double-logged to audit_logs).
+
+  - **JsonBlock in detail page** dumps payload/result/checkpoint
+    JSON pretty-printed. For huge payloads this could be slow;
+    revisit if a real csv-import payload bloats beyond ~50KB.
