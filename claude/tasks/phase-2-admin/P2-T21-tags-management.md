@@ -2,11 +2,11 @@
 id: P2-T21
 phase: 2
 title: Tags management
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -86,4 +86,39 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **No new migration needed.** `tags.deleted_at` already exists
+    in 0003. Skipped the proposed `merge_tags` RPC and did the
+    merge client-side via the Supabase JS client — three round-trips
+    (read source rows, upsert into target with
+    `ignoreDuplicates`, delete source links) plus the soft-delete.
+    The volume is bounded (≤ a few hundred products per tag) and
+    keeping the audit-log writer in the action layer keeps the
+    granularity story consistent.
+
+  - **PostgREST 1000-row cap bit us.** `product_tags` has ~8K rows
+    in dev. The first version of `listTagsWithCounts` did a flat
+    `.select("tag_id")` and got the first 1000 only — fixture
+    products tagged in test runs ended up missing. Fixed by
+    paginating in `.range(offset, offset+999)` chunks of 1000
+    until the response is short. Same pattern will need to apply
+    anywhere else we read every row of a large junction table.
+
+  - **Merge writes two audit shapes.** One `tag.merge` summary row
+    plus one `product.set_tags` row per affected product. The
+    per-product rows mirror the granularity of the per-product
+    Category-tab save action (T12), so the audit viewer in T26
+    won't need a special filter.
+
+  - **Dialogs use `key=<id>`** — same pattern as T16's
+    license/alt-text edits to avoid the React Compiler
+    set-state-in-effect rule. Parent passes `key={target?.id ??
+    "empty"}` on each dialog.
+
+  - **`createTagAction` re-fetches** the inserted row for the
+    audit `after_json` because `createTag` only returns `{id}`.
+    A two-line cost for a clean audit shape; trade-off accepted.
+
+  - **10 tests.** Cover create (happy + collision + validation),
+    rename (happy + collision), soft-delete (idempotent),
+    list-with-counts, merge (happy + duplicate-skip behavior +
+    self-merge reject + empty-source path).
