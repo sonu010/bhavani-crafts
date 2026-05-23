@@ -2,11 +2,11 @@
 id: P2-T22
 phase: 2
 title: Attribute definitions admin
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -89,4 +89,40 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Hard-delete, not soft-delete.** `attribute_definitions` has no
+    `deleted_at` column in 0002 — the spec assumed one. Did not add a
+    migration; delete is permanent and gated by a reference guard
+    (`in_use` error with the referenced product-value count). The
+    Trash view (T28) skips attributes for the same reason.
+
+  - **Type-change guard.** Editing the `type` is blocked once any
+    `product_attributes` row exists. The form disables the field with
+    a hint pointing at the value count; the server enforces too
+    (`type_change_blocked` error). Owner must clear all values via the
+    product editor before changing the type.
+
+  - **Options schema mirrors DB CHECK.** Zod `superRefine` enforces
+    that `type='select'` carries a non-empty `options_json` array AND
+    that other types do NOT carry one. Duplicates within options are
+    rejected before round-tripping. The DB has the same CHECK so a
+    leaked invalid payload would fail at insert, but the typed error
+    is nicer.
+
+  - **`attributes` is a new cache tag.** Server actions
+    `updateTag("attributes")` + `updateTag("products")`. The
+    storefront facet code in Phase 3 should also `await unstable_cache(
+    ..., { tags: ["attributes"] })` for its definitions read so this
+    tag actually flushes anything. Until then it's a no-op marker.
+
+  - **No DnD for options.** Order is insertion order; click × to
+    remove. dnd-kit reorder for options can land if we ever need it
+    (the storage column is a plain array, no schema change required).
+
+  - **13 tests.** Cover create (text + select happy, validation
+    failures, slug collision, missing-category), update (rename +
+    type-change block when values exist), delete (happy + in_use
+    block + not_found), and list-with-counts.
+
+  - **List uses paginated product_attributes read** — same
+    `range(offset, offset+999)` loop tags introduced, since
+    product_attributes is on the same ~8K-row scale.
