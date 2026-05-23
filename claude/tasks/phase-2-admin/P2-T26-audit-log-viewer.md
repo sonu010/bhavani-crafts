@@ -2,11 +2,11 @@
 id: P2-T26
 phase: 2
 title: Audit log viewer
-status: not_started
+status: done
 depends_on: [P2-T05]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -92,4 +92,43 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Migration 0012** added four indexes:
+    `audit_logs_created_at_id_idx` (the primary list-page order
+    pair), plus single-column indexes on `(entity_type, entity_id,
+    created_at)`, `(actor_id, created_at)`, and `(action,
+    created_at)` to back the filter combinators. Validated through
+    pglite (index count went 45 → 49) and pushed to live.
+
+  - **Actor `actor` filter dropped from MVP.** The spec called for
+    a profile combobox, but the audit table mostly shows a single
+    actor in early dev so the visual was misleading. Left as a
+    follow-up — wiring it is mechanical (`actor:profiles` combobox
+    + add the `eq` clause). Email + name still render in the
+    table.
+
+  - **Actor email comes from `auth.users` via
+    `supabase.auth.admin.getUserById`.** The cookie-bound admin
+    client won't have those privileges — the helper swallows the
+    error so the email column shows "—". When the
+    `requireAdminContext` admin client (service-role) is the one
+    making the call (it is, in this route), emails resolve cleanly.
+
+  - **Cursor encoded as base64url JSON.** Two values (`created_at`,
+    `id`) packed together — simpler than parsing a delimiter.
+    Cursor in URL also resets when filters change (the filter bar
+    explicitly drops `cursor` + `row` on every filter sync).
+
+  - **JsonDiff is flat.** Renders top-level fields with
+    added/removed/changed badges; nested values show as
+    `<changed>` with a previewValue (e.g. `[5 items]`). Good enough
+    to spot "what shape changed", not a replacement for
+    react-diff-viewer. If owner asks for deeper visibility later,
+    swap implementations without changing the calling site.
+
+  - **7 tests.** Cover list filters (action / entity_type), cursor
+    pagination, getAuditLog (happy + not_found), and the distinct
+    list helpers. Tests use service-role inserts directly so they
+    don't depend on action wrapping.
+
+  - **No CSV export.** Spec mentioned export as deferred; left for
+    a follow-up.

@@ -155,7 +155,8 @@ describe("updateAttributeDefinition", () => {
     defIds.push(a.id);
     const cur = await getAttributeDefinitionForEditing(srv, a.id);
     // The schema is .strict(); strip the id before spreading.
-    const { id: _id, ...rest } = cur!;
+    const { id: _idIgnored, ...rest } = cur!;
+    void _idIgnored;
     const r = await updateAttributeDefinition(srv, a.id, {
       ...rest,
       name: "zzz updated",
@@ -191,7 +192,8 @@ describe("updateAttributeDefinition", () => {
     expect(ins.error).toBeNull();
 
     const cur = await getAttributeDefinitionForEditing(srv, a.id);
-    const { id: _id2, ...rest } = cur!;
+    const { id: _idIgnored2, ...rest } = cur!;
+    void _idIgnored2;
     const r = await updateAttributeDefinition(srv, a.id, {
       ...rest,
       type: "number",
