@@ -2,11 +2,11 @@
 id: P2-T28
 phase: 2
 title: Soft-delete trash view
-status: not_started
+status: done
 depends_on: [P2-T07]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -131,4 +131,43 @@ None.
 
 # Notes for next agent
 
-(empty)
+  - **Five entity types** with `deleted_at`: products, categories,
+    tags, product_images, product_variants. `attribute_definitions`
+    is intentionally excluded — that table has no `deleted_at`
+    column (delete is hard-only, gated by reference count; see
+    T22).
+
+  - **No 30-day retention cron yet.** The header surfaces the
+    cutoff date so the contract stays visible, but the actual
+    nightly hard-delete is Phase 5. Until then, soft-deleted rows
+    sit forever until manually purged via the typed-confirmation
+    modal.
+
+  - **Hard-delete audit captures the row pre-delete.** The data
+    layer's `hardDeleteEntity` returns `beforeRow` (the full row
+    snapshot) to the action layer, which writes the `audit_logs`
+    row with `before_json = beforeRow` after the DELETE succeeds.
+    `audit_logs.entity_id` will dangle by design — see ADR-006.
+
+  - **Bulk hard-delete is intentionally absent.** ADR-006 forbids
+    it. The Trash UI exposes only bulk-restore + per-row hard
+    delete. Do not add a "select all → hard delete" button.
+
+  - **Typed-confirmation modal** matches the literal string
+    `DELETE` (case-sensitive). The cascade note in the dialog
+    explains what gets removed alongside the row (images,
+    variants, attribute values, tag links).
+
+  - **Public/private split** (`trash-public.ts`) — same pattern as
+    T16 / T27. Holds `TRASH_ENTITY_TYPES`, `TRASH_ENTITY_LABELS`,
+    and the `TrashedRow` interface; the data layer re-exports for
+    server-side imports.
+
+  - **Restore writes a stub audit `before_json`.** The pre-restore
+    `deleted_at` value isn't preserved (the row keeps it inline);
+    if a richer history is wanted later, switch to writing the
+    full row snapshot before the UPDATE.
+
+  - **8 tests.** Cover listTrashed, getTrashCounts, restore (happy
+    + not_deleted + not_found), hardDelete (happy + not_deleted +
+    snapshot returned).
