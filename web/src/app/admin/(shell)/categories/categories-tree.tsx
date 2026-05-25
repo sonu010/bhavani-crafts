@@ -66,15 +66,17 @@ export function CategoriesTree({
 
   const toggle = useCallback(
     (id: string) => {
-      setExpanded((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        syncUrl(next);
-        return next;
-      });
+      // Compute `next` outside the setState updater. Calling
+      // `syncUrl` (which calls `startTransition`) inside the updater
+      // counts as "during render" — React 19 rejects it with
+      // "Cannot call startTransition while rendering".
+      const next = new Set(expanded);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setExpanded(next);
+      syncUrl(next);
     },
-    [syncUrl],
+    [expanded, syncUrl],
   );
 
   if (tree.length === 0) {

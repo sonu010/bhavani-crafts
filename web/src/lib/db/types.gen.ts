@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       ai_generations: {
@@ -998,6 +973,13 @@ export type Database = {
       }
     }
     Functions: {
+      attribute_value_counts: {
+        Args: never
+        Returns: {
+          attribute_id: string
+          value_count: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       products_status_counts: {
         Args: never
@@ -1008,6 +990,13 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      tag_product_counts: {
+        Args: never
+        Returns: {
+          product_count: number
+          tag_id: string
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
@@ -1179,9 +1168,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       ai_generation_status: [

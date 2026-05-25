@@ -9,7 +9,7 @@ import {
   listAttributeDefinitionsAdmin,
   updateAttributeDefinition,
 } from "@/lib/db/admin/attribute-defs";
-import { srv } from "../_clients";
+import { purgeZzzFixtures, srv } from "../_clients";
 
 const defIds: string[] = [];
 const catIds: string[] = [];
@@ -25,6 +25,9 @@ afterAll(async () => {
   if (catIds.length > 0) {
     await srv.from("categories").delete().in("id", catIds);
   }
+  // Belt + braces: drop any `zzz-` row this suite (or a prior crashed
+  // run) leaked. Idempotent.
+  await purgeZzzFixtures();
 });
 
 function rid() {

@@ -69,3 +69,42 @@ export async function makeTestProduct(opts: {
     },
   };
 }
+
+/**
+ * Prefix-based purge for the `zzz-…` fixture rows. Call from a
+ * test-suite's `afterAll` to drop rows the per-test cleanups missed
+ * (e.g. when a test throws mid-flight). Idempotent; safe to call when
+ * nothing matches.
+ *
+ * The `scripts/purge-test-fixtures.mjs` script does the same thing
+ * across the whole DB — this helper is the per-suite version so each
+ * file cleans up after itself without depending on the manual script.
+ */
+export async function purgeZzzFixtures(): Promise<void> {
+  const targets: Array<{ table: string; column: string; prefix: string }> = [
+    { table: "product_variants", column: "sku", prefix: "ZZZ-" },
+    { table: "product_images", column: "alt", prefix: "zzz-" },
+    { table: "products", column: "slug", prefix: "zzz-" },
+    { table: "products", column: "sku", prefix: "ZZZ-" },
+    { table: "attribute_definitions", column: "slug", prefix: "zzz-" },
+    { table: "categories", column: "slug", prefix: "zzz-" },
+    { table: "tags", column: "slug", prefix: "zzz-" },
+  ];
+  for (const { table, column, prefix } of targets) {
+    // Cast through unknown because the typed query rejects unknown
+    // table names; this helper is generic on purpose.
+    const tbl = srv.from(table as never) as unknown as {
+      delete: () => {
+        like: (
+          c: string,
+          p: string,
+        ) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+    const { error } = await tbl.delete().like(column, `${prefix}%`);
+    if (error) {
+      // Best-effort cleanup; log and continue.
+      console.warn(`purgeZzzFixtures ${table}.${column}: ${error.message}`);
+    }
+  }
+}

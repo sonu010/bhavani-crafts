@@ -46,7 +46,10 @@ export interface AdminAttributeDefinition {
 export async function listAttributeDefinitionsAdmin(
   supabase: SC,
 ): Promise<AdminAttributeDefinition[]> {
-  const [defsRes, catsRes] = await Promise.all([
+  // Three parallel queries. The counts call uses the
+  // `attribute_value_counts()` RPC (migration 0013) which does a
+  // single GROUP BY server-side — same fix as `listTagsWithCounts`.
+  const [defsRes, catsRes, countsRes] = await Promise.all([
     supabase
       .from("attribute_definitions")
       .select(
@@ -58,33 +61,19 @@ export async function listAttributeDefinitionsAdmin(
       .from("categories")
       .select("id, name")
       .is("deleted_at", null),
+    supabase.rpc("attribute_value_counts"),
   ]);
   if (defsRes.error) throw new Error(`listAttributeDefinitionsAdmin (defs): ${defsRes.error.message}`);
   if (catsRes.error) throw new Error(`listAttributeDefinitionsAdmin (cats): ${catsRes.error.message}`);
+  if (countsRes.error) throw new Error(`listAttributeDefinitionsAdmin (counts): ${countsRes.error.message}`);
 
   const catNameById = new Map(
     (catsRes.data ?? []).map((c) => [c.id, c.name]),
   );
 
-  // Per-definition product_attributes count. Paginate in 1000-row
-  // chunks (same reason as tags: ~8K rows likely soon).
   const counts = new Map<string, number>();
-  const PAGE = 1000;
-  for (let offset = 0; ; offset += PAGE) {
-    const page = await supabase
-      .from("product_attributes")
-      .select("attribute_id")
-      .range(offset, offset + PAGE - 1);
-    if (page.error) {
-      throw new Error(
-        `listAttributeDefinitionsAdmin (pa-page): ${page.error.message}`,
-      );
-    }
-    const rows = page.data ?? [];
-    for (const r of rows) {
-      counts.set(r.attribute_id, (counts.get(r.attribute_id) ?? 0) + 1);
-    }
-    if (rows.length < PAGE) break;
+  for (const r of countsRes.data ?? []) {
+    counts.set(r.attribute_id, Number(r.value_count));
   }
 
   return (defsRes.data ?? []).map((d) => ({

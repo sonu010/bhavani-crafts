@@ -35,29 +35,25 @@ export interface AdminTagRow {
  * to aggregate in JS rather than via a view.
  */
 export async function listTagsWithCounts(supabase: SC): Promise<AdminTagRow[]> {
-  const tagsRes = await supabase
-    .from("tags")
-    .select("id, slug, name")
-    .is("deleted_at", null)
-    .order("name", { ascending: true });
+  // Two parallel queries: tags + the server-side rollup. The previous
+  // version paginated product_tags in 1000-row chunks (8 round-trips,
+  // ~3s) because PostgREST's default response cap silently truncated
+  // the count. The `tag_product_counts()` RPC (migration 0013) does a
+  // single GROUP BY in one round-trip.
+  const [tagsRes, countsRes] = await Promise.all([
+    supabase
+      .from("tags")
+      .select("id, slug, name")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    supabase.rpc("tag_product_counts"),
+  ]);
   if (tagsRes.error) throw new Error(`listTagsWithCounts (tags): ${tagsRes.error.message}`);
+  if (countsRes.error) throw new Error(`listTagsWithCounts (counts): ${countsRes.error.message}`);
 
-  // PostgREST defaults to a 1000-row response cap; product_tags is in the
-  // 8K range so we have to paginate explicitly. Range steps of 1000 keep
-  // each response small and predictable.
   const counts = new Map<string, number>();
-  const PAGE = 1000;
-  for (let offset = 0; ; offset += PAGE) {
-    const page = await supabase
-      .from("product_tags")
-      .select("tag_id")
-      .range(offset, offset + PAGE - 1);
-    if (page.error) throw new Error(`listTagsWithCounts (pt): ${page.error.message}`);
-    const rows = page.data ?? [];
-    for (const r of rows) {
-      counts.set(r.tag_id, (counts.get(r.tag_id) ?? 0) + 1);
-    }
-    if (rows.length < PAGE) break;
+  for (const r of countsRes.data ?? []) {
+    counts.set(r.tag_id, Number(r.product_count));
   }
 
   return (tagsRes.data ?? []).map((t) => ({
