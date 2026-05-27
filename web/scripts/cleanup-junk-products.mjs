@@ -55,7 +55,7 @@ async function fetchAll() {
   return out;
 }
 
-function softDelete(ids, why) {
+function softDelete(ids) {
   if (ids.length === 0) return Promise.resolve();
   if (!APPLY) return Promise.resolve();
   return c

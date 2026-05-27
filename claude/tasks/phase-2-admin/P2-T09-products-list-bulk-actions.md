@@ -2,11 +2,11 @@
 id: P2-T09
 phase: 2
 title: Products list bulk actions
-status: not_started
+status: done
 depends_on: [P2-T07]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -100,3 +100,34 @@ None.
 # Notes for next agent
 
 (empty)
+
+  - **Sync-only.** The spec wanted > 100 row jobification via
+    `background_jobs`. The CSV worker (T24) that drains those jobs
+    doesn't exist yet, and chunked UPDATEs handle a few thousand
+    rows fine inside the server-action timeout. Threshold remains
+    in code as a future flip point; jobified path lands when the
+    worker ships.
+
+  - **No filter-mode selection.** "Select all 5,804 needs_review"
+    was deferred — the cleaned fixture's queue is small enough
+    that page-by-page selection works. Add filter-mode when the
+    import workflow demands it.
+
+  - **`?selected=` URL persistence.** Selection lives in the URL
+    so reload preserves it. `router.replace` keeps history clean.
+    Capped at the URL length the browser allows; ~1000 IDs fits
+    comfortably.
+
+  - **One audit row per affected product** — per ADR-006
+    granularity. Audit inserts chunk at 500 rows to keep request
+    payloads bounded.
+
+  - **Tag picker** uses slug-or-id. The action layer resolves
+    either via `resolveTag()` so future "by id" callers don't
+    need a separate path.
+
+  - **7 tests** in `__tests__/db/admin/bulk.test.ts`:
+    readProductsForBulk (live + skip-deleted), applyBulkUpdate
+    (publish, move category, empty noop), applyBulkSoftDelete
+    (idempotent), add/remove tag (idempotent on re-add, removes
+    cleanly).

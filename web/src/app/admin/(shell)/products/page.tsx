@@ -7,6 +7,8 @@ import {
   type AdminProductSort,
   type AdminProductStatus,
 } from "@/lib/db/admin/products";
+import { getCategoryTree } from "@/lib/db/categories";
+import type { CategoryTreeNode } from "@/lib/schemas/category";
 import { perfStart } from "@/lib/perf";
 import { FilterBar } from "./filter-bar";
 import { LoadMore } from "./load-more";
@@ -118,7 +120,7 @@ export default async function AdminProductsPage({
   // the data-access boundary.
   const { admin } = await requireAdminContext();
   t.mark("auth");
-  const [counts, page, filterOptions] = await Promise.all([
+  const [counts, page, filterOptions, categoryTree] = await Promise.all([
     countProductsByStatus(admin),
     listProductsAdmin(admin, {
       status,
@@ -131,6 +133,7 @@ export default async function AdminProductsPage({
       source,
     }),
     getAdminFilterOptions(admin),
+    getCategoryTree(admin),
   ]);
   t.mark("queries");
   t.end();
@@ -171,7 +174,12 @@ export default async function AdminProductsPage({
 
       <StatusChips counts={counts} active={status} sort={sort} extraParams={baseParams} />
 
-      <ProductsTable rows={page.items} backHref={backHref} />
+      <ProductsTable
+        rows={page.items}
+        backHref={backHref}
+        allTags={filterOptions.tags}
+        categoryOptions={flattenCategoriesForPicker(categoryTree)}
+      />
 
       <LoadMore
         cursor={page.nextCursor}
@@ -181,4 +189,20 @@ export default async function AdminProductsPage({
       />
     </div>
   );
+}
+
+/**
+ * Flatten the recursive category tree into a depth-aware list the
+ * bulk-toolbar move dropdown can render with indentation.
+ */
+function flattenCategoriesForPicker(
+  tree: CategoryTreeNode[],
+  depth = 0,
+  out: Array<{ id: string; name: string; depth: number }> = [],
+): Array<{ id: string; name: string; depth: number }> {
+  for (const n of tree) {
+    out.push({ id: n.id, name: n.name, depth });
+    if (n.children.length > 0) flattenCategoriesForPicker(n.children, depth + 1, out);
+  }
+  return out;
 }
