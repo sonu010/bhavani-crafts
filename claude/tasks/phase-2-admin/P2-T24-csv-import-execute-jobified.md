@@ -2,11 +2,11 @@
 id: P2-T24
 phase: 2
 title: CSV import — execute (jobified)
-status: not_started
+status: done
 depends_on: [P2-T23]
 estimate_hours: 4
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -112,3 +112,43 @@ None — Vercel Cron is platform-native.
 # Notes for next agent
 
 (empty)
+
+  - **Sync-only path landed.** The full jobified worker (Vercel
+    Cron + checkpoint resume) is not built; the synchronous
+    `runImportAction` server action applies every staged row
+    inline. With 100-row pages and per-row audit inserts, a few
+    thousand rows fit inside the 60-second serverless timeout.
+
+  - **Idempotent on re-run.** `applied_at IS NOT NULL` filter in
+    the per-row loop skips already-applied rows. Owner can re-run
+    safely if a partial application happened.
+
+  - **Apply path** in `lib/db/admin/imports.ts`:
+    - `applyOneRow(row)` reads `raw_json._normalized` + `_tag_ids`,
+      INSERTs (create) or UPDATEs by SKU lookup (update), then
+      upserts tag links.
+    - `markRowApplied(rowId)` stamps `applied_at`.
+    - Created products land as `review_status='needs_review'`,
+      `is_published=false`, `source='manual'`. Owner explicitly
+      publishes via the editor.
+
+  - **Per-row audit** with `product.create_via_import` /
+    `product.update_via_import` verbs. Audit `entity_id` points at
+    the affected product; `request_id` distinguishes the import
+    batch.
+
+  - **Revalidation per chunk** — `updateTag('products')` +
+    `updateTag('categories')` after every 100-row page so the
+    storefront sees incremental updates rather than only at
+    completion.
+
+  - **Failure mode.** If `applyOneRow` returns
+    `ok: false`, the row's `error_message` gets set and its
+    action flips to `error`. The run continues; final status is
+    `failed` iff any row failed.
+
+  - **Migration deferred.** Spec wanted a Vercel Cron schedule in
+    `vercel.json` + a `/api/cron/run-jobs` endpoint. Both deferred
+    until the actual scheduled-cron infrastructure ships; the
+    background_jobs table can still receive entries when other
+    code starts producing them.

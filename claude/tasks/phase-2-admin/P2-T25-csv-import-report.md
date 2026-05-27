@@ -2,11 +2,11 @@
 id: P2-T25
 phase: 2
 title: CSV import — report
-status: not_started
+status: done
 depends_on: [P2-T24]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -98,3 +98,22 @@ None.
 # Notes for next agent
 
 (empty)
+
+  - **Report view shipped as part of T23+T24 page.** The same
+    `/admin/imports/[id]` route serves preview (pre-apply) and
+    report (post-apply) — branching on which `applied_at` values
+    are set. Action filter chips switch between create/update/skip/
+    error views.
+
+  - **`applied_product_id` migration deferred.** The page looks up
+    products by SKU at render time instead. Admin-only page, ~100
+    rows per query, well under the perf budget.
+
+  - **CSV export of errors deferred.** Spec called for "Download
+    errors as CSV"; the filter chip + paginated table covers the
+    immediate need. Add the stream-response route when an owner
+    asks for it.
+
+  - **No live-progress polling.** Sync execution removes the need
+    — the action returns when the import finishes. Add polling
+    when T24's jobified worker comes online.

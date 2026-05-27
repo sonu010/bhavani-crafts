@@ -2,11 +2,11 @@
 id: P2-T23
 phase: 2
 title: CSV import — upload + validate
-status: not_started
+status: done
 depends_on: [P2-T11]
 estimate_hours: 4
 owner: ai
-last_updated: 2026-05-17
+last_updated: 2026-05-18
 ---
 
 # Goal
@@ -126,3 +126,35 @@ psql "$DB_URL" -c "SELECT count(*) FROM products;"  # same before + after
 # Notes for next agent
 
 (empty)
+
+  - **Two-phase model preserved.** Validate-only via the upload
+    route; the catalog stays untouched until "Run import" fires.
+    Confirmed via the integration test (apply happens through the
+    explicit action layer).
+
+  - **CSV row schema** lives in
+    `web/src/lib/schemas/import-csv.ts`. Required columns:
+    `sku`, `name`, `base_price_inr`. Optional: slug (auto-derived),
+    short_description, description, compare_at_price_inr,
+    stock_status (defaults `unknown`), stock_quantity,
+    category_slug, tags (comma-separated).
+
+  - **Pre-fetched refs** — one round-trip each for categories +
+    tags + existing products (by SKU). Avoids the N-query trap on
+    a 5K-row CSV. `fetchValidatorRefs()` returns three Maps the
+    classifier hits in O(1).
+
+  - **15-test coverage.** 4 parser tests (BOM strip, header
+    normalisation, blank-row drop, empty CSV); 11 classifier tests
+    (validation failures, unknown refs, create/update/skip
+    detection, slug auto-derivation, _normalized + _tag_ids
+    pack).
+
+  - **`_normalized` + `_tag_ids` side-channel.** Stored inside
+    `raw_json` instead of adding a schema column. The executor
+    reads from there directly — no re-resolution needed at apply
+    time.
+
+  - **Schema check before staging.** Missing required columns
+    return a 400 before any row work. Owner sees the headers we
+    detected + the list of missing required columns.
