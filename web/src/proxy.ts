@@ -69,9 +69,23 @@ export async function proxy(req: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Verify the JWT LOCALLY via getClaims() instead of the network
+  // getUser(). On a project with asymmetric signing keys this is a
+  // WebCrypto signature check against the cached JWKS — no round-trip —
+  // and it returns the `aal` claim the MFA gate needs, collapsing what
+  // were TWO network calls (getUser + getAuthenticatorAssuranceLevel)
+  // into one local op on the happy path. (On legacy symmetric keys it
+  // falls back to a server call, i.e. no worse than getUser.)
+  //
+  // This is still the CHEAP gate — requireRole()/requireAAL2() in the
+  // data layer stay authoritative: they call getUser() and re-check
+  // role, so a revoked-but-not-yet-expired token still can't do work.
+  // See auth-and-roles.md §"Three layers of authorization".
+  const { data: claimsData, error: claimsError } =
+    await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
 
-  if (!user) {
+  if (claimsError || !claims?.sub) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
@@ -87,13 +101,18 @@ export async function proxy(req: NextRequest) {
     return response;
   }
 
-  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aalData?.currentLevel === "aal2") {
+  // AAL comes straight from the verified JWT claim — no extra network
+  // call. (`aal` is a Supabase custom claim not in the base JwtPayload
+  // type, hence the narrow cast.)
+  const aal = (claims as { aal?: string }).aal;
+  if (aal === "aal2") {
     return response;
   }
 
   // AAL1 outside the allow-list. Pick the right destination based on
-  // whether the user has an enrolled factor.
+  // whether the user has an enrolled factor. This branch only runs
+  // during 2FA setup/verify (rare), so the listFactors() round-trip
+  // here is acceptable.
   const { data: factorsData } = await supabase.auth.mfa.listFactors();
   const hasVerifiedTotp = factorsData?.totp?.some((f) => f.status === "verified") ?? false;
 
