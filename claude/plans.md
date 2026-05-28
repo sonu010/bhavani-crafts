@@ -143,6 +143,7 @@ plus a previously-unowned SEO task (T24).
 - ⬜ [P3-T28: Payment verification + order confirmation](tasks/phase-3-storefront/P3-T28-payment-verification-and-confirmation.md) — depends P3-T27 · **NEW**
 - ⬜ [P3-T22: Mobile pass (360px)](tasks/phase-3-storefront/P3-T22-mobile-pass.md) — depends P3-T13, P3-T18, P3-T27
 - ⬜ [P3-T23: Lighthouse pass (perf budget)](tasks/phase-3-storefront/P3-T23-lighthouse-pass.md) — depends P3-T22
+- 🔶 [P3-T29: E2E (Playwright) — admin critical flows](tasks/phase-3-storefront/P3-T29-e2e-playwright-admin-flows.md) — harness + specs built + validated; first green run + CI job pending (needs local Docker stack) · **NEW (T00)**
 
 ---
 

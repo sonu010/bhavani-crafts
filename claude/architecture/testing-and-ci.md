@@ -151,7 +151,10 @@ Test fixtures (slugs prefixed `zzz-`) are cleaned up by each suite's `afterAll`.
 
 - **Husky pre-commit hooks.** Local-only safety net. Deferred to P2-T01.
 - **Lighthouse CI.** Storefront-perf gate. Lands in P3-T23.
-- **Playwright E2E.** End-to-end browser flows. Lands in P3-T22.
+- **Playwright E2E.** Harness + admin critical-flow specs land in
+  **P3-T29** (config, TOTP-aware auth fixture, anon/admin specs).
+  Runs against a LOCAL Supabase stack, not prod — see
+  `web/e2e/README.md`. The CI `e2e` job is the remaining piece.
 - **`size-limit` bundle budget.** Lands when storefront pages exist (Phase 3).
 - **Sentry source-map upload.** Lands in P5-T05.
 - **Dependabot.** Recommend enabling on the repo via GitHub UI; no workflow code needed.

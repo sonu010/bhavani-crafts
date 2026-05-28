@@ -20,5 +20,11 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     testTimeout: 15_000,
     fileParallelism: false,
+    // Scope vitest to the data-layer/unit suites under __tests__/.
+    // Playwright E2E specs live in e2e/ and use @playwright/test, NOT
+    // vitest — exclude them so vitest's default `**/*.spec.*` glob
+    // doesn't try to run (and crash on) the browser specs.
+    include: ["__tests__/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["e2e/**", "node_modules/**", ".next/**"],
   },
 });
