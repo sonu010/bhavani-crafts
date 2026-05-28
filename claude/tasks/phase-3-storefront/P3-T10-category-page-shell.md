@@ -57,6 +57,8 @@ pagination (T12).
 - [ ] Unknown slug → 404.
 - [ ] Reads wrapped in `unstable_cache` with categories/products tags;
       editing a product in admin reflects after revalidation.
+- [ ] Page is cached (`export const revalidate` set), NOT
+      `force-dynamic` — per the T00 performance contract.
 - [ ] `generateMetadata` produces a category title/description.
 - [ ] No horizontal scroll at 360px.
 - [ ] tsc + lint + build green.

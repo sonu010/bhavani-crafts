@@ -62,6 +62,9 @@ admin preview token so unpublished products are viewable via a signed
       / mismatched token → 404 (falls back to public rule).
 - [ ] Public read wrapped in `unstable_cache` with product tags;
       preview read uncached.
+- [ ] Public render is cached (`export const revalidate` set); the
+      preview branch is the ONLY `force-dynamic`-equivalent path in
+      Phase 3 — per the T00 performance contract.
 - [ ] `generateMetadata` populates title + og:image.
 - [ ] No horizontal scroll at 360px.
 - [ ] tsc + lint + build green.

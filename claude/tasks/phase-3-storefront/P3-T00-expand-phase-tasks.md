@@ -30,6 +30,31 @@ that were missing from the original plan.
    the storefront serves stale data after every admin edit. Tag
    vocabulary is fixed in caching-and-revalidation.md.
 
+   **Performance contract (the "no lag browsing" guarantee) — applies
+   to every storefront task, enforced as an acceptance criterion:**
+   - Storefront pages are cached, NOT `force-dynamic`. The ONLY
+     dynamic branch in all of Phase 3 is the PDP `?preview=<token>`
+     path (T13), which is read uncached + token-gated. Everything
+     else serves from cache.
+   - Each data-fetching page sets `export const revalidate = <N>`
+     (ISR) AND wraps its reads in `unstable_cache` with the right
+     tags. ISR gives a static-fast baseline; the tags give on-demand
+     freshness when admin edits. Both, not either.
+   - Budget: cached storefront route TTFB < 200ms; LCP < 2.5s; CLS
+     < 0.1 (verified in T23 on `pnpm build && pnpm start`, NOT dev —
+     Turbopack cold-compile makes dev numbers meaningless).
+   - Client JS stays minimal: only the cart store, search box,
+     gallery, and variant selector are client islands. No accidental
+     `"use client"` on a big server tree.
+
+   **Admin performance** (separate system — auth-gated, uncacheable
+   data): the lever is fixed per-request overhead, not queries (those
+   are already RPC-backed + keyset-paginated + indexed). The
+   measured bottleneck was the auth round-trip; `proxy.ts` now uses
+   local JWT verification (`getClaims()`, ES256/WebCrypto, no
+   network) instead of `getUser()`. Keep it that way. See
+   `claude/architecture/performance.md` if/when written.
+
 3. **Shared `<ProductCard>`** is built ONCE in P3-T01 and reused by
    hero, Atlas-adjacent rows, weekly collection, kits, category grid,
    search results, related products. Do not fork it per consumer.

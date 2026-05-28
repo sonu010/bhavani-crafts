@@ -57,13 +57,29 @@ from images.
 - [ ] LCP < 2.5s; CLS < 0.1; no image-driven layout shift.
 - [ ] LCP images have `priority` + correct `sizes`; below-fold lazy.
 - [ ] Client JS islands stay minimal (no giant "use client" trees).
+- [ ] **Cached-route TTFB < 200ms** on a warm cache (read the `[perf]`
+      logs from `pnpm build && pnpm start`, NOT dev — Turbopack
+      cold-compile makes dev numbers meaningless).
+- [ ] **No storefront page is `force-dynamic`** except the PDP
+      `?preview=` branch. Grep: `grep -rn "force-dynamic"
+      web/src/app/(storefront)` returns only the documented exception.
+- [ ] Each catalog page sets `export const revalidate` (ISR) AND
+      wraps reads in `unstable_cache` with the correct tags; editing a
+      product/category in admin reflects on the storefront after
+      revalidation (manual cross-check).
 - [ ] tsc + lint + build green.
 
 # Verification
 
 ```bash
-cd web && pnpm build && pnpm start
-# Lighthouse (mobile) on /, /c/<slug>, /p/<slug>; capture scores
+cd web && pnpm build && pnpm start   # PROD mode — never measure in dev
+# 1. Hit /, /c/<slug>, /p/<slug> twice each; read [perf] logs on the
+#    SECOND hit (warm cache) → TTFB < 200ms
+# 2. Lighthouse (mobile) on the three routes; capture scores
+# 3. grep -rn "force-dynamic" web/src/app/(storefront)  → only the
+#    PDP preview exception
+# 4. Edit a product in admin → reload its /p/<slug> → change appears
+#    (tag revalidation working)
 npx unlighthouse --site http://localhost:3000   # optional bulk scan
 ```
 
