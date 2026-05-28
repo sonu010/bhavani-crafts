@@ -107,34 +107,42 @@ A lightweight wedge inserted between Phase 1 and Phase 2 after the first Vercel 
 
 ---
 
-## Phase 3 — Public storefront   (aggressive 3 days · realistic 5–7 days)
+## Phase 3 — Public storefront   (aggressive 4 days · realistic 7–10 days)
 
 **Entry task** = expand the stubs in this phase with lessons learned from Phase 2.
+All stubs expanded by P3-T00 (2026-05-18). Scope grew: owner reversed the
+"no payments in MVP" call → Razorpay checkout is now in (cluster T25–T28),
+plus a previously-unowned SEO task (T24).
 
-- ⬜ [P3-T00: Expand Phase 3 task files](tasks/phase-3-storefront/P3-T00-expand-phase-tasks.md) — depends P2-T29
-- ⬜ [P3-T01: Public layout + nav](tasks/phase-3-storefront/P3-T01-public-layout-and-nav.md) — stub
-- ⬜ [P3-T02: Landing — hero](tasks/phase-3-storefront/P3-T02-landing-hero.md) — stub
-- ⬜ [P3-T03: Landing — caption strip](tasks/phase-3-storefront/P3-T03-landing-caption-strip.md) — stub
-- ⬜ [P3-T04: Landing — Atlas (category grid)](tasks/phase-3-storefront/P3-T04-landing-atlas-categories.md) — stub
-- ⬜ [P3-T05: Landing — weekly collection](tasks/phase-3-storefront/P3-T05-landing-weekly-collection.md) — stub
-- ⬜ [P3-T06: Landing — kits row](tasks/phase-3-storefront/P3-T06-landing-kits-row.md) — stub
-- ⬜ [P3-T07: Landing — bulk enquiry](tasks/phase-3-storefront/P3-T07-landing-bulk-enquiry.md) — stub
-- ⬜ [P3-T08: Landing — visit section](tasks/phase-3-storefront/P3-T08-landing-visit-section.md) — stub
-- ⬜ [P3-T09: Public footer](tasks/phase-3-storefront/P3-T09-public-footer.md) — stub
-- ⬜ [P3-T10: Category page shell](tasks/phase-3-storefront/P3-T10-category-page-shell.md) — stub
-- ⬜ [P3-T11: Category filters sidebar](tasks/phase-3-storefront/P3-T11-category-filters-sidebar.md) — stub
-- ⬜ [P3-T12: Category cursor pagination](tasks/phase-3-storefront/P3-T12-category-pagination-cursor.md) — stub
-- ⬜ [P3-T13: Product detail page](tasks/phase-3-storefront/P3-T13-product-detail-page.md) — stub
-- ⬜ [P3-T14: Product detail — gallery](tasks/phase-3-storefront/P3-T14-product-detail-gallery.md) — stub
-- ⬜ [P3-T15: Product detail — variants UI](tasks/phase-3-storefront/P3-T15-product-detail-variants-ui.md) — stub
-- ⬜ [P3-T16: Related products](tasks/phase-3-storefront/P3-T16-related-products.md) — stub
-- ⬜ [P3-T17: Product JSON-LD (SEO)](tasks/phase-3-storefront/P3-T17-product-jsonld-seo.md) — stub
-- ⬜ [P3-T18: Search page (FTS)](tasks/phase-3-storefront/P3-T18-search-page-fts.md) — stub
-- ⬜ [P3-T19: Search — synonyms + trigram](tasks/phase-3-storefront/P3-T19-search-synonyms-and-trigram.md) — stub
-- ⬜ [P3-T20: Cart drawer](tasks/phase-3-storefront/P3-T20-cart-drawer.md) — stub
-- ⬜ [P3-T21: Cart store port from web-legacy](tasks/phase-3-storefront/P3-T21-cart-store-port.md) — stub
-- ⬜ [P3-T22: Mobile pass](tasks/phase-3-storefront/P3-T22-mobile-pass.md) — stub
-- ⬜ [P3-T23: Lighthouse pass](tasks/phase-3-storefront/P3-T23-lighthouse-pass.md) — stub
+- ✅ [P3-T00: Expand Phase 3 task files](tasks/phase-3-storefront/P3-T00-expand-phase-tasks.md) — done
+- ⬜ [P3-T01: Public layout + nav + shared ProductCard](tasks/phase-3-storefront/P3-T01-public-layout-and-nav.md) — depends P3-T00
+- ⬜ [P3-T02: Landing — hero](tasks/phase-3-storefront/P3-T02-landing-hero.md) — depends P3-T01
+- ⬜ [P3-T03: Landing — caption strip](tasks/phase-3-storefront/P3-T03-landing-caption-strip.md) — depends P3-T02
+- ⬜ [P3-T04: Landing — Atlas (category grid)](tasks/phase-3-storefront/P3-T04-landing-atlas-categories.md) — depends P3-T01
+- ⬜ [P3-T05: Landing — weekly collection (is_featured)](tasks/phase-3-storefront/P3-T05-landing-weekly-collection.md) — depends P3-T04
+- ⬜ [P3-T06: Landing — kits row (workshop-kits category)](tasks/phase-3-storefront/P3-T06-landing-kits-row.md) — depends P3-T04
+- ⬜ [P3-T07: Landing — bulk enquiry (WhatsApp)](tasks/phase-3-storefront/P3-T07-landing-bulk-enquiry.md) — depends P3-T01
+- ⬜ [P3-T08: Landing — visit section](tasks/phase-3-storefront/P3-T08-landing-visit-section.md) — depends P3-T01
+- ⬜ [P3-T09: Public footer](tasks/phase-3-storefront/P3-T09-public-footer.md) — depends P3-T01
+- ⬜ [P3-T10: Category page shell (/c/[slug])](tasks/phase-3-storefront/P3-T10-category-page-shell.md) — depends P3-T01
+- ⬜ [P3-T11: Category filters sidebar](tasks/phase-3-storefront/P3-T11-category-filters-sidebar.md) — depends P3-T10
+- ⬜ [P3-T12: Category cursor pagination](tasks/phase-3-storefront/P3-T12-category-pagination-cursor.md) — depends P3-T10
+- ⬜ [P3-T13: Product detail page (/p/[slug], preview-token)](tasks/phase-3-storefront/P3-T13-product-detail-page.md) — depends P3-T01
+- ⬜ [P3-T14: Product detail — gallery](tasks/phase-3-storefront/P3-T14-product-detail-gallery.md) — depends P3-T13
+- ⬜ [P3-T15: Product detail — variants UI](tasks/phase-3-storefront/P3-T15-product-detail-variants-ui.md) — depends P3-T13
+- ⬜ [P3-T16: Related products](tasks/phase-3-storefront/P3-T16-related-products.md) — depends P3-T13
+- ⬜ [P3-T17: Product JSON-LD (SEO)](tasks/phase-3-storefront/P3-T17-product-jsonld-seo.md) — depends P3-T13
+- ⬜ [P3-T18: Search page (FTS + search_logs)](tasks/phase-3-storefront/P3-T18-search-page-fts.md) — depends P3-T01
+- ⬜ [P3-T19: Search — synonyms + trigram](tasks/phase-3-storefront/P3-T19-search-synonyms-and-trigram.md) — depends P3-T18
+- ⬜ [P3-T21: Cart store port (from origin/main)](tasks/phase-3-storefront/P3-T21-cart-store-port.md) — depends P3-T01
+- ⬜ [P3-T20: Cart drawer](tasks/phase-3-storefront/P3-T20-cart-drawer.md) — depends P3-T01, P3-T21
+- ⬜ [P3-T24: SEO — sitemap, robots, metadata](tasks/phase-3-storefront/P3-T24-seo-sitemap-robots-metadata.md) — depends P3-T10, P3-T13 · **NEW (T00)**
+- ⬜ [P3-T25: Orders schema + payments ADR](tasks/phase-3-storefront/P3-T25-orders-schema-and-adr.md) — depends P3-T21 · **NEW · needs ADR**
+- ⬜ [P3-T26: Razorpay order creation (server)](tasks/phase-3-storefront/P3-T26-razorpay-order-create.md) — depends P3-T25 · **NEW**
+- ⬜ [P3-T27: Checkout page + Razorpay widget](tasks/phase-3-storefront/P3-T27-checkout-page.md) — depends P3-T26 · **NEW**
+- ⬜ [P3-T28: Payment verification + order confirmation](tasks/phase-3-storefront/P3-T28-payment-verification-and-confirmation.md) — depends P3-T27 · **NEW**
+- ⬜ [P3-T22: Mobile pass (360px)](tasks/phase-3-storefront/P3-T22-mobile-pass.md) — depends P3-T13, P3-T18, P3-T27
+- ⬜ [P3-T23: Lighthouse pass (perf budget)](tasks/phase-3-storefront/P3-T23-lighthouse-pass.md) — depends P3-T22
 
 ---
 
