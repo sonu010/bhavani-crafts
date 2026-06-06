@@ -63,7 +63,53 @@ async function readOrder(supabase: SC, id: string): Promise<OrderRow | null> {
   return data ? (data as unknown as OrderRow) : null;
 }
 
-/** pending_payment → paid. Stamps paid_at = now(). */
+/**
+ * Best-effort stock decrement for every order line. Runs after the
+ * status flip so a stock RPC failure can't roll back the payment
+ * confirmation (ADR-011 §5: stock is informational at MVP, over-
+ * sells are reconciled manually). Errors are swallowed + logged so
+ * the caller's `markOrderPaid` always succeeds when the status flip
+ * did.
+ *
+ * Skips items whose product_id has been NULLed by a catalog delete —
+ * the snapshot stays, but there's nothing to decrement.
+ */
+async function decrementStockForOrder(
+  supabase: SC,
+  orderId: string,
+): Promise<void> {
+  const { data: items, error } = await supabase
+    .from("order_items")
+    .select("product_id, quantity")
+    .eq("order_id", orderId);
+  if (error) {
+    console.warn(
+      `decrementStockForOrder: read items failed (${error.message}); skipping`,
+    );
+    return;
+  }
+  for (const it of items ?? []) {
+    const productId = it.product_id as string | null;
+    const qty = it.quantity as number;
+    if (!productId || qty <= 0) continue;
+    const { error: rpcErr } = await supabase.rpc("decrement_product_stock", {
+      p_product_id: productId,
+      p_quantity: qty,
+    });
+    if (rpcErr) {
+      // One failed line shouldn't poison the others or the order
+      // itself. Log so we have a thread to pull on later.
+      console.warn(
+        `decrement_product_stock(${productId}, ${qty}) failed: ${rpcErr.message}`,
+      );
+    }
+  }
+}
+
+/**
+ * pending_payment → paid. Stamps paid_at = now() and decrements
+ * stock_quantity per ADR-011 §5 (best-effort; failures don't roll back).
+ */
 export async function markOrderPaid(
   supabase: SC,
   id: string,
@@ -84,6 +130,10 @@ export async function markOrderPaid(
     .select(SELECT_COLS)
     .single();
   if (error) throw new Error(`markOrderPaid: ${error.message}`);
+
+  // Best-effort post-write; never blocks the caller.
+  await decrementStockForOrder(supabase, id);
+
   return { ok: true, before, after: data as unknown as OrderRow };
 }
 

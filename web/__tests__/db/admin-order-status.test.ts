@@ -138,4 +138,112 @@ describe("admin order-status flips", () => {
       }
     }
   });
+
+  // ─── markOrderPaid: stock decrement side-effect (ADR-011 §5) ───────
+  it("markOrderPaid: decrements stock_quantity per item; clamps at 0; skips untracked", async () => {
+    // Seed a category + two products: one with tracked stock, one
+    // with stock_quantity NULL (opted out of tracking).
+    const { data: cat } = await srv
+      .from("categories")
+      .insert({ slug: `${TAG}-stockcat`, name: "stock cat" })
+      .select("id")
+      .single();
+    const { data: prodTracked } = await srv
+      .from("products")
+      .insert({
+        sku: `${TAG.toUpperCase()}-T`,
+        slug: `${TAG}-tracked`,
+        name: "zzz tracked",
+        base_price_inr: 100,
+        stock_status: "in_stock" as const,
+        stock_quantity: 5,
+        category_id: cat!.id,
+        is_published: true,
+        review_status: "published" as const,
+        source: "manual" as const,
+      })
+      .select("id")
+      .single();
+    const { data: prodUntracked } = await srv
+      .from("products")
+      .insert({
+        sku: `${TAG.toUpperCase()}-U`,
+        slug: `${TAG}-untracked`,
+        name: "zzz untracked",
+        base_price_inr: 100,
+        stock_status: "in_stock" as const,
+        stock_quantity: null,
+        category_id: cat!.id,
+        is_published: true,
+        review_status: "published" as const,
+        source: "manual" as const,
+      })
+      .select("id")
+      .single();
+
+    // Order with 2× tracked and 1× untracked.
+    const id = await seedOrder("stock-decrement");
+    await srv.from("order_items").insert([
+      {
+        order_id: id,
+        product_id: prodTracked!.id,
+        sku: `${TAG.toUpperCase()}-T`,
+        name: "zzz tracked",
+        unit_price_inr: 100,
+        quantity: 2,
+        line_total_inr: 200,
+      },
+      {
+        order_id: id,
+        product_id: prodUntracked!.id,
+        sku: `${TAG.toUpperCase()}-U`,
+        name: "zzz untracked",
+        unit_price_inr: 100,
+        quantity: 1,
+        line_total_inr: 100,
+      },
+    ]);
+
+    const result = await markOrderPaid(srv, id);
+    expect(result.ok).toBe(true);
+
+    // Tracked: 5 - 2 = 3.
+    const { data: trackedAfter } = await srv
+      .from("products")
+      .select("stock_quantity")
+      .eq("id", prodTracked!.id)
+      .single();
+    expect(trackedAfter!.stock_quantity).toBe(3);
+
+    // Untracked: stays null (opted out — RPC no-ops).
+    const { data: untrackedAfter } = await srv
+      .from("products")
+      .select("stock_quantity")
+      .eq("id", prodUntracked!.id)
+      .single();
+    expect(untrackedAfter!.stock_quantity).toBeNull();
+
+    // Cleanup product fixtures (the order itself is wiped in afterAll).
+    await srv.from("products").delete().in("id", [prodTracked!.id, prodUntracked!.id]);
+    await srv.from("categories").delete().eq("id", cat!.id);
+  });
+
+  it("markOrderPaid: stock RPC failure doesn't roll back the paid flip", async () => {
+    // Seed an order whose items reference a NULLed product_id (catalog
+    // delete after order create). The decrement loop should skip; the
+    // status flip still succeeds.
+    const id = await seedOrder("stock-skip");
+    await srv.from("order_items").insert({
+      order_id: id,
+      product_id: null,
+      sku: "ZZZ-ORPHAN",
+      name: "zzz orphan",
+      unit_price_inr: 100,
+      quantity: 1,
+      line_total_inr: 100,
+    });
+    const result = await markOrderPaid(srv, id);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.after.status).toBe("paid");
+  });
 });

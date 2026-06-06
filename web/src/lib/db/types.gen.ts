@@ -1164,6 +1164,10 @@ export type Database = {
           order_number: string
         }[]
       }
+      decrement_product_stock: {
+        Args: { p_product_id: string; p_quantity: number }
+        Returns: number
+      }
       generate_order_number: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_pending_anon_order: { Args: { p_order_id: string }; Returns: boolean }

@@ -75,15 +75,29 @@ function ago(iso: string): string {
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
 }) {
   const { supabase } = await requireAdminContext();
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const status = pickStatus(sp.status);
+  const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 120) : "";
 
-  const { items, total } = await listAdminOrders(supabase, { page, status });
+  const { items, total } = await listAdminOrders(supabase, { page, status, q });
   const totalPages = Math.max(1, Math.ceil(total / ORDERS_PER_PAGE));
+
+  // Preserve current `q` + `status` across pagination + chip nav.
+  function withParam(name: string, value: string | null): string {
+    const usp = new URLSearchParams();
+    if (q) usp.set("q", q);
+    if (status) usp.set("status", status);
+    if (value === null) usp.delete(name);
+    else usp.set(name, value);
+    // `page` is always reset to 1 on a new filter — only kept here for
+    // the explicit page links.
+    const qs = usp.toString();
+    return qs ? `/admin/orders?${qs}` : "/admin/orders";
+  }
 
   return (
     <div className="space-y-6">
@@ -93,16 +107,52 @@ export default async function AdminOrdersPage({
             Orders
           </h1>
           <p className="text-sm text-stone-500">
-            {total} {total === 1 ? "order" : "orders"}{" "}
-            {status ? `· ${STATUS_LABEL[status].toLowerCase()}` : ""}
+            {total} {total === 1 ? "order" : "orders"}
+            {status ? ` · ${STATUS_LABEL[status].toLowerCase()}` : ""}
+            {q ? ` · matching "${q}"` : ""}
           </p>
         </div>
       </header>
 
-      {/* Status filter strip */}
+      {/* Search — plain GET form so the URL stays the source of truth
+         + the result is bookmarkable + crawler-resistant headers
+         already block search engines. */}
+      <form
+        action="/admin/orders"
+        method="get"
+        role="search"
+        className="flex w-full max-w-xl gap-2"
+      >
+        {status ? <input type="hidden" name="status" value={status} /> : null}
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Search by order number, name, or email…"
+          aria-label="Search orders"
+          maxLength={120}
+          className="h-9 w-full min-w-0 rounded-md border border-husk-200 bg-paper-0 px-3 text-base md:text-sm text-bark-900 outline-none placeholder:text-stone-400 focus-visible:border-teal-800 focus-visible:ring-3 focus-visible:ring-teal-800/30"
+        />
+        <button
+          type="submit"
+          className="shrink-0 rounded-md bg-bark-900 px-4 text-sm font-medium text-paper-0 transition-colors hover:bg-bark-800"
+        >
+          Search
+        </button>
+        {q ? (
+          <Link
+            href={status ? `/admin/orders?status=${status}` : "/admin/orders"}
+            className="shrink-0 rounded-md border border-husk-200 px-3 py-1.5 text-sm text-stone-600 hover:border-bark-900 hover:text-bark-900"
+          >
+            Clear
+          </Link>
+        ) : null}
+      </form>
+
+      {/* Status filter strip — preserves `q` across chip clicks. */}
       <nav className="-mx-1 flex flex-wrap items-center gap-1 text-sm">
         <Link
-          href="/admin/orders"
+          href={q ? `/admin/orders?q=${encodeURIComponent(q)}` : "/admin/orders"}
           className={`rounded-full border px-3 py-1 transition-colors ${
             !status
               ? "border-bark-900 bg-bark-900 text-paper-0"
@@ -111,19 +161,24 @@ export default async function AdminOrdersPage({
         >
           All
         </Link>
-        {(Object.keys(STATUS_LABEL) as AdminOrderStatus[]).map((s) => (
-          <Link
-            key={s}
-            href={`/admin/orders?status=${s}`}
-            className={`rounded-full border px-3 py-1 transition-colors ${
-              status === s
-                ? "border-bark-900 bg-bark-900 text-paper-0"
-                : "border-husk-200 text-stone-600 hover:border-bark-900 hover:text-bark-900"
-            }`}
-          >
-            {STATUS_LABEL[s]}
-          </Link>
-        ))}
+        {(Object.keys(STATUS_LABEL) as AdminOrderStatus[]).map((s) => {
+          const usp = new URLSearchParams();
+          usp.set("status", s);
+          if (q) usp.set("q", q);
+          return (
+            <Link
+              key={s}
+              href={`/admin/orders?${usp.toString()}`}
+              className={`rounded-full border px-3 py-1 transition-colors ${
+                status === s
+                  ? "border-bark-900 bg-bark-900 text-paper-0"
+                  : "border-husk-200 text-stone-600 hover:border-bark-900 hover:text-bark-900"
+              }`}
+            >
+              {STATUS_LABEL[s]}
+            </Link>
+          );
+        })}
       </nav>
 
       {items.length === 0 ? (
@@ -131,8 +186,8 @@ export default async function AdminOrdersPage({
           No orders yet. They&rsquo;ll appear here as customers check out.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-husk-200 bg-paper-0">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border border-husk-200 bg-paper-0">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-husk-200 text-xs uppercase tracking-wide text-stone-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Order</th>
@@ -182,11 +237,7 @@ export default async function AdminOrdersPage({
       {totalPages > 1 ? (
         <nav className="flex items-center justify-between text-sm">
           <Link
-            href={
-              page > 1
-                ? `/admin/orders?page=${page - 1}${status ? `&status=${status}` : ""}`
-                : "#"
-            }
+            href={page > 1 ? withParam("page", String(page - 1)) : "#"}
             aria-disabled={page === 1}
             className={`rounded-md border border-husk-200 px-3 py-1.5 ${
               page === 1
@@ -201,9 +252,7 @@ export default async function AdminOrdersPage({
           </span>
           <Link
             href={
-              page < totalPages
-                ? `/admin/orders?page=${page + 1}${status ? `&status=${status}` : ""}`
-                : "#"
+              page < totalPages ? withParam("page", String(page + 1)) : "#"
             }
             aria-disabled={page === totalPages}
             className={`rounded-md border border-husk-200 px-3 py-1.5 ${

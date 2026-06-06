@@ -167,11 +167,11 @@ export default async function AdminOrderDetailPage({
             ) : null}
           </section>
 
-          <section className="rounded-lg border border-husk-200 bg-paper-0">
+          <section className="overflow-x-auto rounded-lg border border-husk-200 bg-paper-0">
             <h2 className="border-b border-husk-200 px-5 py-3 text-xs font-medium uppercase tracking-wide text-stone-500">
               Items ({order.items.length})
             </h2>
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="px-5 py-2 font-medium">Item</th>

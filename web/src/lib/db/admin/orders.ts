@@ -31,9 +31,28 @@ export interface AdminOrderListItem {
   itemCount: number;
 }
 
+/**
+ * Escape a user-typed string for safe inclusion in a PostgREST `ilike`
+ * pattern. `%` and `_` are SQL wildcards; if we don't escape them the
+ * user could trivially match the whole table by typing `%`. PostgREST
+ * uses backslash for the LIKE escape.
+ */
+function escapeIlike(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 export async function listAdminOrders(
   supabase: SC,
-  opts: { page?: number; status?: AdminOrderStatus } = {},
+  opts: {
+    page?: number;
+    status?: AdminOrderStatus;
+    /**
+     * Free-text search against order_number, customer_name,
+     * customer_email. Case-insensitive substring; trim the input,
+     * skip the filter when empty.
+     */
+    q?: string;
+  } = {},
 ): Promise<{ items: AdminOrderListItem[]; total: number; page: number }> {
   const page = Math.max(1, opts.page ?? 1);
   const from = (page - 1) * ORDERS_PER_PAGE;
@@ -50,6 +69,20 @@ export async function listAdminOrders(
     .range(from, to);
 
   if (opts.status) q = q.eq("status", opts.status);
+
+  const search = opts.q?.trim();
+  if (search) {
+    const pattern = `%${escapeIlike(search)}%`;
+    // PostgREST `or(...)` lets us do a single OR across columns; each
+    // term needs the operator + value pair.
+    q = q.or(
+      [
+        `order_number.ilike.${pattern}`,
+        `customer_email.ilike.${pattern}`,
+        `customer_name.ilike.${pattern}`,
+      ].join(","),
+    );
+  }
 
   const { data, error, count } = await q;
   if (error) throw new Error(`listAdminOrders: ${error.message}`);
