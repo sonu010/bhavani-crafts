@@ -534,7 +534,7 @@ export type Database = {
           deleted_by?: string | null
           id?: string
           notes?: string | null
-          order_number: string
+          order_number?: string
           paid_at?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -1149,6 +1149,7 @@ export type Database = {
       }
       generate_order_number: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_pending_anon_order: { Args: { p_order_id: string }; Returns: boolean }
       products_status_counts: {
         Args: never
         Returns: {
