@@ -45,6 +45,15 @@ export default async function StorefrontLayout({
 
   return (
     <div className="flex min-h-full flex-col">
+      {/* Preconnect to the JustKraft CDN. Most product images sit there;
+          opening the TCP + TLS handshake before the first <Image> hits
+          shaves ~200-400ms off the first image render on a cold cache.
+          Removable once images move to Supabase Storage in P4-T11. */}
+      <link rel="preconnect" href="https://djl2kq23xfhqi.cloudfront.net" />
+      <link
+        rel="dns-prefetch"
+        href="https://djl2kq23xfhqi.cloudfront.net"
+      />
       {/* Skip-link for keyboard + screen-reader users. Hidden visually
           until focused (Tab on a fresh page); then it lets you jump
           past the header nav straight to the page content. Targets

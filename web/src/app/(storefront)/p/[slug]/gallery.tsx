@@ -88,6 +88,10 @@ export function Gallery({
             fill
             sizes="(max-width: 1024px) 100vw, 640px"
             priority={active === 0}
+            // The first PDP gallery image is the LCP. Same rationale as
+            // the hero in _landing/hero.tsx — opt INTO the optimizer
+            // even for cloudfront sources so the LCP gets resized.
+            unoptimized={active === 0 ? false : undefined}
             placeholder={main.blur_data_url ? "blur" : "empty"}
             blurDataURL={main.blur_data_url ?? undefined}
             className="object-cover"
@@ -96,9 +100,15 @@ export function Gallery({
       </div>
 
       {images.length > 1 ? (
+        // Plain <ul> of <button>s rather than role="tablist" / "tab".
+        // The thumbs DON'T have associated `tabpanel`s — the main image
+        // above isn't a tabpanel, it's a single composite image that
+        // swaps. ARIA's tablist pattern requires `tab` > `tabpanel`
+        // wiring (per axe-core rule `aria-required-children`), and we
+        // don't have that. A plain button list with `aria-current="true"`
+        // on the active one is the correct semantic and passes axe.
         <ul
           className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]"
-          role="tablist"
           aria-label={`${productName} images`}
         >
           {images.map((img, i) => {
@@ -107,8 +117,6 @@ export function Gallery({
               <li key={img.id}>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={selected}
                   aria-current={selected ? "true" : undefined}
                   aria-label={`Image ${i + 1} of ${images.length}`}
                   onClick={() => go(i)}

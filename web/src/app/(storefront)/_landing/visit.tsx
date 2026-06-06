@@ -30,7 +30,7 @@ export function Visit() {
         {/* Photo (placeholder until the owner supplies a store photo) */}
         <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-husk-200 bg-husk-100">
           <div className="flex h-full items-center justify-center">
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-stone-400">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-stone-600">
               Store photo
             </span>
           </div>

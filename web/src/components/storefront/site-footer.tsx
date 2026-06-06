@@ -123,7 +123,7 @@ export function SiteFooter({
 
       <div className="border-t border-husk-200">
         <div className="mx-auto max-w-6xl px-6 py-4">
-          <p className="font-mono text-[11px] text-stone-400">
+          <p className="font-mono text-[11px] text-stone-600">
             © {new Date().getFullYear()} Bhavani Crafts
           </p>
         </div>

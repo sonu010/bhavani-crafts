@@ -92,6 +92,15 @@ export async function Hero() {
                     alt={product.imageAlt ?? product.name}
                     fill
                     priority
+                    // The hero image is the LCP element. Even when the
+                    // source sits on a third-party CDN we normally
+                    // bypass (StorefrontImage default), we OPT INTO the
+                    // optimizer here so the LCP gets a resized + AVIF
+                    // variant — a 2.5MB cloudfront JPEG vs a 90KB AVIF
+                    // is the difference between LCP 4s and LCP < 2s.
+                    // Only ONE optimization burned per hero per device-
+                    // width, so quota stays cheap.
+                    unoptimized={false}
                     sizes="(max-width: 1024px) 100vw, 40vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                     placeholder={product.blurDataUrl ? "blur" : "empty"}
