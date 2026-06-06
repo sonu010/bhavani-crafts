@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Search, ShoppingBag } from "lucide-react";
+import { Menu, ShoppingBag } from "lucide-react";
+import { HeaderSearch } from "./header-search";
 import {
   Sheet,
   SheetContent,
@@ -97,13 +98,10 @@ export function SiteHeader({
 
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-1">
-          <Link
-            href="/search"
-            aria-label="Search"
-            className="inline-flex size-9 items-center justify-center rounded-md text-bark-900 hover:bg-husk-100"
-          >
-            <Search className="size-5" />
-          </Link>
+          {/* Search opens a Sheet from the top with a focused input —
+             one-hop to results from any page, rather than dropping the
+             user on the bare /search landing page first. */}
+          <HeaderSearch />
           {/* Cart trigger — opens the drawer (mounted in the storefront
              layout). The count badge renders only after the persist
              middleware finishes rehydrating to avoid a SSR/client

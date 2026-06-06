@@ -45,8 +45,20 @@ export default async function StorefrontLayout({
 
   return (
     <div className="flex min-h-full flex-col">
+      {/* Skip-link for keyboard + screen-reader users. Hidden visually
+          until focused (Tab on a fresh page); then it lets you jump
+          past the header nav straight to the page content. Targets
+          `#main-content` (wrapper around `children`). WCAG 2.4.1. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-teal-800 focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-paper-0 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+      >
+        Skip to content
+      </a>
       <SiteHeader categories={categories} />
-      <div className="flex-1">{children}</div>
+      <div id="main-content" className="flex-1">
+        {children}
+      </div>
       <SiteFooter categories={categories} />
       {/* Cart drawer — mounted once per layout so any component (header
           cart button, PDP add-to-cart) can open it via the store's

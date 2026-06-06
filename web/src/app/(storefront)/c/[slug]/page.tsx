@@ -82,9 +82,21 @@ export default async function CategoryPage({
   if (!category) notFound();
 
   const filters = parseFilters(sp);
-  const page = hasActiveFilters(filters)
+  const filtersActive = hasActiveFilters(filters);
+  const page = filtersActive
     ? await getCategoryProducts({ descendantIds, filters, cursor: null })
     : await getCategoryFirstPage(slug, descendantIds);
+
+  // Distinguish "category is empty" from "your filters narrowed the
+  // result to nothing." The two failure modes warrant different copy
+  // and different recovery actions: in the filtered case, clearing
+  // filters gets you back to results; in the unfiltered case, the
+  // category itself has nothing.
+  const emptyLabel = filtersActive
+    ? "No products match these filters. Try widening your price range or clearing filters."
+    : children.length > 0
+      ? "No products in this category yet — try a sub-category above."
+      : "No products in this category yet.";
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -95,10 +107,7 @@ export default async function CategoryPage({
         <FiltersSidebar initial={filters} />
 
         <div className="space-y-6">
-          <ProductCardGrid
-            products={page.items}
-            emptyLabel="No products in this category yet."
-          />
+          <ProductCardGrid products={page.items} emptyLabel={emptyLabel} />
           <LoadMore
             slug={slug}
             filters={filters}
