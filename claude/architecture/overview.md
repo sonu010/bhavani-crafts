@@ -75,13 +75,15 @@ A short version of the schema. The full thing is in [database-schema.md](databas
 - `attribute_definitions` + `product_attributes` — faceted filtering per category.
 - `tags` + `product_tags` — free-form keywords.
 - Ops: `audit_logs`, `background_jobs`, `job_events`, `import_runs`, `import_run_rows`, `search_synonyms`, `search_logs`, `ai_generations`.
+- `orders(id, order_number, status, customer_*, shipping_*, subtotal_inr, total_inr, razorpay_*, created_at, paid_at, ...)` + `order_items(order_id, product_id, variant_id, sku, name, unit_price_inr, quantity, line_total_inr, ...)` — Razorpay-backed checkout. Prices + names are snapshotted on `order_items` so historical orders are immutable when the catalog changes. See [ADR-011](../decisions/ADR-011-razorpay-payments.md).
 
-All tables have RLS enabled. Child catalog tables join back to the parent product's `is_published` and `deleted_at` in their public-select policies, so unpublished/deleted products can't leak children to anon clients. See [security.md](security.md) §RLS.
+All tables have RLS enabled. Child catalog tables join back to the parent product's `is_published` and `deleted_at` in their public-select policies, so unpublished/deleted products can't leak children to anon clients. Orders contain PII — anon can INSERT a pending order, never SELECT; admin reads all. See [security.md](security.md) §RLS.
 
 ## What's deliberately not in MVP
 
-- Checkout, payments (Razorpay), orders, fulfillment, shipping, tax, invoices.
-- Customer accounts, sign-up, wishlist.
+- ~~Checkout, payments (Razorpay), orders~~ — **reversed 2026-05-18** by the owner; now in scope. See [ADR-011](../decisions/ADR-011-razorpay-payments.md) for the scope boundary (no refunds in-app, no subscriptions, no saved cards, no customer accounts).
+- Fulfillment, shipping calculation, tax computation, invoices — still out. Shipping is a flat-rate constant at checkout; tax is owner-below-GST-threshold for now.
+- Customer accounts, sign-up, wishlist — still out. Orders capture name/phone/email per-order; no `customers` table.
 - Creator community / feed / project showcase (designed in `extracted_ideas/` but deferred).
 - Recommendations, personalization, WhatsApp shopping bot.
 - Multi-region, multi-currency, multi-warehouse.
