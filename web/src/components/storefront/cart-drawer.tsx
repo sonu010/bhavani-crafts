@@ -72,7 +72,7 @@ export function CartDrawer() {
               ))}
             </ul>
 
-            <div className="border-t border-husk-200 px-5 py-4">
+            <div className="border-t border-husk-200 px-5 py-4 [padding-bottom:max(theme(spacing.4),env(safe-area-inset-bottom))]">
               <div className="flex items-baseline justify-between pb-3">
                 <span className="text-sm text-stone-600">Subtotal</span>
                 <span className="font-mono text-lg font-medium tabular-nums text-bark-900">

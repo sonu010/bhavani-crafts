@@ -37,7 +37,7 @@ export function SiteHeader({
   const cartHydrated = useCartHasHydrated();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-husk-200 bg-paper-0/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-husk-200 bg-paper-0/95 backdrop-blur [padding-top:env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-screen-xl items-center gap-3 px-3 sm:h-16 sm:px-6">
         {/* Mobile hamburger */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
