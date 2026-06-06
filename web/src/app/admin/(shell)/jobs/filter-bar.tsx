@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JOB_STATUSES, type JobStatus } from "@/lib/db/admin/jobs-public";
@@ -33,7 +33,6 @@ export function JobsFilterBar({
   kinds: string[];
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   const [statuses, setStatuses] = useState<Set<JobStatus>>(
@@ -50,23 +49,30 @@ export function JobsFilterBar({
     });
   }, []);
 
-  const sync = useCallback(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("status");
-    for (const s of statuses) next.append("status", s);
-    if (kind) next.set("kind", kind);
-    else next.delete("kind");
-    const qs = next.toString();
-    startTransition(() => {
-      router.replace(qs ? `?${qs}` : "?", { scroll: false });
-    });
-  }, [statuses, kind, router, searchParams]);
-
-  // Push to URL when filters change (debounced).
+  // Debounce-sync filter state into the URL. Does NOT depend on
+  // `searchParams`: that created an infinite loop (each `router.replace`
+  // → new `searchParams` → recreated callback → effect re-fired →
+  // replace again, continuous `GET /admin/jobs`). We build the query from
+  // local state and skip the navigation when the URL already matches.
   useEffect(() => {
-    const handle = setTimeout(sync, 200);
+    const handle = setTimeout(() => {
+      const next = new URLSearchParams();
+      for (const s of [...statuses].sort()) next.append("status", s);
+      if (kind) next.set("kind", kind);
+      next.sort();
+      const qs = next.toString();
+
+      const current = new URLSearchParams(window.location.search);
+      current.delete("cursor");
+      current.sort();
+      if (current.toString() === qs) return;
+
+      startTransition(() => {
+        router.replace(qs ? `?${qs}` : "?", { scroll: false });
+      });
+    }, 200);
     return () => clearTimeout(handle);
-  }, [sync]);
+  }, [statuses, kind, router]);
 
   const clear = () => {
     setStatuses(new Set());

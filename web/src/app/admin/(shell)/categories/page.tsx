@@ -6,7 +6,7 @@ import { CategoriesTree } from "./categories-tree";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Categories — Bhavani Crafts",
+  title: "Categories",
   robots: { index: false, follow: false },
 };
 

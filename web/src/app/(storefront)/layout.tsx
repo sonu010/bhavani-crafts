@@ -1,7 +1,11 @@
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/db/public-client";
 import { listTopLevelCategories } from "@/lib/db/categories";
+import { readOrEmpty } from "@/lib/storefront/safe-read";
+import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "./site-header";
+import { SiteFooter } from "@/components/storefront/site-footer";
+import { CartDrawer } from "@/components/storefront/cart-drawer";
 
 /**
  * Storefront layout — the chrome every public page renders inside.
@@ -14,10 +18,13 @@ import { SiteHeader } from "./site-header";
  * in architecture/performance.md. ISR revalidate is a backstop for the
  * rare case where a tag flush is missed.
  */
-export const metadata = {
-  // Storefront is indexable (the opposite of admin's noindex).
-  title: "Bhavani Crafts — craft supplies in Hyderabad",
-};
+// No metadata override at this layer — the home page title +
+// description come from the root layout's `title.default` (Next 16
+// does not apply the title.template to a default). Per-page
+// generateMetadata for PDP/category/search inherits the template
+// from root so each becomes "X — Bhavani Crafts". Setting a title
+// here (even `{ absolute }`) would shadow the template for every
+// descendant — we did that once and lost the suffix on every PDP.
 
 const getNavCategories = unstable_cache(
   async (): Promise<Array<{ slug: string; name: string }>> => {
@@ -34,13 +41,20 @@ export default async function StorefrontLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const categories = await getNavCategories();
+  const categories = await readOrEmpty("nav-categories", getNavCategories, []);
 
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader categories={categories} />
       <div className="flex-1">{children}</div>
-      {/* Footer slot — P3-T09 mounts <SiteFooter/> here. */}
+      <SiteFooter categories={categories} />
+      {/* Cart drawer — mounted once per layout so any component (header
+          cart button, PDP add-to-cart) can open it via the store's
+          `openCart()` action without prop drilling. */}
+      <CartDrawer />
+      {/* Storefront toasts (e.g. copy-address, newsletter). Admin has its
+          own Toaster in the (shell) layout. */}
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

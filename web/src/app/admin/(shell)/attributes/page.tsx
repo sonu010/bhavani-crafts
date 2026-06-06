@@ -6,7 +6,7 @@ import { AttributesTable } from "./attributes-table";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Attributes — Bhavani Crafts",
+  title: "Attributes",
   robots: { index: false, follow: false },
 };
 

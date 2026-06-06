@@ -6,7 +6,7 @@ import { perfStart } from "@/lib/perf";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Imports — Bhavani Crafts",
+  title: "Imports",
   robots: { index: false, follow: false },
 };
 

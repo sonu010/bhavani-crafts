@@ -3,7 +3,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Forbidden — Bhavani Crafts",
+  title: "Forbidden",
   robots: { index: false, follow: false },
 };
 

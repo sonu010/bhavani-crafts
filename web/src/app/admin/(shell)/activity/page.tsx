@@ -16,7 +16,7 @@ import { FilterBar } from "./filter-bar";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Audit log — Bhavani Crafts",
+  title: "Audit log",
   robots: { index: false, follow: false },
 };
 

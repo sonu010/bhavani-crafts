@@ -29,10 +29,12 @@ test.describe("admin products", () => {
   test("editing a product's name saves and persists", async ({ page }) => {
     await page.goto("/admin/products");
 
-    // Open the first product row.
+    // Open the first product row. Clicking a Next <Link> is a soft (client)
+    // navigation that fires no `load` event, so assert the URL with
+    // toHaveURL (which polls) rather than waitForURL(..., {load}).
     const firstRow = page.locator('a[href*="/admin/products/"]').first();
     await firstRow.click();
-    await page.waitForURL(/\/admin\/products\/[0-9a-f-]+\/edit/);
+    await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]+\/edit/);
 
     // General tab — edit the name with a reversible E2E marker.
     const marker = ` [e2e ${Date.now()}]`;
@@ -41,14 +43,18 @@ test.describe("admin products", () => {
     await nameInput.fill(original + marker);
     await page.getByRole("button", { name: /save/i }).first().click();
 
-    // Toast confirms; reload proves persistence.
-    await expect(page.getByText(/saved|all changes saved/i).first()).toBeVisible();
+    // Wait for the SUCCESS TOAST specifically — "Product saved". Do NOT
+    // match /saved/i loosely: the dirty-state indicator reads "Unsaved
+    // changes", which also contains "saved" and would let the test reload
+    // before the save Server Action commits (racing the write). The toast
+    // only appears after the action returns ok, so it's the real signal.
+    await expect(page.getByText(/product saved/i)).toBeVisible();
     await page.reload();
     await expect(page.getByLabel(/^name/i)).toHaveValue(original + marker);
 
     // Revert so the run is idempotent.
     await page.getByLabel(/^name/i).fill(original);
     await page.getByRole("button", { name: /save/i }).first().click();
-    await expect(page.getByText(/saved|all changes saved/i).first()).toBeVisible();
+    await expect(page.getByText(/product saved/i)).toBeVisible();
   });
 });

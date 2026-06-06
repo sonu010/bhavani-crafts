@@ -24,14 +24,22 @@ setup("authenticate as admin", async ({ page }) => {
   await page.getByRole("button", { name: /sign in|log in/i }).click();
 
   // 2. TOTP step — the AAL1 session must verify to reach AAL2.
-  await page.waitForURL(/\/auth\/verify-2fa/);
+  //
+  // The login Server Action redirect()s to /admin, then the proxy steps the
+  // AAL1 session up to /auth/verify-2fa. Both hops are SOFT (client-side)
+  // navigations that don't fire a `load` event, so we assert on the verify
+  // form being visible rather than page.waitForURL(..., {load}) — which
+  // would hang waiting for a load event that never comes.
+  const codeInput = page.getByLabel(/code|otp|verification/i);
+  await expect(codeInput).toBeVisible({ timeout: 30_000 });
   const code = await generateTotp({ secret });
-  await page.getByLabel(/code|otp|verification/i).fill(code);
+  await codeInput.fill(code);
   await page.getByRole("button", { name: /verify|continue|submit/i }).click();
 
-  // 3. Land on the admin dashboard.
-  await page.waitForURL(/\/admin(\/|$)/);
-  await expect(page).toHaveURL(/\/admin(\/|$)/);
+  // 3. Land on the admin dashboard. toHaveURL polls the URL (works with
+  //    soft navigations). Reaching /admin (not bounced back to verify-2fa)
+  //    is itself the proof the session stepped up to AAL2.
+  await expect(page).toHaveURL(/\/admin(\/|$)/, { timeout: 30_000 });
 
   await page.context().storageState({ path: AUTH_STATE_FILE });
 });

@@ -5,7 +5,7 @@ import { AdminShell } from "./admin-shell";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Admin — Bhavani Crafts",
+  title: "Admin",
   robots: { index: false, follow: false },
 };
 

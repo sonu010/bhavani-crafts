@@ -2,11 +2,11 @@
 id: P3-T10
 phase: 3
 title: Category page shell
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -77,4 +77,18 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `/c/[slug]/page.tsx` + `category-header.tsx` + `data.ts`. Category
+    lookup + descendant ids cached (`getCategoryView`, tags
+    `categories`/`category:<slug>`); canonical first page cached
+    (`getCategoryFirstPage`, tags `products`/`categories`/`category:<slug>`);
+    filtered/paginated reads go direct (`getCategoryProducts`). `notFound()`
+    on unknown slug; `generateMetadata`. Descendant scoping via
+    `getDescendantIds` (verified: /c/pooja-items shows child-category
+    products). `export const revalidate = 300`; page is `ƒ` dynamic when
+    filter params are present but the canonical read is tag-cached.
+  - **Build resilience:** the storefront layout + landing reads now fetch
+    Supabase at build (ISR prerender). Wrapped in `readOrEmpty`
+    (`lib/storefront/safe-read.ts`) so a build-time DB outage (e.g. CI
+    static job's placeholder URL) degrades to an empty shell + recovers on
+    revalidate, instead of failing the build. `getProductCardsPage` now
+    returns `{items, nextCursor}` (getProductCards still returns items).

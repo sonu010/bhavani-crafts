@@ -1,14 +1,28 @@
 # Build progress
 
-Last updated: 2026-05-16
+Last updated: 2026-05-28
 
 ## Counts
 
-- ✅ Done: **23** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI)
-- 🟡 In progress: 0
-- 🚧 Blocked: 0
+- ✅ Done: **74** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 23 — P3-T00 + T01 + T02–T09 landing + T10–T12 category + T13–T16 PDP + T17 JSON-LD + T18–T19 search + T20–T21 cart + T24 SEO)
+- 🟡 In progress: 3 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked**; P3-T29 E2E harness — green locally, CI job + bulk/trash specs remain)
+- 🚧 Blocked: 0 (the two in-progress P2 tasks await owner creds/smoke — see blockers.md)
 - ⏸️ Deferred: 1 (P0-T03 — cart store; pulled at P3-T21 directly from `origin/main`)
-- ⬜ Not started: 72
+- ⬜ Not started: 6 (Phase 3: T22 mobile pass, T23 lighthouse, T25–T28 payments)
+
+## Phase 2 — admin panel complete (28/30)
+
+Built under `web/src/app/(shell)/admin/**` + `web/src/lib/db/admin/*` (DI pattern). Login + TOTP 2FA + three-layer authz (`proxy.ts` → `requireRole`/`requireAAL2` → RLS) · admin shell (nav tree + Sheet mobile) · 2×3 dashboard · products list (cursor + filters + bulk) · product editor (6 tabs, image upload with file-type sniff/EXIF strip, dnd-kit reorder, publish preview) · categories/tags/attributes admins · CSV import (upload→validate→jobified execute→report) · audit/jobs viewers · Trash (soft-delete, ADR-006). **Open:** P2-T01 (hCaptcha + Upstash creds) + P2-T03 (owner browser smoke) — owner-blocked.
+
+Migrations added in Phase 2: `0008` admin search indexes · `0009` products_status_counts RPC · `0010`/`0011` default-variant index (added then dropped redundant) · `0012` audit indexes · `0013` tag/attribute count RPCs. **Live schema now through 0013** (~11 enums · 20 tables · ~49 indexes · ~40 functions — run `node web/scripts/dump-live-schema.mjs` for exact).
+
+## Phase 3 — storefront in progress (10 done)
+
+- **P3-T00** done — all 30 stubs expanded; added the **Razorpay payments cluster (T25–T28)**, SEO (T24), and E2E (T29). Payments is a scope addition over `overview.md`.
+- **P3-T01** done — public `(storefront)` layout + sticky nav + shared `<ProductCard>`/`<ProductCardGrid>` + `createPublicClient` (cookie-less anon for cached reads) + `formatInr`. `/` confirmed `○ Static, Revalidate 5m`.
+- **P3-T02–T09 done — the editorial landing page.** Split hero · caption strip · Atlas category grid · weekly collection · workshop-kits row · bulk-enquiry WhatsApp strip · visit section · 4-col footer. New shared read helper `lib/db/storefront.ts` (`getProductCards` = listProducts + batched primary images → `ProductCardItem[]`; `getCategoryCovers`). WhatsApp/Instagram via `NEXT_PUBLIC_*` env. Sections hide gracefully when empty. All verified on the local stack: 239 vitest · 12 launch-blockers · **8 Playwright E2E** (incl. 2 new anon landing specs) green; `/` stays `○ Static, Revalidate 5m`.
+- **P3-T29** in_progress — Playwright E2E harness green locally (setup/admin/anon, local-Supabase-only). CI `e2e` job wired; bulk + trash specs remain.
+- **architecture/performance.md** written — two-system model + budgets + the `getClaims` admin-auth fix (`proxy.ts` now verifies JWT locally, no network).
 
 ## Phase 0 + 1 + 1.5 — complete
 
@@ -23,9 +37,11 @@ Last updated: 2026-05-16
 0006_rls.sql                     RLS on all 20 tables; 33 policies; child-parent EXISTS pattern
 0007_indexes_views.sql           9 catalog indexes + category_with_descendants recursive view
 
-Live schema: 11 enums · 20 tables · 45 indexes · 37 functions
-             (0008 added slug trigram + review_status index;
-              0009 added products_status_counts() RPC)
+Live schema: migrations through 0013 (~11 enums · 20 tables · ~49 indexes · ~40 functions)
+             (0008 slug trigram + review_status index; 0009 products_status_counts();
+              0010+0011 default-variant index add/drop; 0012 audit indexes;
+              0013 tag_product_counts() + attribute_value_counts())
+             Run `node web/scripts/dump-live-schema.mjs` for exact counts.
 
 Catalog:     seeded from data/justkraft-inventory/justkraft_products.cleaned.json
              (~5.8K products). All rows is_published=false, source='justkraft_seed',
@@ -63,6 +79,27 @@ Catalog:     seeded from data/justkraft-inventory/justkraft_products.cleaned.jso
 - **Production**: https://bhavani-crafts.vercel.app/ — legacy prototype from `origin/main`. Untouched.
 - **Preview**: https://bhavani-crafts-6cg92t4ki-sonu010s-projects.vercel.app/ — `rebuild-v2`. `/` Phase-0 placeholder · `/api/health` returns `{"ok":true}` · `/design` returns 404 in production (dev-only).
 
+## Commit history (most recent first — Phase 2 + Phase 3 start)
+
+```
+7d34e82  P3-T29 (partial) — Playwright E2E harness + admin critical-flow specs
+f05d810  P3-T01 — public storefront layout + nav + shared ProductCard
+6fb1dca  docs: add architecture/performance.md (cross-phase reference)
+d138f75  docs(p3): bake the storefront performance contract into task specs
+771f44f  perf(admin): proxy verifies JWT locally (getClaims) not getUser
+3cf902e  P3-T00 — expand Phase 3 storefront task files + add missing tasks
+f4e8b85  P2-T23/T24/T25 — CSV import: upload + validate + apply + report
+aa8b88d  P2-T09 — products list bulk actions
+c7f00de  fix(admin): tree React error, zzz leak, /admin/tags 3s, scraped dupes
+8727ab9  P2-T29 — admin mobile pass at 360px
+dc4c64c  P2-T28 — Trash + soft-delete recovery at /admin/trash
+c234ac2  P2-T27 — background jobs viewer at /admin/jobs
+c555477  P2-T26 — audit log viewer at /admin/activity
+a5559bf  P2-T22 — attribute definitions admin at /admin/attributes
+6ecc78c  P2-T21 — tags admin at /admin/tags
+(… earlier P2-T01 through P2-T20 + the migrations 0008–0013 …)
+```
+
 ## Commit history at Phase 1 + 1.5 close
 
 ```
@@ -88,20 +125,37 @@ e40a3d8  P0-T02 + P0-T04: archive legacy prototype, scaffold fresh Next.js 16 ap
 
 ## Awaiting owner action
 
-- **GitHub Actions secrets** (optional, non-blocking): three values from `web/.env.local` to enable the `live` CI job. See [`user/08`](../user/08-ci-and-github-secrets.md). Without them, `static` runs and `live` auto-skips with a warning.
+- **Razorpay test keys** — gate before P3-T26 (payments cluster).
+- **hCaptcha keys + Upstash creds** — finish P2-T01 hardening (login works without them; they add captcha + rate-limit layers).
+- **P2-T03 browser smoke** — owner signs in + verifies 2FA once on the real owner account to close promote-owner.
+- **First local E2E run** — Docker + `supabase start`/`db reset` + `pnpm e2e:seed` + `pnpm test:e2e` (see `web/e2e/README.md`).
+- _(resolved)_ GitHub Actions secrets — configured; `live` CI job runs green on every push.
 
 ## Non-blocking follow-ups
 
 - _(resolved 2026-05-17)_ ~~Re-seed live with the cleaned fixture.~~ Done — `scripts/clean-justkraft-inventory.mjs` rejected the scrape-failure rows + normalized SKUs into `data/justkraft-inventory/justkraft_products.cleaned.json`; the seed script chunked its cleanup pass to clear Supabase's statement timeout (commit `309826f`); live now reflects the cleaned fixture.
 
-## Next 3 to work (Phase 2)
+## Next 3 to work (Phase 3 storefront)
 
-1. **P2-T00** — Expand Phase 2 task stubs with lessons learned from Phase 1 (DI Supabase client pattern, pglite-test-before-push, fixture cleanup convention, tsconfig exclude pattern).
-2. **P2-T01** — Supabase Auth (email + password) — login page + middleware.
-3. **P2-T02** — `requireRole(supabase, role)` helper + a runbook for promoting the owner profile.
+1. **P3-T25** — orders schema migration + payments ADR (**gate for the Razorpay cluster T26–T28**; needs owner's Razorpay test keys). The cart already shapes lines for this; T25 unblocks the checkout build.
+2. **P3-T22** — mobile pass at 360px audit (`/c`, `/p`, `/search`, cart drawer, header sheet). Probably 1-2 small CSS fixes.
+3. **P3-T23** — Lighthouse pass against `architecture/performance.md` budgets (cached TTFB <200ms, LCP <2.5s).
+
+Every Phase 3 task honors `architecture/performance.md` (cacheable reads via `createPublicClient` + `unstable_cache` tags; budgets) and the cross-cutting patterns (DI client, soft delete, audit logs, revalidate tags, targeted `git add`).
 
 ## Notes log (most recent first)
 
+- 2026-05-29 — **Phase 3 SEO (P3-T24).** Built `app/sitemap.ts` (paginated published products + categories + static routes, `lastmod` from `updated_at`, route `revalidate=3600`, wrapped in `readOrEmpty` for DB-outage resilience) + `app/robots.ts` (allow `/`, disallow `/admin /auth /api /design`, points at sitemap). Added `listAllPublishedSlugs` / `listAllCategorySlugs` data-layer helpers (1000-row paginated). PDP + category metadata now emit `alternates.canonical` + full `openGraph` set (PDP also includes `twitter` card). Root layout sets `metadataBase` + `title.template` so every per-page string title gets " — Bhavani Crafts" appended automatically. Stripped " — Bhavani Crafts" from 22 page titles (root template applies it universally). Gotcha closed: setting `title` (even `{ absolute }`) in `(storefront)/layout.tsx` overrode the root template for every descendant, silently dropping the suffix on PDP/category. Fix: put the tagline in `title.default` at root (defaults are NOT templated) and drop the storefront override. All verified: 5 new anon SEO E2E specs assert robots disallows + sitemap entries (incl. unpublished-leak check) + PDP/category canonical + og tags + title-template wrap. **All 41 E2E pass** in 34.7s.
+- 2026-05-29 — **Phase 3 cart cluster (P3-T20–T21).** Built `lib/storefront/cart-store.ts` (zustand + persist `bc-cart-v1`, variant-aware line shape keyed by `variantId ?? productId`, flattened snapshots, `selectTotalItems`/`selectSubtotalInr`). Built `components/storefront/cart-drawer.tsx` (Sheet right/bottom, qty steppers, line totals, remove ×, subtotal, Checkout → `/checkout`). Wired the header cart icon + count badge + open-on-add. Rewrote PDP `add-to-cart.tsx` to take a single `line` snapshot prop; variant-selector now builds variant labels ("Small / Teal") + passes the resolved unit price. Two big gotchas closed: (1) sync localStorage hydration finishes during store creation, so initialize `hasHydrated` from `persist.hasHydrated()` not just the listener; (2) `useCartHasHydrated` is built on `useSyncExternalStore` because the React Compiler's `react-hooks/set-state-in-effect` rule rejects the obvious useState+useEffect pattern. **All 36 E2E pass** (4 new cart specs: drawer-opens-on-add, qty stepper updates, persistence across reload + badge, variant-keyed lines + remove + checkout link).
+- 2026-05-29 — **E2E admin coverage batch (8 new admin specs).** Lifecycle (create draft → edit → soft-delete → restore → hard-delete), bulk (multi-select via header checkbox → bulk soft-delete with typed `delete`), categories (create → rename → soft-delete → restore), tags×2 (create + soft-delete; create+merge), attributes (CRUD), imports (CSV upload via setInputFiles → validate → run → catalog), audit (action recorded). Shared `_helpers.ts`. Locked the 11 conventions in `e2e/README.md`. Cleaned up admin-chrome to be opt-in via `E2E_CHROME=1`. From 24 → 32 E2E specs.
+- 2026-05-29 — **Phase 3 search + JSON-LD (P3-T17–T19).** Built `/search?q=` (FTS via existing `searchProducts`, batched primary images via new `searchProductCards`, empty state + min-2-char guard, plain GET-form for SSR/shareable). Search logging through the anon client — migration `0014_search_logs_anon_insert.sql` adds an INSERT-only RLS policy + length CHECK + pglite-validated smoke (correct architecture answer; `@/lib/db/admin` import restriction stays intact). Log insert runs in Next 16's `after()` so the user pays no latency. Product JSON-LD on PDP: schema.org Product with Brand + image array + Offer/AggregateOffer (INR + availability mapped from stock_status); markdown-stripped description, `<`-escaped for safety, **skipped on preview renders**. New `lib/storefront/site-url.ts` (NEXT_PUBLIC_SITE_URL → VERCEL_URL → localhost). T19 was verification-only — all 7 craft synonyms already seeded, 14 vitest specs green; trigram threshold parked per the documented known issue. Schema now through 0014. All green: 239 vitest · **24 E2E** (6 new: 4 search + 2 JSON-LD).
+- 2026-05-29 — **Phase 3 PDP cluster (P3-T13–T16).** Built `/p/[slug]`: cached public read + uncached service-role preview path (token-bound to product id, banner + `robots:noindex`), gallery with keyboard arrows + touch swipe + thumb tabs, variant selector resolving by set-equality on `option_value_ids` (default preselected, price/stock fall back to product base, add-to-cart disabled with reason on invalid combo / out-of-stock), markdown description (`react-markdown` + `rehype-sanitize`), attributes table, related-products scroll-snap row (same category fallback to newest overall). New `lib/db/pdp.ts` composing PdpView; new `getPdpVariantBundle` public-safe mirror of admin variants bundle. Extended seed with a `resin-coaster-set` (Size×Color, 4 variants, one out_of_stock + one low_stock) so the variant selector has a real happy path. Preview-token round-trip verified live (valid → 200 + banner; tampered → 404; wrong-product → 404). All green: 239 vitest · **18 E2E** (5 new PDP specs).
+- 2026-05-29 — **Fixed admin filter-bar infinite loop + Phase 3 category cluster (P3-T10–T12).** (1) `/admin/activity` + `/admin/jobs` filter bars looped (`useEffect`→`router.replace`→new `searchParams`→recreated callback→re-fire, ~3×/sec) — continuous `GET`s, blocked navigation. Fixed: build query from local state, no `searchParams` dep, no-op guard. Regression spec `e2e/admin/navigation.spec.ts`. Hardened `e2e/seed-admin.ts` (unique TOTP friendlyName). (2) Built `/c/[slug]`: cached category lookup + descendant-scoped product grid, URL-driven price/stock filter sidebar (event-only, safe pattern), Load-more cursor pagination (server-action append). Added `getProductCardsPage`, cursor codec, `lib/storefront/safe-read.ts` (ISR build resilience — the homepage now fetches at build, so reads degrade gracefully if the DB is unreachable). All green: 239 vitest · 13 E2E (3 new category specs incl. descendant scoping + server-side filtering) · build (`/` static, `/c/[slug]` dynamic).
+- 2026-05-29 — **Phase 3 landing page (P3-T02–T09).** Built the full editorial homepage: split hero, caption strip, Atlas category grid, weekly collection, workshop-kits row, bulk-enquiry WhatsApp strip, visit section, 4-col footer. New `lib/db/storefront.ts` shared read helper (`getProductCards`, `getCategoryCovers`) + `onlyFeatured` opt on `listProducts` + `lib/storefront/whatsapp.ts`. Extended `supabase/seed.sql` (featured products + workshop-kits) so every section has data and a happy-path E2E. Added 2 anon landing E2E specs. All green on local: 239 vitest · 12 launch-blockers · 8 E2E; `/` stays `○ Static, Revalidate 5m`. Gotcha learned: `unstable_cache` persists across builds in `.next/cache` keyed only on keyParts, not the DB target — `rm -rf .next` when switching the build's Supabase target.
+- 2026-05-28 — **Test environment + prod-data isolation + 2FA login fix.** Stood up a disposable LOCAL Supabase stack as the target for ALL fixture-creating tests (vitest + launch-blockers + Playwright) — production is no longer written by the test pipeline. Added: `pnpm test:setup`/`db:reset:test`/`test:e2e:setup`, `scripts/write-test-env.mjs`, hard non-local guardrails in `vitest.setup.ts` + `_clients.ts` (override `ALLOW_NONLOCAL_TEST_DB=1`), `supabase/seed.sql` (deterministic catalog), local `config.toml` MFA enable. Backup/rollback: `scripts/backup-live.mjs` (read-only paginated JSON snapshot — captured 37,387 live rows) + `scripts/restore-live.mjs` (dry-run default, typed-host confirm) + `runbooks/backup-and-restore.md` + nightly read-only `backup.yml` CI workflow. CI reworked: `static` + `integration` (local) + `e2e` (local); destructive `live` job removed. **Caught + fixed a real 2FA login bug:** post-password proxy soft-bounce rendered `/auth/verify-2fa` at URL `/admin` with a dead form action (no owner could finish logging in) — login now redirects directly to the MFA step. All green on local: 239 vitest · 12 launch-blockers · 6 E2E.
+- 2026-05-28 — **Session-resume + progress docs refreshed** for handoff to a new chat. Reflects Phase 2 built (28/30; T01/T03 owner-blocked), Phase 3 planned + T01 built, migrations through 0013, the Razorpay scope addition, performance.md + the `getClaims` proxy fix, the E2E harness, and the new gotchas (PostgREST 1000-row cap, `server-only`/`-public` split, startTransition-in-render, `createPublicClient` for cached reads, ES256/getClaims, global zzz-purge).
+- 2026-05-18 — **Phase 3 planning (P3-T00).** Expanded all 30 storefront stubs; added the Razorpay payments cluster (T25–T28), SEO (T24), and Playwright E2E (T29). Built P3-T01 (public layout + nav + ProductCard). Wrote `architecture/performance.md` and applied the `getClaims` admin-auth optimization in `proxy.ts`.
+- 2026-05-17/18 — **Phase 2 admin panel built (T01–T29).** Auth + 2FA + three-layer authz · admin shell · dashboard · products list + editor + image pipeline · categories/tags/attributes · CSV import (jobified) · audit/jobs/trash viewers. Migrations 0008–0013. Fixed: tabs overflow, categories-tree React error, zzz fixture leak, /admin/tags 3s load (RPC), scraped-dupe triage.
 - 2026-05-16 — **Doc audit + cold-start hygiene.** Added `architecture/testing-and-ci.md` and `ADR-010` to capture the DI-Supabase-client + pglite patterns durably. Fixed P0-T03 status drift (`not_started` → `deferred`). Refreshed engineering-principles audit log.
 - 2026-05-16 — **CI live.** GitHub Actions workflow runs lint + tsc + validate:migrations + build on every push; vitest + launch-blockers on `rebuild-v2`. Two consecutive green runs.
 - 2026-05-16 — **First Vercel build failure caught a hidden test bug.** `expect(p.base_price_inr).toBeNull;` was missing parens — never ran. CI annotations surfaced it.

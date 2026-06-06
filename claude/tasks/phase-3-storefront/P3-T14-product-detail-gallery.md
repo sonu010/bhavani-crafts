@@ -2,11 +2,11 @@
 id: P3-T14
 phase: 3
 title: Product detail — gallery
-status: not_started
+status: done
 depends_on: [P3-T13]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -62,4 +62,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `gallery.tsx` client. Main image with `priority` (LCP), thumb
+    strip, keyboard arrows (when gallery has focus), and touch swipe
+    (50px threshold). Dependency-free state machine. Thumbnails are real
+    `<button role=tab>` with `aria-selected` / `aria-current`. Zero-image
+    fallback shows a husk-100 placeholder card. License-status gate is
+    already enforced by RLS — we just render what we got.

@@ -7,7 +7,7 @@ import { AttributeForm } from "../attribute-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New attribute — Bhavani Crafts",
+  title: "New attribute",
   robots: { index: false, follow: false },
 };
 

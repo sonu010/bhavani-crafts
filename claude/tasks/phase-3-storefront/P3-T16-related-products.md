@@ -2,11 +2,11 @@
 id: P3-T16
 phase: 3
 title: Related products
-status: not_started
+status: done
 depends_on: [P3-T13]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -59,4 +59,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `related.tsx` server. Same-category newest, current excluded, up to
+    8. Falls back to newest overall when the category is thin. Reuses
+    `getProductCardsPage` for the batched-image read. Cached as
+    `[pdp-related, categoryId, excludeId]` with tags `products`/`categories`
+    (revalidate 600). Wrapped in `readOrEmpty` (build-time resilience).
+    Scroll-snap row; hides when empty.

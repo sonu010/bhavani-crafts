@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
+import { siteUrl } from "@/lib/storefront/site-url";
 import "./globals.css";
 
 /**
@@ -30,10 +31,33 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+/**
+ * Root metadata. `metadataBase` makes relative URLs (og:image,
+ * alternates.canonical) resolve against the canonical site origin.
+ * Per-page `generateMetadata` overrides title/description/openGraph;
+ * what's here is the home page + fallbacks.
+ */
 export const metadata: Metadata = {
-  title: "Bhavani Crafts",
+  metadataBase: new URL(siteUrl()),
+  title: {
+    // The bare tagline is the home page title (no template applied to
+    // a title.default). The template wraps every child page that sets
+    // a string title — PDPs become "Brass Diya — Bhavani Crafts" etc.
+    default: "Bhavani Crafts — craft supplies in Hyderabad",
+    template: "%s — Bhavani Crafts",
+  },
   description:
     "Hyderabad's craft supply studio — resin, paints, paper, wood, jewellery findings and more.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Bhavani Crafts",
+    title: "Bhavani Crafts",
+    description:
+      "Hyderabad's craft supply studio — resin, paints, paper, wood, jewellery findings and more.",
+    url: "/",
+    locale: "en_IN",
+  },
 };
 
 export default function RootLayout({

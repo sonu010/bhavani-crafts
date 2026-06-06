@@ -2,11 +2,11 @@
 id: P3-T09
 phase: 3
 title: Public footer
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -68,4 +68,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `components/storefront/site-footer.tsx` (4-col, mounted in the
+    storefront layout below children) + `_footer/newsletter-form.tsx`
+    (client, client-side email validation, NO-OP toast — no
+    `newsletter_signups` table / provider yet; flagged for later).
+    Catalog column reuses the layout's nav categories (first 6).
+    Policy routes stubbed. Instagram gated on `NEXT_PUBLIC_INSTAGRAM_URL`.

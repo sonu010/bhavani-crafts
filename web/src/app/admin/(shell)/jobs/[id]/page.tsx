@@ -9,7 +9,7 @@ import { JobEventsTimeline } from "./job-events-timeline";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Job — Bhavani Crafts",
+  title: "Job",
   robots: { index: false, follow: false },
 };
 

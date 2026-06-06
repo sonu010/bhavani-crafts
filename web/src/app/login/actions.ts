@@ -103,8 +103,22 @@ export async function signInAction(
     requestId,
   });
 
-  // The proxy decides whether to bounce them to /admin/2fa-setup or
-  // /auth/verify-2fa based on their MFA factor state. Here we just
-  // redirect to `next` and let the proxy do its job.
-  redirect(next);
+  // Route the AAL1 session DIRECTLY to its MFA step. We deliberately do
+  // NOT redirect to `next` / `/admin` and let the proxy bounce: that
+  // bounce would happen during the client-side (soft) navigation this
+  // Server Action's redirect() triggers, and Next then renders the proxy's
+  // target (/auth/verify-2fa) at the OLD url (/admin) with a dead form
+  // action — so the 2FA code submit silently never fires and the user is
+  // stuck (caught by the e2e login flow). Redirecting straight to the
+  // final destination avoids the bounce entirely. The proxy still gates
+  // /admin for every other entry point (deep links, expired AAL2, etc.).
+  const { data: factorsData } = await supabase.auth.mfa.listFactors();
+  const hasVerifiedTotp =
+    factorsData?.totp?.some((f) => f.status === "verified") ?? false;
+
+  redirect(
+    hasVerifiedTotp
+      ? `/auth/verify-2fa?next=${encodeURIComponent(next)}`
+      : "/admin/2fa-setup",
+  );
 }

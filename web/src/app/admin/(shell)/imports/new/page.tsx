@@ -5,7 +5,7 @@ import { UploadForm } from "./upload-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New import — Bhavani Crafts",
+  title: "New import",
   robots: { index: false, follow: false },
 };
 

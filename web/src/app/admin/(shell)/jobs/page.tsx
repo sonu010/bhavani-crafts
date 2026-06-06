@@ -9,7 +9,7 @@ import { JobsFilterBar } from "./filter-bar";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Background jobs — Bhavani Crafts",
+  title: "Background jobs",
   robots: { index: false, follow: false },
 };
 

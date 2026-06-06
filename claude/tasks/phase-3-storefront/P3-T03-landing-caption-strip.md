@@ -2,11 +2,11 @@
 id: P3-T03
 phase: 3
 title: Landing — caption strip
-status: not_started
+status: done
 depends_on: [P3-T02]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -58,4 +58,6 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - Static `_landing/caption-strip.tsx`; three facts in a `FACTS`
+    constant. JetBrains Mono uppercase, husk-200 border-y, middot
+    separators, horizontal-scroll ticker on mobile (scrollbar hidden).

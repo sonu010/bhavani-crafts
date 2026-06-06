@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# …but DO commit the *.example templates (no secrets — placeholders only).
+!.env.test.example
+!e2e/.env.e2e.example
 
 # vercel
 .vercel
@@ -46,3 +49,8 @@ e2e/.auth/
 e2e/.env.e2e
 test-results/
 playwright-report/
+
+# Local DB backups (prod rollback safety net) — never commit dumps.
+/backups/
+*.dump
+*.sql.gz

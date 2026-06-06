@@ -2,11 +2,11 @@
 id: P3-T11
 phase: 3
 title: Category filters sidebar
-status: not_started
+status: done
 depends_on: [P3-T10]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -71,4 +71,11 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `filters-sidebar.tsx` (client): price min/max + stock, URL-driven.
+    Reads from `searchParams`, writes via `router.replace` ONLY in
+    onChange/onClick handlers — NO auto-firing effect (avoids the
+    filter-bar infinite loop fixed earlier; mirrors the safe
+    `products/filter-bar.tsx`). Price inputs debounced via a ref timer +
+    `key={value}` remount so they reset on Clear. Mobile = bottom Sheet
+    (`render` prop) with active-count badge. Server-side filtering proven
+    via E2E (?max=700 drops the ₹1250 item).

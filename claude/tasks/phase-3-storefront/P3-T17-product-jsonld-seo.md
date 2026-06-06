@@ -2,11 +2,11 @@
 id: P3-T17
 phase: 3
 title: Product JSON-LD (SEO)
-status: not_started
+status: done
 depends_on: [P3-T13]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -65,4 +65,19 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `p/[slug]/product-jsonld.tsx` (server). Builds schema.org Product
+    server-side from the already-fetched PdpView — no extra query.
+    Markdown→plain-text via inline regex strip; cap 5000 chars (Google
+    limit). HTML-escapes `<` so a malicious description can't break out
+    of the script tag.
+  - Variant pricing: if any two variant prices differ → `AggregateOffer`
+    with `lowPrice`/`highPrice`/`offerCount` + aggregate availability
+    (InStock if any variant is in_stock/low_stock). Otherwise → single
+    `Offer` from default variant or product base.
+  - Skipped on the preview render — we don't want crawlers indexing
+    unpublished products via a leaked signed link.
+  - New `lib/storefront/site-url.ts` resolves the canonical origin:
+    `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → `http://localhost:3000`.
+    Added env example. Reused by sitemap/robots at T24.
+  - E2E verified: simple product → Offer ₹250 InStock; variant product →
+    AggregateOffer 950–1300 INR offerCount≥2; preview render → 0 scripts.

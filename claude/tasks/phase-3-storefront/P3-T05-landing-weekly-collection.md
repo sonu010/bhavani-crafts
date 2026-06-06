@@ -2,11 +2,11 @@
 id: P3-T05
 phase: 3
 title: Landing — this week's collection
-status: not_started
+status: done
 depends_on: [P3-T04]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -63,4 +63,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `_landing/weekly-collection.tsx`; `getProductCards({onlyFeatured,
+    perPage:4})`, cached `["landing-weekly-collection"]`, tags
+    `products/featured/homepage`. Title/intro are static constants
+    (Phase 4 homepage settings replaces). Scroll-snap row. HIDES when no
+    featured products — seed now marks 3 featured so the happy path has
+    E2E coverage (anon/landing.spec.ts).

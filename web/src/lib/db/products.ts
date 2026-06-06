@@ -40,11 +40,67 @@ export interface ListProductsCursor {
   id: string;
 }
 
+/**
+ * Enumerate every PUBLISHED, non-deleted product's slug + updated_at,
+ * paginated through the 1000-row PostgREST cap. Used by the sitemap;
+ * intentionally lightweight (no joins, no images). Pages are 1000 rows.
+ */
+export async function listAllPublishedSlugs(
+  supabase: SC,
+): Promise<Array<{ slug: string; updated_at: string }>> {
+  const PAGE = 1000;
+  const all: Array<{ slug: string; updated_at: string }> = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("slug, updated_at")
+      .is("deleted_at", null)
+      .eq("is_published", true)
+      .order("slug", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) {
+      throw new Error(`listAllPublishedSlugs failed: ${error.message}`);
+    }
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
+}
+
+/**
+ * Encode/decode a `ListProductsCursor` as a base64url string for the
+ * `?cursor=` URL param (storefront "Load more"). `decodeProductCursor`
+ * returns null for any malformed input — a bad cursor degrades to "first
+ * page", never throws.
+ */
+export function encodeProductCursor(cursor: ListProductsCursor): string {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+export function decodeProductCursor(raw: string | null | undefined): ListProductsCursor | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
+    if (
+      parsed &&
+      typeof parsed.created_at === "string" &&
+      typeof parsed.id === "string"
+    ) {
+      return { created_at: parsed.created_at, id: parsed.id };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export interface ListProductsOpts {
   categoryIds?: string[]; // empty/undefined = all categories
   minPriceInr?: number;
   maxPriceInr?: number;
   stockStatus?: "in_stock" | "low_stock" | "out_of_stock" | "made_to_order" | "unknown";
+  onlyFeatured?: boolean; // true = is_featured only (homepage hero + weekly collection)
   sort?: ListProductsSort;
   perPage?: number;
   cursor?: ListProductsCursor | null;
@@ -92,6 +148,9 @@ export async function listProducts(
   if (opts.stockStatus) {
     q = q.eq("stock_status", opts.stockStatus);
   }
+  if (opts.onlyFeatured) {
+    q = q.eq("is_featured", true);
+  }
 
   // Cursor: only applied for the default "newest" sort. Other sorts use
   // offset-less pagination on a different axis and are not safe to mix
@@ -133,6 +192,129 @@ export async function listProducts(
   }
 
   return { items, nextCursor };
+}
+
+/**
+ * Storefront variant bundle for the PDP (P3-T15). Public-read variant of
+ * `lib/db/admin/variants.ts:getVariantsBundle` — same shape, works with
+ * any DI client (no admin gate). Used by the variant selector to resolve
+ * a selected combo of option values to a concrete variant.
+ *
+ * One query for options, one for values, one for variants — three
+ * round-trips. Skipping the values query when there are no options is the
+ * fast path for variant-less products.
+ */
+export interface PdpOptionValue {
+  id: string;
+  value: string;
+  sort_order: number;
+}
+export interface PdpOption {
+  id: string;
+  name: string;
+  sort_order: number;
+  values: PdpOptionValue[];
+}
+export interface PdpVariant {
+  id: string;
+  sku: string;
+  name: string | null;
+  price_inr: number | null;
+  compare_at_price_inr: number | null;
+  stock_status: ProductListItem["stock_status"];
+  is_default: boolean;
+  sort_order: number;
+  option_value_ids: string[];
+}
+export interface PdpVariantBundle {
+  options: PdpOption[];
+  variants: PdpVariant[];
+}
+
+export async function getPdpVariantBundle(
+  supabase: SC,
+  productId: string,
+): Promise<PdpVariantBundle> {
+  const optsRes = await supabase
+    .from("product_options")
+    .select("id, name, sort_order")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (optsRes.error) {
+    throw new Error(`getPdpVariantBundle (options): ${optsRes.error.message}`);
+  }
+  const optionRows = optsRes.data ?? [];
+  const optionIds = optionRows.map((o) => o.id);
+  if (optionIds.length === 0) return { options: [], variants: [] };
+
+  const [valuesRes, variantsRes] = await Promise.all([
+    supabase
+      .from("product_option_values")
+      .select("id, option_id, value, sort_order")
+      .in("option_id", optionIds)
+      .order("sort_order", { ascending: true })
+      .order("value", { ascending: true }),
+    supabase
+      .from("product_variants")
+      .select(
+        "id, sku, name, price_inr, compare_at_price_inr, stock_status, is_default, sort_order, variant_option_values(option_value_id)",
+      )
+      .eq("product_id", productId)
+      .is("deleted_at", null)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+  if (valuesRes.error) {
+    throw new Error(`getPdpVariantBundle (values): ${valuesRes.error.message}`);
+  }
+  if (variantsRes.error) {
+    throw new Error(`getPdpVariantBundle (variants): ${variantsRes.error.message}`);
+  }
+
+  const valuesByOption = new Map<string, PdpOptionValue[]>();
+  for (const row of (valuesRes.data ?? []) as Array<{
+    id: string;
+    option_id: string;
+    value: string;
+    sort_order: number;
+  }>) {
+    const arr = valuesByOption.get(row.option_id) ?? [];
+    arr.push({ id: row.id, value: row.value, sort_order: row.sort_order });
+    valuesByOption.set(row.option_id, arr);
+  }
+
+  const options: PdpOption[] = optionRows.map((o) => ({
+    id: o.id,
+    name: o.name,
+    sort_order: o.sort_order,
+    values: valuesByOption.get(o.id) ?? [],
+  }));
+
+  type RawVariant = {
+    id: string;
+    sku: string;
+    name: string | null;
+    price_inr: number | null;
+    compare_at_price_inr: number | null;
+    stock_status: ProductListItem["stock_status"];
+    is_default: boolean;
+    sort_order: number;
+    variant_option_values: Array<{ option_value_id: string }> | null;
+  };
+  const variants: PdpVariant[] = ((variantsRes.data ?? []) as RawVariant[]).map((v) => ({
+    id: v.id,
+    sku: v.sku,
+    name: v.name,
+    price_inr: v.price_inr,
+    compare_at_price_inr: v.compare_at_price_inr,
+    stock_status: v.stock_status,
+    is_default: v.is_default,
+    sort_order: v.sort_order,
+    option_value_ids: (v.variant_option_values ?? []).map((j) => j.option_value_id),
+  }));
+
+  return { options, variants };
 }
 
 /** Fetch one published product by slug, joined with images, variants, tags. */

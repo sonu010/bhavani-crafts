@@ -2,11 +2,11 @@
 id: P3-T04
 phase: 3
 title: Landing — the Atlas (category grid)
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -69,4 +69,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `_landing/atlas.tsx`; cached `["landing-atlas"]`, tags
+    `categories/products/homepage`. Uses `getCategoryCovers` (in
+    `lib/db/storefront.ts`): category.image_url first, else newest
+    published product image in the category's DESCENDANT subtree (3
+    batched queries via `category_with_descendants`). Names overlaid
+    mix-blend-multiply. Hides if no categories.

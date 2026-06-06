@@ -2,11 +2,11 @@
 id: P3-T02
 phase: 3
 title: Landing — split editorial hero
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -71,4 +71,25 @@ cd web && pnpm build && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - **Shared read helper born here:** `web/src/lib/db/storefront.ts` —
+    `getProductCards(sb, opts)` (listProducts + ONE batched
+    `getPrimaryImages` query → `ProductCardItem[]`) and
+    `getCategoryCovers`. Reused by weekly/kits/atlas. Added an
+    `onlyFeatured` opt to `listProducts`.
+  - Hero reads the newest featured product, falling back to newest
+    published so it's never empty. Cached as `["landing-hero"]`, tags
+    `products/featured/categories/homepage`. CTA → first top category
+    `/c/<slug>` (falls back to `/search`).
+  - Each landing section is a self-contained server component doing its
+    own `unstable_cache` read; `page.tsx` is pure composition and `/`
+    stays `○ Static, Revalidate 5m`.
+  - **GOTCHA:** `unstable_cache` persists across builds in `.next/cache`
+    keyed only on its keyParts, NOT the target DB. Switching the build's
+    Supabase target (live → local) without `rm -rf .next` serves STALE
+    cross-environment data in the static prerender. CI unaffected (fresh
+    checkout).
+  - **next/image + unconfigured host:** seed uses `seed.local` image URLs
+    (not in remotePatterns). Does NOT crash the prerender — next/image
+    only rejects the host at the browser's `/_next/image` request, so the
+    page renders (broken img) and E2E passes. Real images come from
+    Supabase Storage / Just Kraft CDN (both allowed).

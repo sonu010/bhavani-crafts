@@ -5,7 +5,7 @@ import { VerifyForm } from "./verify-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Two-factor verification — Bhavani Crafts",
+  title: "Two-factor verification",
   robots: { index: false, follow: false },
 };
 
@@ -19,7 +19,19 @@ export const metadata = {
  *   - signed out → /login
  *   - has no verified factor → /admin/2fa-setup
  */
-export default async function VerifyTwoFactorPage() {
+export default async function VerifyTwoFactorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  // Where to land after the code verifies. Only honor a same-site absolute
+  // path; anything else is a redirect open-target and falls back to /admin.
+  const { next: nextRaw } = await searchParams;
+  const next =
+    typeof nextRaw === "string" && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/admin";
+
   const supabase = await createServerClient();
   const {
     data: { user },
@@ -30,7 +42,7 @@ export default async function VerifyTwoFactorPage() {
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal?.currentLevel === "aal2") {
-    redirect("/admin");
+    redirect(next);
   }
 
   const { data: factorsList } = await supabase.auth.mfa.listFactors();
@@ -51,7 +63,7 @@ export default async function VerifyTwoFactorPage() {
         </p>
       </header>
 
-      <VerifyForm factorId={verified.id} />
+      <VerifyForm factorId={verified.id} next={next} />
     </main>
   );
 }

@@ -12,7 +12,7 @@ import { MoveProductsForm } from "./move-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Move products — Bhavani Crafts",
+  title: "Move products",
   robots: { index: false, follow: false },
 };
 

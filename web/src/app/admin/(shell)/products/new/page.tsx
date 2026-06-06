@@ -4,7 +4,7 @@ import { requireAdminContext } from "@/lib/db/admin-context";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New product — Bhavani Crafts",
+  title: "New product",
   robots: { index: false, follow: false },
 };
 

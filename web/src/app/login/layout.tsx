@@ -12,7 +12,7 @@ import type { Metadata } from "next";
  * 10-layer defense.
  */
 export const metadata: Metadata = {
-  title: "Sign in — Bhavani Crafts",
+  title: "Sign in",
   robots: { index: false, follow: false },
 };
 

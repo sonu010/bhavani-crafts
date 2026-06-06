@@ -5,7 +5,7 @@ import { EnrollForm } from "./enroll-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Set up two-factor authentication — Bhavani Crafts",
+  title: "Set up two-factor authentication",
   robots: { index: false, follow: false },
 };
 

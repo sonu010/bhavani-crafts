@@ -2,11 +2,11 @@
 id: P3-T18
 phase: 3
 title: Search page (FTS)
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -78,4 +78,23 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `/search/page.tsx` (server, force-dynamic + noindex). Reads `?q=`,
+    calls `searchProductCards()` (new wrapper in lib/db/storefront.ts:
+    searchProducts + batched primary-image fetch → ProductCardItem[]).
+    Empty state + min-2-char guard + plain GET-form (no client JS,
+    shareable, SSR-friendly).
+  - **Logging via the anon client, not service-role.** Added migration
+    `0014_search_logs_anon_insert.sql` adding an INSERT-only RLS policy
+    (`with check (user_id is null and length<=120)`) + a CHECK constraint
+    on `query` length, plus a pglite-compatible smoke that asserts the
+    policy shape + the over-length rejection. The project's ESLint rule
+    forbids `@/lib/db/admin` outside admin namespaces — search logging
+    is conceptually a public write, so the right answer was a policy.
+  - `logSearch` runs in `after()` so the user doesn't pay for the insert
+    latency; swallowed-error model means a transient DB write never
+    breaks the search page.
+  - Header search trigger already routed to `/search` (since T01); now
+    the page exists. No site-header change needed.
+  - Live-verified: `?q=resin` finds the seeded Resin Coaster Set; zero-
+    result + sub-2-char both render correct empty states; search_logs
+    rows written for all four test queries.

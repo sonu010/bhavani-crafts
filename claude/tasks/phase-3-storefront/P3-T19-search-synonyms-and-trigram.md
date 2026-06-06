@@ -2,11 +2,11 @@
 id: P3-T19
 phase: 3
 title: Search — synonyms + trigram polish
-status: not_started
+status: done
 depends_on: [P3-T18]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -74,4 +74,15 @@ pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - **Verification-only.** All 7 craft-domain synonyms (acrylic, colour,
+    glitter, gsm, mdf, mould, resin) are already seeded by P1-T05; the
+    14 vitest specs in `__tests__/db/search-synonyms.test.ts` +
+    `search.test.ts` all green. No new migration needed.
+  - **Trigram threshold parked.** `architecture/search.md` §"Trigram
+    threshold — known issue" documents that long product names dilute
+    the similarity score (e.g. similarity('Resin epoxy 100ml clear
+    casting kit', 'rezin') = 0.079, far below the 0.3 default). The
+    storefront search currently falls back to FTS-only when synonyms
+    don't help. Fix is per-word trigram tokenization (or `pg_trgm`'s
+    `strict_word_similarity`) — bigger lift than the spec warranted,
+    flagged for a Phase-4 quality pass.

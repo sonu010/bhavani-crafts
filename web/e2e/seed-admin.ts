@@ -99,7 +99,15 @@ async function main() {
     await user.auth.mfa.unenroll({ factorId: f.id });
   }
 
-  const enroll = await user.auth.mfa.enroll({ factorType: "totp" });
+  // Enroll with a UNIQUE friendlyName. Re-running the seed without a
+  // `supabase db reset` can leave an unverified factor named "" that
+  // listFactors().all doesn't return (so the unenroll loop above misses
+  // it), which makes a default re-enroll fail with mfa_factor_name_conflict.
+  // A unique name sidesteps the conflict; login verifies the newest factor.
+  const enroll = await user.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: `e2e-${Date.now()}`,
+  });
   if (enroll.error || !enroll.data) throw enroll.error ?? new Error("enroll failed");
   const factorId = enroll.data.id;
   const secret = enroll.data.totp.secret;

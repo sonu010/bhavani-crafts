@@ -7,7 +7,7 @@ import { CategoryForm } from "../category-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New category — Bhavani Crafts",
+  title: "New category",
   robots: { index: false, follow: false },
 };
 

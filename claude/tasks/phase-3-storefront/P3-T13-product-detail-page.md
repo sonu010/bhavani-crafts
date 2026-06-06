@@ -2,11 +2,11 @@
 id: P3-T13
 phase: 3
 title: Product detail page
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -85,4 +85,16 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `/p/[slug]/page.tsx` + `lib/db/pdp.ts` (composes detail + variants +
+    attributes + filterable defs in one read). Two paths: cached public
+    (`getPdpView` via createPublicClient, tags
+    `products`/`product:<slug>`) and uncached preview (`getPdpPreview` via
+    createAdminClient — service-role, bypasses RLS). Order matters: try
+    public first; only if null AND a `?preview=` token is present, fetch
+    via service-role to get the product id, then verify the token
+    against THAT id (token-product binding). Preview render shows a
+    Saffron banner + `robots: noindex`. Markdown description rendered via
+    `react-markdown` + `rehype-sanitize` (same pipeline as the admin
+    editor). Breadcrumb back to category. `export const revalidate = 300`.
+    Preview round-trip verified live: valid token → 200 + banner;
+    tampered → 404; wrong-product token → 404.

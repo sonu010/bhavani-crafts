@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -411,6 +431,153 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "background_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total_inr: number
+          name: string
+          order_id: string
+          product_id: string | null
+          quantity: number
+          sku: string
+          unit_price_inr: number
+          variant_id: string | null
+          variant_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total_inr: number
+          name: string
+          order_id: string
+          product_id?: string | null
+          quantity: number
+          sku: string
+          unit_price_inr: number
+          variant_id?: string | null
+          variant_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total_inr?: number
+          name?: string
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          sku?: string
+          unit_price_inr?: number
+          variant_id?: string | null
+          variant_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          notes: string | null
+          order_number: string
+          paid_at: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          refunded_at: string | null
+          shipping_address: Json
+          shipping_inr: number
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_inr: number
+          total_inr: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          notes?: string | null
+          order_number: string
+          paid_at?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          refunded_at?: string | null
+          shipping_address: Json
+          shipping_inr?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_inr: number
+          total_inr: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string
+          paid_at?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          refunded_at?: string | null
+          shipping_address?: Json
+          shipping_inr?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_inr?: number
+          total_inr?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -980,6 +1147,7 @@ export type Database = {
           value_count: number
         }[]
       }
+      generate_order_number: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       products_status_counts: {
         Args: never
@@ -1029,6 +1197,12 @@ export type Database = {
         | "public_domain"
         | "disputed"
         | "removed"
+      order_status:
+        | "pending_payment"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "refunded"
       product_source: "manual" | "justkraft_seed" | "csv_import" | "ai_assisted"
       profile_role: "owner" | "admin" | "editor" | "viewer"
       review_status:
@@ -1168,6 +1342,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       ai_generation_status: [
@@ -1203,6 +1380,13 @@ export const Constants = {
         "disputed",
         "removed",
       ],
+      order_status: [
+        "pending_payment",
+        "paid",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
       product_source: ["manual", "justkraft_seed", "csv_import", "ai_assisted"],
       profile_role: ["owner", "admin", "editor", "viewer"],
       review_status: [
@@ -1222,3 +1406,4 @@ export const Constants = {
     },
   },
 } as const
+

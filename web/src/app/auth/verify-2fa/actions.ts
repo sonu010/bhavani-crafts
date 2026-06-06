@@ -13,6 +13,7 @@ export async function verify2faAction(
 ): Promise<{ error: string } | void> {
   const factorIdRaw = formData.get("factorId");
   const codeRaw = formData.get("code");
+  const nextRaw = formData.get("next");
   if (typeof factorIdRaw !== "string" || typeof codeRaw !== "string") {
     return { error: GENERIC_ERROR };
   }
@@ -21,6 +22,11 @@ export async function verify2faAction(
   if (!/^\d{6}$/.test(code)) {
     return { error: GENERIC_ERROR };
   }
+  // Same-site absolute path only; otherwise fall back to /admin.
+  const next =
+    typeof nextRaw === "string" && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/admin";
 
   const supabase = await createServerClient();
   const admin = createAdminClient();
@@ -74,5 +80,5 @@ export async function verify2faAction(
     requestId,
   });
 
-  redirect("/admin");
+  redirect(next);
 }

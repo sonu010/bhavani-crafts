@@ -11,6 +11,21 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/types.gen";
 
+// ─── Prod-data guardrail (defense in depth) ───────────────────────────
+// vitest.setup.ts already refuses a non-local URL, but this module owns
+// the service-role client that actually performs the destructive
+// INSERT/DELETE. Re-assert here so anything importing `srv` (a stray
+// script, a misconfigured run) cannot touch a live project by accident.
+const _url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const _isLocal = /(^|\/\/)(127\.0\.0\.1|localhost|0\.0\.0\.0)(:|\/|$)/.test(_url);
+if (!_isLocal && process.env.ALLOW_NONLOCAL_TEST_DB !== "1") {
+  throw new Error(
+    `__tests__/db/_clients: refusing to build a destructive test client ` +
+      `against non-local Supabase URL "${_url}". Run \`pnpm test:setup\` ` +
+      `or set ALLOW_NONLOCAL_TEST_DB=1 to override (you accept the risk).`,
+  );
+}
+
 export const anon: SupabaseClient<Database> = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

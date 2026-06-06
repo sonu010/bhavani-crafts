@@ -294,9 +294,13 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
+# Enabled to mirror production, where owner accounts MUST use TOTP 2FA
+# (see auth-and-roles.md). The local stack needs this on so the MFA
+# integration tests + the E2E admin seed (pnpm e2e:seed) can enroll +
+# verify a factor.
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

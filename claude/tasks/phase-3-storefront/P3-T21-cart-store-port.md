@@ -2,11 +2,11 @@
 id: P3-T21
 phase: 3
 title: Cart store port (from origin/main)
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -69,4 +69,25 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `lib/storefront/cart-store.ts`. `zustand` (5.0.13 already in deps) +
+    `persist` middleware under `bc-cart-v1`. `partialize` strips
+    `isOpen` so the drawer always starts closed on a fresh page.
+  - Line shape is a FLATTENED snapshot (productId/slug/name/imageUrl/
+    variantId/variantSku/variantLabel/unitPriceInr/quantity), keyed by
+    `variantId ?? productId` so the same product in two variants becomes
+    two lines. No full Product object retained → small localStorage
+    footprint, no stale embeds when admin edits a product.
+  - Selectors `selectTotalItems` and `selectSubtotalInr` are exported
+    PLAIN FUNCTIONS (call as `useCartStore(selectTotalItems)`), not
+    custom hooks — keeps them inlineable.
+  - **Hydration gotcha for sync storage:** zustand's persist finishes
+    rehydration DURING store creation when using localStorage, BEFORE
+    any module-level listener registers. Initialize the local
+    `hasHydrated` flag from `useCartStore.persist?.hasHydrated()` rather
+    than waiting on `onFinishHydration` alone (which still fires for the
+    async-storage case).
+  - **`useCartHasHydrated()`** is built on `useSyncExternalStore` — NOT
+    useState+useEffect — because the React Compiler's
+    `react-hooks/set-state-in-effect` rule rejects the obvious pattern.
+    SSR snapshot returns `false`; client snapshot reflects the live
+    persist state.

@@ -2,11 +2,11 @@
 id: P3-T08
 phase: 3
 title: Landing — visit Bhavani Crafts
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -60,4 +60,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `_landing/visit.tsx` (server) + `_landing/copy-address.tsx`
+    (client, navigator.clipboard + sonner toast, text-select fallback).
+    Address/hours/photo are PLACEHOLDER constants pending the
+    real-content gate. Maps = an "Open in Google Maps" link (no iframe,
+    per the Lighthouse budget). Storefront `<Toaster>` mounted in the
+    layout (T09) for the copy toast.

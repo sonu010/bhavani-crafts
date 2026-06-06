@@ -63,6 +63,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+  // Dev-only (ignored in production builds). Next 16 blocks cross-origin
+  // requests to dev resources + Server Action POSTs unless the requesting
+  // host is whitelisted here. The Playwright E2E drives the dev server at
+  // http://127.0.0.1:3000, so without this the /login Server Action is
+  // silently rejected (form never navigates). localhost is allowed by
+  // default; 127.0.0.1 must be listed explicitly.
+  allowedDevOrigins: ["127.0.0.1"],
+
   images: {
     remotePatterns: [
       // Just Kraft seed CDN — dev only; never serves on production (RLS

@@ -42,8 +42,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  // Generous per-test timeout: the webServer runs `next dev`, so the FIRST
+  // hit to each route pays a cold Turbopack compile. The login setup alone
+  // compiles /login → /admin → /auth/verify-2fa in one chain. 30s wasn't
+  // enough on a cold server; 90s gives headroom without masking real hangs.
+  timeout: 90_000,
+  expect: { timeout: 10_000 },
 
   use: {
     baseURL: BASE_URL,
@@ -68,14 +72,38 @@ export default defineConfig({
       testMatch: /anon\/.*\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
+    // 4. (opt-in via E2E_CHROME=1) Authed admin flows in the REAL Google
+    //    Chrome installed on macOS (not the bundled Chromium).
+    //    `channel: "chrome"` launches the system Chrome binary. Triggered
+    //    by `pnpm test:e2e:chrome`. testMatch is empty unless the env var
+    //    is set so the default `pnpm test:e2e` run doesn't run admin
+    //    specs twice (once under chromium + once under chrome).
+    {
+      name: "admin-chrome",
+      testMatch:
+        process.env.E2E_CHROME === "1" ? /admin\/.*\.spec\.ts/ : /(?!.*)/, // never-match when disabled
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], channel: "chrome", storageState: AUTH_STATE },
+    },
   ],
 
-  // Boot the Next dev server against the local stack for the run.
+  // Boot a PRODUCTION build against the local stack for the run.
+  //
+  // We deliberately use `next build && next start`, not `next dev`:
+  //   - `next dev` recompiles each route on first hit (Turbopack), so the
+  //     login redirect chain (/login → /admin → /auth/verify-2fa) plus the
+  //     proxy's auth network calls regularly blew past the test timeout and
+  //     made the suite flaky.
+  //   - A prod build is prebuilt → navigations + redirects resolve in ms,
+  //     and it mirrors what real users/admins hit. It also sidesteps the
+  //     dev-only cross-origin Server Action block entirely.
+  // NEXT_PUBLIC_* are inlined at build time from `env` below (the LOCAL
+  // stack), so the served app talks to local Supabase, never prod.
   webServer: {
-    command: "pnpm dev",
+    command: "pnpm build && pnpm start",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
     env: {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",

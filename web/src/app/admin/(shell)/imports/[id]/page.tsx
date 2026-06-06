@@ -13,7 +13,7 @@ import { RunImportButton } from "./run-import-button";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Import — Bhavani Crafts",
+  title: "Import",
   robots: { index: false, follow: false },
 };
 

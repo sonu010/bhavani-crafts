@@ -80,3 +80,10 @@ stitch_bhavani_creator_studio.zip
 # ─── Misc temp ───
 /tmp/
 *.tmp
+
+# ─── Transient / one-off ───
+# Owner-meeting prep documents (regenerated on demand).
+claude/owner-meeting-*.md
+claude/owner-meeting-*.xlsx
+# State file for scripts/flip-publish-all.mjs (transient data-flip ids).
+web/scripts/.flip-publish-state.json

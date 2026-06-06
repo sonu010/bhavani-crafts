@@ -2,11 +2,11 @@
 id: P3-T15
 phase: 3
 title: Product detail — variants UI
-status: not_started
+status: done
 depends_on: [P3-T13]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -76,4 +76,23 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `variant-selector.tsx` client. Resolves the variant by set-equality
+    on `option_value_ids`. Default variant preselected from the bundle.
+    Price/stock fall back to the product's base when the variant lacks
+    its own. Add-to-cart disabled with a clear reason on:
+    out-of-stock, invalid combo, or incomplete selection.
+  - `lib/db/products.ts` now exposes `getPdpVariantBundle` (public-safe
+    mirror of `lib/db/admin/variants.ts:getVariantsBundle` — no admin
+    gate, same shape). Three round-trips: options, then values + variants
+    in parallel. Skips the values fetch when there are no options.
+  - **Deferred:** greying out unavailable option-value chips (combo
+    candidate-set intersection) — the seed isn't rich enough to justify
+    it yet. The current behaviour shows the chips, you pick a combo, and
+    we disable add-to-cart with "This combination isn't available.".
+  - **Cart wiring is stubbed.** `add-to-cart.tsx` accepts the full
+    payload (productId, variantId, sku, productName) and shows a toast.
+    When P3-T21 (cart store) lands, replace the body of `onClick` with
+    the zustand store action — the props are already the cart line
+    payload.
+  - Seed now contains a variant product (`resin-coaster-set`: Size×Color,
+    4 variants) so the happy path has E2E coverage.

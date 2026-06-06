@@ -10,6 +10,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  selectTotalItems,
+  useCartHasHydrated,
+  useCartStore,
+} from "@/lib/storefront/cart-store";
 
 /**
  * Storefront top nav. Sticky; brand wordmark + top-category links +
@@ -26,6 +31,9 @@ export function SiteHeader({
   categories: Array<{ slug: string; name: string }>;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleCart = useCartStore((s) => s.toggleCart);
+  const totalItems = useCartStore(selectTotalItems);
+  const cartHydrated = useCartHasHydrated();
 
   return (
     <header className="sticky top-0 z-40 border-b border-husk-200 bg-paper-0/95 backdrop-blur">
@@ -96,14 +104,29 @@ export function SiteHeader({
           >
             <Search className="size-5" />
           </Link>
-          {/* Cart trigger — opens the drawer once P3-T20 lands; the
-             count badge binds to the store from P3-T21. */}
+          {/* Cart trigger — opens the drawer (mounted in the storefront
+             layout). The count badge renders only after the persist
+             middleware finishes rehydrating to avoid a SSR/client
+             mismatch (server has no localStorage). */}
           <button
             type="button"
-            aria-label="Cart"
-            className="inline-flex size-9 items-center justify-center rounded-md text-bark-900 hover:bg-husk-100"
+            onClick={toggleCart}
+            aria-label={
+              cartHydrated && totalItems > 0
+                ? `Cart, ${totalItems} item${totalItems === 1 ? "" : "s"}`
+                : "Cart"
+            }
+            className="relative inline-flex size-9 items-center justify-center rounded-md text-bark-900 hover:bg-husk-100"
           >
             <ShoppingBag className="size-5" />
+            {cartHydrated && totalItems > 0 ? (
+              <span
+                aria-hidden
+                className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-teal-800 font-mono text-[10px] tabular-nums text-paper-0"
+              >
+                {totalItems}
+              </span>
+            ) : null}
           </button>
         </div>
       </div>

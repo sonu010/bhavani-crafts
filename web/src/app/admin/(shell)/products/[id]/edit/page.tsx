@@ -19,7 +19,7 @@ import { pickTab } from "./tabs-config";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Edit product — Bhavani Crafts",
+  title: "Edit product",
   robots: { index: false, follow: false },
 };
 

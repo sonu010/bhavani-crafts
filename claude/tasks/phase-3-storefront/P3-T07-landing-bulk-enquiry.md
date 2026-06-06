@@ -2,11 +2,11 @@
 id: P3-T07
 phase: 3
 title: Landing — bulk enquiry strip
-status: not_started
+status: done
 depends_on: [P3-T01]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -61,4 +61,7 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `_landing/bulk-enquiry.tsx` (full-bleed paper-0 pull-quote) +
+    `lib/storefront/whatsapp.ts` (`whatsappHref` / `hasWhatsapp`). CTA
+    gated on `NEXT_PUBLIC_WHATSAPP_NUMBER` (added to .env.example;
+    hidden if unset). Reused by footer + future cart fallback.

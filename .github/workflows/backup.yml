@@ -1,0 +1,73 @@
+name: Backup live catalog
+
+# Nightly READ-ONLY snapshot of the live catalog → workflow artifact.
+# This is the rollback safety net (see claude/runbooks/backup-and-restore.md).
+# It only SELECTs from production; it never writes. Gated on the same three
+# Supabase secrets as the rest of the project — skips cleanly if unset.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # daily 02:00 UTC
+  workflow_dispatch: {} # allow on-demand runs before risky changes
+
+jobs:
+  backup:
+    name: snapshot catalog (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets are configured
+        id: check-secrets
+        env:
+          URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SRV: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$ANON" ] || [ -z "$SRV" ]; then
+            echo "::warning::Supabase secrets not configured. Skipping backup."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check-secrets.outputs.configured == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.check-secrets.outputs.configured == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.local (live, read-only use)
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EOF
+
+      - name: Snapshot catalog
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm backup:live
+
+      - name: Upload snapshot artifact
+        if: steps.check-secrets.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-backup-${{ github.run_id }}
+          path: web/backups/
+          retention-days: 90

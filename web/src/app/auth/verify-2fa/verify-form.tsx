@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { verify2faAction } from "./actions";
 
-export function VerifyForm({ factorId }: { factorId: string }) {
+export function VerifyForm({
+  factorId,
+  next,
+}: {
+  factorId: string;
+  next: string;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -23,6 +29,7 @@ export function VerifyForm({ factorId }: { factorId: string }) {
   return (
     <form action={handleSubmit} className="space-y-4" noValidate>
       <input type="hidden" name="factorId" value={factorId} />
+      <input type="hidden" name="next" value={next} />
       <div className="space-y-2">
         <Label htmlFor="code">6-digit code</Label>
         <Input

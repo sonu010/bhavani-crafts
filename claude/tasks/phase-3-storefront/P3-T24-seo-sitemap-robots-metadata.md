@@ -2,11 +2,11 @@
 id: P3-T24
 phase: 3
 title: SEO — sitemap, robots, metadata
-status: not_started
+status: done
 depends_on: [P3-T13, P3-T10]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -82,4 +82,30 @@ cd web && pnpm build && pnpm start
 
 # Notes for next agent
 
-(empty)
+  - `app/sitemap.ts` + `app/robots.ts` + canonical/OG on PDP + category
+    + title-template at root layout.
+  - **Sitemap** paginates products + categories via `listAllPublishedSlugs`
+    / `listAllCategorySlugs` (new helpers in lib/db/products.ts +
+    categories.ts; 1000-row chunks to beat the PostgREST cap). Each entry
+    carries `lastmod` from `updated_at`. Wrapped in `readOrEmpty` so a
+    DB outage degrades to a static-pages-only sitemap. `export const
+    revalidate = 3600` — Next 16 caches the route response.
+  - **robots.txt** allows `/`, disallows `/admin /auth /api /design`,
+    points at `/sitemap.xml`, includes `Host:` for the canonical origin.
+  - **PDP + category metadata** now emit `alternates.canonical`, `openGraph`
+    (type/title/description/url/images/locale), and `twitter` card on the
+    PDP. `metadataBase` lives on root layout so relative URLs resolve.
+  - **Title template gotcha (cost me a rebuild):** setting `title` (even
+    `{ absolute }`) in the storefront layout overrides the root template
+    for every descendant — PDP titles silently dropped the suffix. Fix:
+    put the home tagline in `title.default` at ROOT (default is NOT
+    templated), drop the storefront override, let children with string
+    titles inherit the template. Documented in SESSION-RESUME.
+  - **Stripped " — Bhavani Crafts" from 22 page titles** (admin + auth +
+    storefront + storefront layout); the root template applies the
+    suffix universally now. Login + admin shell + verify-2fa + categories/
+    products/etc were all updated by a python sweep.
+  - All verified live: robots blocks 4 prefixes, sitemap has 19 entries
+    (home + search + 8 categories + 9 products) all with lastmod, PDP
+    canonical absolute via metadataBase, og:image/title/description/url
+    correct, title template wraps "X — Bhavani Crafts" on every page.

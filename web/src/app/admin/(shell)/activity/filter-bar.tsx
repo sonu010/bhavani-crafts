@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,6 @@ export function FilterBar({
   entityTypes: string[];
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   const [action, setAction] = useState(initial.action ?? "");
@@ -41,39 +40,39 @@ export function FilterBar({
   const [since, setSince] = useState(initial.since ?? "");
   const [until, setUntil] = useState(initial.until ?? "");
 
-  const sync = useCallback(
-    (updates: Record<string, string>) => {
-      const next = new URLSearchParams(searchParams.toString());
-      for (const [k, v] of Object.entries(updates)) {
-        if (v) next.set(k, v);
-        else next.delete(k);
-      }
-      // Reset cursor when filters change.
-      next.delete("cursor");
-      next.delete("row");
+  // Debounce-sync the filter state into the URL. This effect deliberately
+  // does NOT depend on `searchParams`: doing so created an infinite loop —
+  // each `router.replace` produced a new `searchParams` reference, which
+  // recreated the callback, which re-fired this effect, which replaced
+  // again (continuous `GET /admin/activity` every ~300ms, blocking the UI).
+  // We build the query purely from local state and skip the navigation
+  // when the URL already matches (the no-op guard), so the effect runs
+  // exactly once per real filter change.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const next = new URLSearchParams();
+      if (action) next.set("action", action);
+      if (entityType) next.set("entity_type", entityType);
+      if (entityId) next.set("entity_id", entityId);
+      if (since) next.set("since", since);
+      if (until) next.set("until", until);
+      next.sort();
       const qs = next.toString();
+
+      // Compare against the live URL (read at call time, NOT a dep) minus
+      // the cursor/row params we intentionally reset on a filter change.
+      const current = new URLSearchParams(window.location.search);
+      current.delete("cursor");
+      current.delete("row");
+      current.sort();
+      if (current.toString() === qs) return;
+
       startTransition(() => {
         router.replace(qs ? `?${qs}` : "?", { scroll: false });
       });
-    },
-    [router, searchParams],
-  );
-
-  // Debounce the entity_id + date inputs.
-  useEffect(() => {
-    const handle = setTimeout(
-      () =>
-        sync({
-          action,
-          entity_type: entityType,
-          entity_id: entityId,
-          since,
-          until,
-        }),
-      300,
-    );
+    }, 300);
     return () => clearTimeout(handle);
-  }, [action, entityType, entityId, since, until, sync]);
+  }, [action, entityType, entityId, since, until, router]);
 
   const clear = () => {
     setAction("");

@@ -2,11 +2,11 @@
 id: P3-T12
 phase: 3
 title: Category cursor pagination
-status: not_started
+status: done
 depends_on: [P3-T10]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -64,4 +64,13 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `load-more.tsx` (client) + `actions.ts` (`loadMoreCategoryProducts`
+    server action) + base64url cursor codec (`encode/decodeProductCursor`
+    in products.ts). Page 1 is server-rendered (cached, SEO); Load more
+    appends pages 2+ client-side via the server action — true append, no
+    scroll jump, stable `(created_at,id)` cursor. Cursor is encoded on the
+    SERVER (page) and passed as a string so the client never touches
+    `Buffer`. Button hides when nextCursor is null. Filters preserved
+    (passed to the action). Seed has <12 products/category so the button
+    is hidden in the current fixture — append path covered by code + the
+    shared cursor logic (same as admin).

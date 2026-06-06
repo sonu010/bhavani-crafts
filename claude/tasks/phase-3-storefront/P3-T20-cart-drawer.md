@@ -2,11 +2,11 @@
 id: P3-T20
 phase: 3
 title: Cart drawer (Sheet)
-status: not_started
+status: done
 depends_on: [P3-T01, P3-T21]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -74,4 +74,23 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `components/storefront/cart-drawer.tsx`. Slides from the right
+    (desktop) / bottom (mobile) via shadcn Sheet. Lines list thumb +
+    name + variant label + qty stepper (Plus/Minus + tabular num count)
+    + line total + remove ×. Subtotal + 'shipping calculated at checkout'
+    + primary Checkout CTA → `/checkout` (payments cluster T25+ wires
+    the page; 404 today by design).
+  - Mounted ONCE in the storefront layout below the footer. Open state
+    lives in the cart store (`isOpen`), so the header cart button +
+    PDP add-to-cart can both `openCart()` without prop drilling.
+  - Header (`site-header.tsx`) now wires the cart icon to `toggleCart()`
+    and renders a teal-800 count badge fed by `selectTotalItems`. Both
+    badge + open state are gated on `useCartHasHydrated()` to dodge
+    SSR/client mismatch.
+  - PDP `add-to-cart.tsx` rewritten: takes a single `line: AddLineInput`
+    prop (caller computes the snapshot) + `disabled` + `reason`. On
+    click → `addLine(line) + openCart()`. variant-selector + the
+    variant-less page branch each build their own snapshot.
+  - E2E covers all 4 happy paths (drawer open, qty stepper updates,
+    localStorage persistence + badge reflects count after reload,
+    variant-keyed line + remove + checkout href).

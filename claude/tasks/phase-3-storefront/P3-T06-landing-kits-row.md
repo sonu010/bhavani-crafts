@@ -2,11 +2,11 @@
 id: P3-T06
 phase: 3
 title: Landing — workshop kits row
-status: not_started
+status: done
 depends_on: [P3-T04]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-05-29
 ---
 
 # Goal
@@ -60,4 +60,9 @@ cd web && pnpm dev
 
 # Notes for next agent
 
-(empty)
+  - `_landing/kits-row.tsx`; resolves `workshop-kits` by slug then
+    `getProductCards({categoryIds:[id], perPage:8})`. Cached
+    `["landing-kits-row"]`, tags `products/categories/homepage`.
+    Numbered 01/02/… badge overlay. HIDES if the category is absent —
+    seed now creates `workshop-kits` + 3 products so the path is
+    E2E-covered.

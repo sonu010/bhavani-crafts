@@ -6,7 +6,7 @@ import { TagsTable } from "./tags-table";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Tags — Bhavani Crafts",
+  title: "Tags",
   robots: { index: false, follow: false },
 };
 

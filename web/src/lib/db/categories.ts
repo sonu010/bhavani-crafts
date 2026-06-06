@@ -13,6 +13,34 @@ import {
 
 type SC = SupabaseClient<Database>;
 
+/**
+ * Enumerate every non-deleted category's slug + updated_at. Used by the
+ * sitemap. Catalog has ~360 categories so one page is enough — no
+ * pagination loop needed, but we use a generous limit cap so a future
+ * growth past 1000 won't silently truncate.
+ */
+export async function listAllCategorySlugs(
+  supabase: SC,
+): Promise<Array<{ slug: string; updated_at: string }>> {
+  const PAGE = 1000;
+  const all: Array<{ slug: string; updated_at: string }> = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("slug, updated_at")
+      .is("deleted_at", null)
+      .order("slug", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) {
+      throw new Error(`listAllCategorySlugs failed: ${error.message}`);
+    }
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
+}
+
 /** Top-level (parent_id IS NULL) categories, sorted. */
 export async function listTopLevelCategories(supabase: SC): Promise<Category[]> {
   const { data, error } = await supabase

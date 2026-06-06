@@ -14,7 +14,7 @@ import { TrashTable } from "./trash-table";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Trash — Bhavani Crafts",
+  title: "Trash",
   robots: { index: false, follow: false },
 };
 
