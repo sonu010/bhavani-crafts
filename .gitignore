@@ -85,5 +85,6 @@ stitch_bhavani_creator_studio.zip
 # Owner-meeting prep documents (regenerated on demand).
 claude/owner-meeting-*.md
 claude/owner-meeting-*.xlsx
-# State file for scripts/flip-publish-all.mjs (transient data-flip ids).
+# State files for scripts/flip-*.mjs (transient data-flip ids).
 web/scripts/.flip-publish-state.json
+web/scripts/.flip-image-license-state.json

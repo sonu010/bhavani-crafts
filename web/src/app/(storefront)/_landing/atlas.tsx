@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { StorefrontImage as Image } from "@/components/storefront/storefront-image";
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/db/public-client";
 import { listTopLevelCategories } from "@/lib/db/categories";

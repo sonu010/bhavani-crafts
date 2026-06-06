@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { StorefrontImage as Image } from "@/components/storefront/storefront-image";
 import type { ProductListItem } from "@/lib/schemas/product";
 import { formatInr } from "@/lib/storefront/format";
 

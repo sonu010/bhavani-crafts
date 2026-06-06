@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { StorefrontImage as Image } from "@/components/storefront/storefront-image";
 import type { Category } from "@/lib/schemas/category";
 
 /**
