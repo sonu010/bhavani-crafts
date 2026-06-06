@@ -3,16 +3,18 @@ import { notFound } from "next/navigation";
 import { encodeProductCursor } from "@/lib/db/products";
 import { ProductCardGrid } from "@/components/storefront/product-card-grid";
 import {
+  CATEGORY_SORTS,
   getCategoryView,
   getCategoryFirstPage,
   getCategoryProducts,
   hasActiveFilters,
   type CategoryFilters,
-  type CategoryStock,
+  type CategorySort,
 } from "./data";
 import { CategoryHeader } from "./category-header";
 import { FiltersSidebar } from "./filters-sidebar";
 import { LoadMore } from "./load-more";
+import { SubcategoryChips } from "./subcategory-chips";
 
 // ISR backstop; the underlying reads are also tag-cached so admin edits
 // flush immediately. The page itself is dynamic when filter params are
@@ -23,10 +25,8 @@ export const revalidate = 300;
 type SearchParams = Promise<{
   min?: string;
   max?: string;
-  stock?: string;
+  sort?: string;
 }>;
-
-const STOCK_VALUES: CategoryStock[] = ["in_stock", "low_stock", "out_of_stock"];
 
 function parseFilters(sp: Awaited<SearchParams>): CategoryFilters {
   const filters: CategoryFilters = {};
@@ -38,8 +38,8 @@ function parseFilters(sp: Awaited<SearchParams>): CategoryFilters {
   if (sp.max !== undefined && Number.isFinite(max) && max >= 0) {
     filters.maxPriceInr = Math.floor(max);
   }
-  if (sp.stock && (STOCK_VALUES as string[]).includes(sp.stock)) {
-    filters.stockStatus = sp.stock as CategoryStock;
+  if (sp.sort && (CATEGORY_SORTS as string[]).includes(sp.sort)) {
+    filters.sort = sp.sort as CategorySort;
   }
   return filters;
 }
@@ -78,7 +78,7 @@ export default async function CategoryPage({
   searchParams: SearchParams;
 }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const { category, descendantIds } = await getCategoryView(slug);
+  const { category, descendantIds, children } = await getCategoryView(slug);
   if (!category) notFound();
 
   const filters = parseFilters(sp);
@@ -89,6 +89,7 @@ export default async function CategoryPage({
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-10">
       <CategoryHeader category={category} />
+      <SubcategoryChips items={children} />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
         <FiltersSidebar initial={filters} />

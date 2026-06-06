@@ -57,6 +57,30 @@ export async function listTopLevelCategories(supabase: SC): Promise<Category[]> 
   return CategorySchema.array().parse(data ?? []);
 }
 
+/**
+ * Direct children of a given category — used by the storefront's
+ * sub-category refine row (chips below the category header). Returns
+ * non-deleted children sorted by sort_order then name. Empty array
+ * when the category is a leaf.
+ */
+export async function listChildCategories(
+  supabase: SC,
+  parentId: string,
+): Promise<Category[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, slug, name, description, parent_id, sort_order, image_url")
+    .eq("parent_id", parentId)
+    .is("deleted_at", null)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(`listChildCategories failed: ${error.message}`);
+  }
+  return CategorySchema.array().parse(data ?? []);
+}
+
 /** Fetch a single category by slug. */
 export async function getCategoryBySlug(
   supabase: SC,

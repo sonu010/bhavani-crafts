@@ -11,11 +11,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import type { CategoryFilters } from "./data";
+import {
+  CATEGORY_SORTS,
+  CATEGORY_SORT_LABEL,
+  type CategoryFilters,
+  type CategorySort,
+} from "./filter-options";
 
 /**
- * Category filter sidebar (P3-T11). Price + stock filters, URL-driven so
- * they're shareable and server-rendered.
+ * Category filter sidebar (P3-T11, refreshed P3-T11.1). Price range +
+ * sort, URL-driven so the result is shareable and server-rendered.
+ *
+ * The previous availability filter (in_stock / low_stock / out_of_stock)
+ * was dropped — it's low-signal for a craft-supply customer (the card
+ * already badges out-of-stock items; nobody comes to the storefront
+ * thinking "filter by stock"). Sort + sub-category chips (rendered
+ * outside this sidebar, above the grid) replace it.
  *
  * IMPORTANT: this writes to the URL ONLY from user event handlers
  * (onChange / onClick) — never from a `useEffect` that depends on
@@ -35,7 +46,7 @@ export function FiltersSidebar({ initial }: { initial: CategoryFilters }) {
 
   const min = searchParams.get("min") ?? "";
   const max = searchParams.get("max") ?? "";
-  const stock = searchParams.get("stock") ?? "";
+  const sort = (searchParams.get("sort") ?? "") as CategorySort | "";
 
   const pushFilters = useCallback(
     (patch: Record<string, string | null>) => {
@@ -56,19 +67,45 @@ export function FiltersSidebar({ initial }: { initial: CategoryFilters }) {
       if (priceTimer.current) clearTimeout(priceTimer.current);
       priceTimer.current = setTimeout(() => {
         const n = value.trim();
-        pushFilters({ [key]: n === "" ? null : String(Math.max(0, Math.floor(Number(n) || 0))) });
+        pushFilters({
+          [key]:
+            n === "" ? null : String(Math.max(0, Math.floor(Number(n) || 0))),
+        });
       }, PRICE_DEBOUNCE_MS);
     },
     [pushFilters],
   );
 
+  // Sort is NOT counted as an "active filter" — it doesn't narrow the
+  // result set, only re-orders. It still shows up in the URL but the
+  // active-count badge stays clean.
   const activeCount =
     (initial.minPriceInr !== undefined ? 1 : 0) +
-    (initial.maxPriceInr !== undefined ? 1 : 0) +
-    (initial.stockStatus !== undefined ? 1 : 0);
+    (initial.maxPriceInr !== undefined ? 1 : 0);
 
   const controls = (
     <div className="space-y-5">
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-medium uppercase tracking-wide text-stone-500">
+          Sort
+        </legend>
+        <select
+          aria-label="Sort products"
+          className={INPUT_CLASS}
+          value={sort}
+          onChange={(e) => pushFilters({ sort: e.target.value || null })}
+        >
+          {/* Empty string = default = newest. We don't emit it to the
+              URL so the canonical /c/<slug> URL stays clean. */}
+          <option value="">{CATEGORY_SORT_LABEL.newest}</option>
+          {CATEGORY_SORTS.filter((s) => s !== "newest").map((s) => (
+            <option key={s} value={s}>
+              {CATEGORY_SORT_LABEL[s]}
+            </option>
+          ))}
+        </select>
+      </fieldset>
+
       <fieldset className="space-y-2">
         <legend className="text-xs font-medium uppercase tracking-wide text-stone-500">
           Price (₹)
@@ -102,29 +139,12 @@ export function FiltersSidebar({ initial }: { initial: CategoryFilters }) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-2">
-        <legend className="text-xs font-medium uppercase tracking-wide text-stone-500">
-          Availability
-        </legend>
-        <select
-          aria-label="Filter by stock"
-          className={INPUT_CLASS}
-          value={stock}
-          onChange={(e) => pushFilters({ stock: e.target.value || null })}
-        >
-          <option value="">Any availability</option>
-          <option value="in_stock">In stock</option>
-          <option value="low_stock">Low stock</option>
-          <option value="out_of_stock">Out of stock</option>
-        </select>
-      </fieldset>
-
       {activeCount > 0 ? (
         <Button
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => pushFilters({ min: null, max: null, stock: null })}
+          onClick={() => pushFilters({ min: null, max: null })}
         >
           <X className="size-3.5" />
           Clear filters

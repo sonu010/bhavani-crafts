@@ -37,7 +37,6 @@ test.describe("anon PDP exploration", () => {
     const radioCount = await radios.count();
     if (radioCount < 2) return;
 
-    const beforeSku = await page.locator("text=/SKU[: ]/i").first().textContent().catch(() => "");
     await radios.nth(1).click();
     // Either the SKU text or the displayed price changes after the
     // variant flip. Wait a beat for client-side reactivity.
