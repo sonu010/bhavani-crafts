@@ -6,6 +6,7 @@ import {
   getAdminOrderById,
   type AdminOrderStatus,
 } from "@/lib/db/admin/orders";
+import { OrderStatusActions } from "./status-actions";
 
 /**
  * /admin/orders/<id> — full order detail (customer + shipping + items
@@ -209,8 +210,10 @@ export default async function AdminOrderDetailPage({
           </section>
         </div>
 
-        {/* Totals + Razorpay refs (right column) */}
+        {/* Totals + Razorpay refs + actions (right column) */}
         <aside className="space-y-6">
+          <OrderStatusActions orderId={order.id} status={order.status} />
+
           <section className="rounded-lg border border-husk-200 bg-paper-0 p-5">
             <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-stone-500">
               Totals
