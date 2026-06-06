@@ -1147,6 +1147,23 @@ export type Database = {
           value_count: number
         }[]
       }
+      create_anon_order: {
+        Args: {
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_items: Json
+          p_notes: string
+          p_shipping: Json
+          p_shipping_inr: number
+          p_subtotal_inr: number
+          p_total_inr: number
+        }
+        Returns: {
+          id: string
+          order_number: string
+        }[]
+      }
       generate_order_number: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_pending_anon_order: { Args: { p_order_id: string }; Returns: boolean }

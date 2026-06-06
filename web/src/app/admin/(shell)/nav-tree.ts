@@ -14,6 +14,7 @@ import {
   FolderTree,
   LayoutDashboard,
   Package,
+  Receipt,
   ScrollText,
   Settings,
   Sliders,
@@ -32,6 +33,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV: readonly AdminNavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Products", href: "/admin/products", icon: Package },
+  { label: "Orders", href: "/admin/orders", icon: Receipt },
   { label: "Categories", href: "/admin/categories", icon: FolderTree },
   { label: "Tags", href: "/admin/tags", icon: Tag },
   { label: "Attributes", href: "/admin/attributes", icon: Sliders },

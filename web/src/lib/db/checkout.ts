@@ -71,9 +71,13 @@ export async function resolveCartLines(
       if (!p) return null;
       return {
         ...l,
+        // ALWAYS use catalog values, never the client snapshot — the
+        // client's sku/name are accepted by the schema for display
+        // metadata but never authoritative. This is the same rule as
+        // unit price.
         resolvedUnitPriceInr: p.priceInr,
-        resolvedSku: l.sku || p.sku,
-        resolvedName: l.name || p.name,
+        resolvedSku: p.sku,
+        resolvedName: p.name,
       } satisfies ResolvedLine;
     })
     .filter((l): l is ResolvedLine => l !== null);
@@ -104,12 +108,23 @@ export function computeTotals(lines: ResolvedLine[]): {
 }
 
 /**
- * Insert the `orders` row + its `order_items`. Anon-RLS-friendly
- * (status='pending_payment', razorpay_* null, user_id null) so this
- * runs through the public client just like any checkout would.
+ * Insert the `orders` row + its `order_items` via the
+ * `create_anon_order(...)` RPC (0018). Why an RPC instead of two
+ * client-side inserts:
  *
- * Returns the created order's id + order_number (the BC-YYYY-NNNN
- * trigger fills the latter automatically).
+ *   1. The orders RLS denies anon SELECT (PII gate, ADR-011 §1).
+ *      A normal `.insert(...).select("id")` chain therefore can't
+ *      read back the new id and order_number under anon.
+ *   2. The RPC is SECURITY DEFINER, so it inserts + reads back in
+ *      one round trip with no service-role on the call site —
+ *      `app/(storefront)/...` stays clean of the admin client.
+ *   3. Atomicity: both inserts happen inside the function body, so
+ *      there's no half-written-order failure mode where the items
+ *      slot is empty.
+ *
+ * The RPC re-enforces the totals-balance + bounds checks the policy
+ * already enforces, so a malformed call surfaces a clear error
+ * before the row-level CHECK constraints fire.
  */
 export async function createPendingOrder(
   supabase: SC,
@@ -123,24 +138,7 @@ export async function createPendingOrder(
     notes?: string;
   },
 ): Promise<{ id: string; orderNumber: string }> {
-  const { data: order, error: orderErr } = await supabase
-    .from("orders")
-    .insert({
-      customer_name: opts.customer.name,
-      customer_email: opts.customer.email,
-      customer_phone: opts.customer.phone,
-      shipping_address: opts.shipping,
-      subtotal_inr: opts.subtotalInr,
-      shipping_inr: opts.shippingInr,
-      total_inr: opts.totalInr,
-      notes: opts.notes && opts.notes.length ? opts.notes : null,
-    })
-    .select("id, order_number")
-    .single();
-  if (orderErr) throw new Error(`createPendingOrder: ${orderErr.message}`);
-
   const itemsPayload = opts.lines.map((l) => ({
-    order_id: order!.id as string,
     product_id: l.productId,
     variant_id: l.variantId,
     sku: l.resolvedSku,
@@ -151,20 +149,27 @@ export async function createPendingOrder(
     line_total_inr: l.resolvedUnitPriceInr * l.quantity,
   }));
 
-  const { error: itemsErr } = await supabase
-    .from("order_items")
-    .insert(itemsPayload);
-  if (itemsErr) {
-    // Best-effort cleanup of the parent row so we don't leave an
-    // empty pending order around. RLS lets anon INSERT but not
-    // DELETE, so this only works under the service-role caller. The
-    // FK CASCADE will pick up the slack if the cleanup itself fails.
-    await supabase.from("orders").delete().eq("id", order!.id);
-    throw new Error(`createPendingOrder items: ${itemsErr.message}`);
-  }
+  // PostgREST jsonb args accept arrays/objects directly; the cast
+  // through `unknown` papers over Supabase JS's narrower Json typing.
+  const { data, error } = await supabase.rpc("create_anon_order", {
+    p_customer_name: opts.customer.name,
+    p_customer_email: opts.customer.email,
+    p_customer_phone: opts.customer.phone,
+    p_shipping: opts.shipping as unknown as Database["public"]["Functions"]["create_anon_order"]["Args"]["p_shipping"],
+    p_subtotal_inr: opts.subtotalInr,
+    p_shipping_inr: opts.shippingInr,
+    p_total_inr: opts.totalInr,
+    p_notes: opts.notes && opts.notes.length ? opts.notes : "",
+    p_items: itemsPayload as unknown as Database["public"]["Functions"]["create_anon_order"]["Args"]["p_items"],
+  });
 
+  if (error) throw new Error(`createPendingOrder: ${error.message}`);
+  const row = (data ?? [])[0];
+  if (!row) {
+    throw new Error("createPendingOrder: RPC returned no row");
+  }
   return {
-    id: order!.id as string,
-    orderNumber: order!.order_number as string,
+    id: row.id as string,
+    orderNumber: row.order_number as string,
   };
 }
