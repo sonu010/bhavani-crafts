@@ -176,6 +176,54 @@ export interface RunningJob {
   total: number;
 }
 
+/**
+ * Pending-orders snapshot for the dashboard banner. Returns the total
+ * count + the newest 3 rows so the strip can show "5 pending payments
+ * · BC-2026-0023 / BC-2026-0021 / …".
+ *
+ * Added when /checkout went live (P3-T27 scaffold). Mirrors the
+ * "incoming work" pattern in Shopify / Stripe admin dashboards.
+ */
+export interface PendingOrderSnippet {
+  id: string;
+  orderNumber: string;
+  totalInr: number;
+  customerName: string;
+  createdAt: string;
+}
+
+export interface PendingOrdersSummary {
+  total: number;
+  recent: PendingOrderSnippet[];
+}
+
+export async function getPendingOrdersSummary(
+  supabase: SC,
+  limit = 3,
+): Promise<PendingOrdersSummary> {
+  const { data, error, count } = await supabase
+    .from("orders")
+    .select(
+      "id, order_number, total_inr, customer_name, created_at",
+      { count: "exact" },
+    )
+    .eq("status", "pending_payment")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`getPendingOrdersSummary: ${error.message}`);
+  return {
+    total: count ?? (data?.length ?? 0),
+    recent: (data ?? []).map((row) => ({
+      id: row.id as string,
+      orderNumber: row.order_number as string,
+      totalInr: row.total_inr as number,
+      customerName: row.customer_name as string,
+      createdAt: row.created_at as string,
+    })),
+  };
+}
+
 export async function listRunningJobs(
   supabase: SC,
   limit = 5,

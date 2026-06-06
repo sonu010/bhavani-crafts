@@ -4,6 +4,7 @@ import {
   getBrokenImagesCount,
   getCatalogCounts,
   getMutationsThisWeek,
+  getPendingOrdersSummary,
   getZeroResultSearches,
   listRunningJobs,
 } from "@/lib/db/admin/dashboard";
@@ -12,6 +13,7 @@ import { AISpendMtdWidget } from "./_widgets/ai-spend-mtd";
 import { BrokenImagesWidget } from "./_widgets/broken-images";
 import { CatalogCountsWidget } from "./_widgets/catalog-counts";
 import { MutationsThisWeekWidget } from "./_widgets/mutations-this-week";
+import { PendingOrdersBanner } from "./_widgets/pending-orders-banner";
 import { RunningJobsWidget } from "./_widgets/running-jobs";
 import { ZeroResultSearchesWidget } from "./_widgets/zero-result-searches";
 
@@ -45,6 +47,7 @@ export default async function AdminDashboardPage() {
     aiSpend,
     brokenImagesCount,
     runningJobs,
+    pendingOrders,
   ] = await Promise.all([
     getCatalogCounts(admin),
     getZeroResultSearches(admin),
@@ -52,6 +55,7 @@ export default async function AdminDashboardPage() {
     getAISpendMTD(admin),
     getBrokenImagesCount(admin),
     listRunningJobs(admin),
+    getPendingOrdersSummary(admin),
   ]);
   t.mark("queries");
   t.end();
@@ -64,6 +68,12 @@ export default async function AdminDashboardPage() {
           Diagnostic snapshot. What needs your attention today?
         </p>
       </header>
+
+      {/* Action strip — renders only when there's work waiting.
+          Distinct from the 2×3 widget grid below: this surfaces
+          INCOMING work the owner has to handle, not diagnostic
+          metrics. */}
+      <PendingOrdersBanner summary={pendingOrders} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <CatalogCountsWidget counts={catalog} />
