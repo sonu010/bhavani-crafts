@@ -27,7 +27,8 @@ export function StatusChips({
   extraParams,
 }: {
   counts: ProductStatusCounts;
-  active: AdminProductStatus;
+  /** `undefined` = ?status=all (no status chip is highlighted). */
+  active: AdminProductStatus | undefined;
   sort: string;
   /** Filter params to preserve when swapping the status chip (q, category, tags, stock, source). */
   extraParams?: Record<string, string>;

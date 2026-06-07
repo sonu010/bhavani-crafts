@@ -69,7 +69,18 @@ function pickOne<T extends string>(
   return v && allowed.includes(v as T) ? (v as T) : undefined;
 }
 
-function pickStatus(raw: string | string[] | undefined): AdminProductStatus {
+/**
+ * `?status=all` is the explicit opt-out — clears the default
+ * needs_review filter so the owner can see every product (or apply
+ * stock / uncategorised / source filters across the whole catalog).
+ * The dashboard widget rows use this. Any unknown value falls through
+ * to the default.
+ */
+function pickStatus(
+  raw: string | string[] | undefined,
+): AdminProductStatus | undefined {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (v === "all") return undefined;
   return pickOne(raw, VALID_STATUSES) ?? DEFAULT_STATUS;
 }
 
@@ -101,6 +112,7 @@ export default async function AdminProductsPage({
     tags?: string | string[];
     stock?: string | string[];
     source?: string | string[];
+    uncategorized?: string | string[];
   }>;
 }) {
   const params = await searchParams;
@@ -114,6 +126,12 @@ export default async function AdminProductsPage({
   const tagSlugs = pickTagList(params.tags);
   const stock = pickOne(params.stock, VALID_STOCK);
   const source = pickOne(params.source, VALID_SOURCE);
+  // Truthy "1", "true", or even empty-string (`?uncategorized`) — be
+  // forgiving on the boolean param.
+  const uncategorizedRaw = Array.isArray(params.uncategorized)
+    ? params.uncategorized[0]
+    : params.uncategorized;
+  const uncategorized = uncategorizedRaw !== undefined && uncategorizedRaw !== "0";
 
   const t = perfStart("/admin/products");
   // Gate before any service-role read. See lib/db/admin-context.ts —
@@ -130,6 +148,7 @@ export default async function AdminProductsPage({
       cursor,
       q,
       categoryId,
+      uncategorized,
       tagSlugs,
       stock,
       source,
@@ -147,13 +166,16 @@ export default async function AdminProductsPage({
   if (tagSlugs && tagSlugs.length > 0) baseParams.tags = tagSlugs.join(",");
   if (stock) baseParams.stock = stock;
   if (source) baseParams.source = source;
+  if (uncategorized) baseParams.uncategorized = "1";
 
   // backHref captures the current filter state so the editor breadcrumb
   // returns the user to the same view. Status + sort stay in the URL
   // even at defaults so the editor never bounces back to ?status=
   // needs_review when the user filtered to something else.
   const listParams = new URLSearchParams();
-  listParams.set("status", status);
+  // When the owner opted out of the default status filter via
+  // ?status=all, preserve that on the back-href too.
+  listParams.set("status", status ?? "all");
   listParams.set("sort", sort);
   for (const [k, v] of Object.entries(baseParams)) listParams.set(k, v);
   const backHref = `/admin/products?${listParams.toString()}`;
@@ -196,7 +218,7 @@ export default async function AdminProductsPage({
 
       <LoadMore
         cursor={page.nextCursor}
-        status={status}
+        status={status ?? "all"}
         sort={sort}
         extraParams={baseParams}
       />

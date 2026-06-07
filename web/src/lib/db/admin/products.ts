@@ -110,6 +110,12 @@ export interface ListProductsAdminOpts {
   q?: string;
   /** Narrow to a category AND all its descendants (uses 0007's view). */
   categoryId?: string;
+  /**
+   * Narrow to rows whose category_id IS NULL. Mutually exclusive with
+   * `categoryId` — if both are set, `categoryId` wins (this matches
+   * the "specific filter beats catch-all" pattern).
+   */
+  uncategorized?: boolean;
   /** OR-semantics: products matching ANY of these tag slugs. */
   tagSlugs?: string[];
   /** Single-value enum filters. */
@@ -274,6 +280,10 @@ export async function listProductsAdmin(
     // Category id didn't resolve to any descendants (shouldn't happen for
     // valid input, but guard anyway).
     return { items: [], nextCursor: null };
+  } else if (opts.uncategorized) {
+    // No specific category requested AND owner wants uncategorised
+    // rows only — match the dashboard widget's "Uncategorised" link.
+    q = q.is("category_id", null);
   }
   if (tagIds) {
     q = q.in("id", tagIds);
