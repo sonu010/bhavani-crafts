@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { requireAdminContext } from "@/lib/db/admin-context";
 import {
   countProductsByStatus,
@@ -158,16 +160,27 @@ export default async function AdminProductsPage({
 
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="font-display text-2xl text-bark-900 sm:text-3xl">Products</h1>
-        {/* Helper copy is desk-only — mobile starts with the controls. */}
-        <p className="hidden text-sm text-stone-500 sm:block">
-          Imported rows live under{" "}
-          <span className="font-mono text-bark-900">Needs review</span>. Work
-          the queue down; the default filter flips to{" "}
-          <span className="font-mono text-bark-900">Published</span> once the
-          queue drops below 50.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="font-display text-2xl text-bark-900 sm:text-3xl">Products</h1>
+          {/* Helper copy is desk-only — mobile starts with the controls. */}
+          <p className="hidden text-sm text-stone-500 sm:block">
+            Imported rows live under{" "}
+            <span className="font-mono text-bark-900">Needs review</span>. Work
+            the queue down; the default filter flips to{" "}
+            <span className="font-mono text-bark-900">Published</span> once the
+            queue drops below 50.
+          </p>
+        </div>
+        {/* "New product" — primary action, top-right. Inserts a draft
+           row via the new-product route and redirects into the editor. */}
+        <Link
+          href="/admin/products/new"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-bark-900 px-4 py-2 text-sm font-medium text-paper-0 transition-colors hover:bg-bark-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bark-900"
+        >
+          <Plus className="size-3.5" />
+          New product
+        </Link>
       </header>
 
       <FilterBar options={filterOptions} />
