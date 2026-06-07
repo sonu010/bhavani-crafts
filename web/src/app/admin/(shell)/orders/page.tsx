@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { requireAdminContext } from "@/lib/db/admin-context";
 import {
   listAdminOrders,
@@ -112,6 +113,30 @@ export default async function AdminOrdersPage({
             {q ? ` · matching "${q}"` : ""}
           </p>
         </div>
+        {/* CSV export — respects the CURRENT filter (status + q); emits
+           all matching rows, not just the current page. Useful for
+           month-end accounting handoff. */}
+        {total > 0 ? (
+          <a
+            href={(() => {
+              const usp = new URLSearchParams();
+              if (status) usp.set("status", status);
+              if (q) usp.set("q", q);
+              const qs = usp.toString();
+              return qs
+                ? `/api/admin/orders/export?${qs}`
+                : "/api/admin/orders/export";
+            })()}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-husk-200 bg-paper-0 px-3 py-1.5 text-xs font-medium text-bark-900 transition-colors hover:border-bark-900"
+            // Standard download hint — most browsers honour the
+            // server's Content-Disposition: attachment regardless,
+            // but `download` reinforces "this isn't a navigation."
+            download
+          >
+            <Download className="size-3.5" />
+            Export CSV
+          </a>
+        ) : null}
       </header>
 
       {/* Search — plain GET form so the URL stays the source of truth
