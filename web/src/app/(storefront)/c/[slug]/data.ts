@@ -10,14 +10,13 @@ import { getProductCardsPage } from "@/lib/db/storefront";
 import type { ListProductsCursor } from "@/lib/db/products";
 import type { Category } from "@/lib/schemas/category";
 import type { ProductCardItem } from "@/components/storefront/product-card";
-// Filter types + sort labels live in filter-options.ts so the client-
-// side filters-sidebar can import them without dragging server-only
-// modules into the client bundle.
+// Filter types live in filter-options.ts so the client-side
+// filters-sidebar can import them without dragging this server-only
+// module into the client bundle. data.ts re-exports the surface its
+// own consumers (page.tsx, actions.ts, load-more.tsx) need; the
+// sidebar imports CATEGORY_SORT_LABEL directly from filter-options.
 export type { CategoryFilters, CategorySort } from "./filter-options";
-export {
-  CATEGORY_SORTS,
-  CATEGORY_SORT_LABEL,
-} from "./filter-options";
+export { CATEGORY_SORTS } from "./filter-options";
 import type { CategoryFilters } from "./filter-options";
 
 export const CATEGORY_PAGE_SIZE = 12;
