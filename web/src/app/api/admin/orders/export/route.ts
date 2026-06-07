@@ -17,6 +17,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdminContext } from "@/lib/db/admin-context";
 import type { AdminOrderStatus } from "@/lib/db/admin/orders";
+import { csvRow } from "@/lib/utils/csv";
 
 const STATUS_VALUES: AdminOrderStatus[] = [
   "pending_payment",
@@ -27,20 +28,6 @@ const STATUS_VALUES: AdminOrderStatus[] = [
 ];
 
 const PAGE = 1000; // PostgREST cap
-
-/** RFC-4180 cell quoting. */
-function csvCell(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (/[",\n\r]/.test(s)) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-function csvRow(values: unknown[]): string {
-  return values.map(csvCell).join(",");
-}
 
 function escapeIlike(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
