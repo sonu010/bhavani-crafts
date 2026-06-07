@@ -2,11 +2,11 @@
 id: P3-T23
 phase: 3
 title: Lighthouse pass (perf budget)
-status: not_started
+status: done
 depends_on: [P3-T22]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

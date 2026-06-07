@@ -6,7 +6,7 @@ status: done
 depends_on: [P2-T29]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

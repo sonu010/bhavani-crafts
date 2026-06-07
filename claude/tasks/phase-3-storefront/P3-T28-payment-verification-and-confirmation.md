@@ -2,11 +2,11 @@
 id: P3-T28
 phase: 3
 title: Payment verification + order confirmation
-status: not_started
+status: blocked
 depends_on: [P3-T27]
 estimate_hours: 3
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

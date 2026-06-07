@@ -2,11 +2,11 @@
 id: P3-T25
 phase: 3
 title: Orders schema + payments ADR
-status: not_started
+status: done
 depends_on: [P3-T21]
 estimate_hours: 3
 owner: shared
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

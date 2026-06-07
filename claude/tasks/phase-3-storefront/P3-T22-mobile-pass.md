@@ -2,11 +2,11 @@
 id: P3-T22
 phase: 3
 title: Storefront mobile pass (360px)
-status: not_started
+status: done
 depends_on: [P3-T13, P3-T18, P3-T27]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

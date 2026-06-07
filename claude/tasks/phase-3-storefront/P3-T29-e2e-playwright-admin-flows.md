@@ -2,11 +2,11 @@
 id: P3-T29
 phase: 3
 title: E2E (Playwright) — admin critical flows
-status: in_progress
+status: done
 depends_on: [P2-T29]
 estimate_hours: 4
 owner: ai
-last_updated: 2026-05-18
+last_updated: 2026-06-07
 ---
 
 # Goal

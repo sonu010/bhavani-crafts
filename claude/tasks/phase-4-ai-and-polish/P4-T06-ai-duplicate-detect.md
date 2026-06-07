@@ -2,11 +2,11 @@
 id: P4-T06
 phase: 4
 title: AI duplicate detect during import
-status: not_started
+status: deferred
 depends_on: [P4-T01]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-05-15
+last_updated: 2026-06-07
 ---
 
 # Goal

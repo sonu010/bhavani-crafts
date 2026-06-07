@@ -36,7 +36,7 @@ A Hyderabad-based craft supplies retailer's e-commerce site. Three audiences:
             ┌────────┴───────┬─────────────┐
             ▼                ▼             ▼
        Anthropic API      Sentry        Plausible / Vercel
-       (Phase 4)         (errors)       (analytics)
+       (deferred)        (errors)       (analytics)
                           │
                           ▼
                   GitHub Actions
@@ -82,6 +82,7 @@ All tables have RLS enabled. Child catalog tables join back to the parent produc
 ## What's deliberately not in MVP
 
 - ~~Checkout, payments (Razorpay), orders~~ — **reversed 2026-05-18** by the owner; now in scope. See [ADR-011](../decisions/ADR-011-razorpay-payments.md) for the scope boundary (no refunds in-app, no subscriptions, no saved cards, no customer accounts).
+- **AI assists in the admin** (category/tag/alt-text/description suggest, duplicate detect, CSV cleanup helper, search synonym mining) — **deferred 2026-06-07** by the owner. To be revisited after Phase 5 or in a later month as a potential paid add-on; the admin handles all those tasks manually for launch. Phase 4 task files stay parked under `tasks/phase-4-ai-and-polish/` with status ⏸️; see [plans.md](../plans.md) §"Phase 4". Anthropic API env var stays in `.env.example` as a placeholder.
 - Fulfillment, shipping calculation, tax computation, invoices — still out. Shipping is a flat-rate constant at checkout; tax is owner-below-GST-threshold for now.
 - Customer accounts, sign-up, wishlist — still out. Orders capture name/phone/email per-order; no `customers` table.
 - Creator community / feed / project showcase (designed in `extracted_ideas/` but deferred).

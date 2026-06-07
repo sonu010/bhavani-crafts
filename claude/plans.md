@@ -107,43 +107,61 @@ A lightweight wedge inserted between Phase 1 and Phase 2 after the first Vercel 
 
 ---
 
-## Phase 3 — Public storefront   (aggressive 4 days · realistic 7–10 days)
+## Phase 3 — Public storefront   (aggressive 4 days · realistic 7–10 days · **shipped 2026-06**)
 
 **Entry task** = expand the stubs in this phase with lessons learned from Phase 2.
 All stubs expanded by P3-T00 (2026-05-18). Scope grew: owner reversed the
 "no payments in MVP" call → Razorpay checkout is now in (cluster T25–T28),
 plus a previously-unowned SEO task (T24).
 
-- ✅ [P3-T00: Expand Phase 3 task files](tasks/phase-3-storefront/P3-T00-expand-phase-tasks.md) — done
-- ⬜ [P3-T01: Public layout + nav + shared ProductCard](tasks/phase-3-storefront/P3-T01-public-layout-and-nav.md) — depends P3-T00
-- ⬜ [P3-T02: Landing — hero](tasks/phase-3-storefront/P3-T02-landing-hero.md) — depends P3-T01
-- ⬜ [P3-T03: Landing — caption strip](tasks/phase-3-storefront/P3-T03-landing-caption-strip.md) — depends P3-T02
-- ⬜ [P3-T04: Landing — Atlas (category grid)](tasks/phase-3-storefront/P3-T04-landing-atlas-categories.md) — depends P3-T01
-- ⬜ [P3-T05: Landing — weekly collection (is_featured)](tasks/phase-3-storefront/P3-T05-landing-weekly-collection.md) — depends P3-T04
-- ⬜ [P3-T06: Landing — kits row (workshop-kits category)](tasks/phase-3-storefront/P3-T06-landing-kits-row.md) — depends P3-T04
-- ⬜ [P3-T07: Landing — bulk enquiry (WhatsApp)](tasks/phase-3-storefront/P3-T07-landing-bulk-enquiry.md) — depends P3-T01
-- ⬜ [P3-T08: Landing — visit section](tasks/phase-3-storefront/P3-T08-landing-visit-section.md) — depends P3-T01
-- ⬜ [P3-T09: Public footer](tasks/phase-3-storefront/P3-T09-public-footer.md) — depends P3-T01
-- ⬜ [P3-T10: Category page shell (/c/[slug])](tasks/phase-3-storefront/P3-T10-category-page-shell.md) — depends P3-T01
-- ⬜ [P3-T11: Category filters sidebar](tasks/phase-3-storefront/P3-T11-category-filters-sidebar.md) — depends P3-T10
-- ⬜ [P3-T12: Category cursor pagination](tasks/phase-3-storefront/P3-T12-category-pagination-cursor.md) — depends P3-T10
-- ⬜ [P3-T13: Product detail page (/p/[slug], preview-token)](tasks/phase-3-storefront/P3-T13-product-detail-page.md) — depends P3-T01
-- ⬜ [P3-T14: Product detail — gallery](tasks/phase-3-storefront/P3-T14-product-detail-gallery.md) — depends P3-T13
-- ⬜ [P3-T15: Product detail — variants UI](tasks/phase-3-storefront/P3-T15-product-detail-variants-ui.md) — depends P3-T13
-- ⬜ [P3-T16: Related products](tasks/phase-3-storefront/P3-T16-related-products.md) — depends P3-T13
-- ⬜ [P3-T17: Product JSON-LD (SEO)](tasks/phase-3-storefront/P3-T17-product-jsonld-seo.md) — depends P3-T13
-- ⬜ [P3-T18: Search page (FTS + search_logs)](tasks/phase-3-storefront/P3-T18-search-page-fts.md) — depends P3-T01
-- ⬜ [P3-T19: Search — synonyms + trigram](tasks/phase-3-storefront/P3-T19-search-synonyms-and-trigram.md) — depends P3-T18
-- ⬜ [P3-T21: Cart store port (from origin/main)](tasks/phase-3-storefront/P3-T21-cart-store-port.md) — depends P3-T01
-- ⬜ [P3-T20: Cart drawer](tasks/phase-3-storefront/P3-T20-cart-drawer.md) — depends P3-T01, P3-T21
-- ⬜ [P3-T24: SEO — sitemap, robots, metadata](tasks/phase-3-storefront/P3-T24-seo-sitemap-robots-metadata.md) — depends P3-T10, P3-T13 · **NEW (T00)**
-- ⬜ [P3-T25: Orders schema + payments ADR](tasks/phase-3-storefront/P3-T25-orders-schema-and-adr.md) — depends P3-T21 · **NEW · needs ADR**
-- ⬜ [P3-T26: Razorpay order creation (server)](tasks/phase-3-storefront/P3-T26-razorpay-order-create.md) — depends P3-T25 · **NEW**
-- ⬜ [P3-T27: Checkout page + Razorpay widget](tasks/phase-3-storefront/P3-T27-checkout-page.md) — depends P3-T26 · **NEW**
-- ⬜ [P3-T28: Payment verification + order confirmation](tasks/phase-3-storefront/P3-T28-payment-verification-and-confirmation.md) — depends P3-T27 · **NEW**
-- ⬜ [P3-T22: Mobile pass (360px)](tasks/phase-3-storefront/P3-T22-mobile-pass.md) — depends P3-T13, P3-T18, P3-T27
-- ⬜ [P3-T23: Lighthouse pass (perf budget)](tasks/phase-3-storefront/P3-T23-lighthouse-pass.md) — depends P3-T22
-- 🔶 [P3-T29: E2E (Playwright) — admin critical flows](tasks/phase-3-storefront/P3-T29-e2e-playwright-admin-flows.md) — harness + specs built + validated; first green run + CI job pending (needs local Docker stack) · **NEW (T00)**
+Everything in this phase landed except the three Razorpay-blocked tasks
+(T26 / T27 widget mount / T28 are owner-pending on test keys — see
+[blockers.md](blockers.md)). On top of the spec this phase shipped a
+P3.5 polish bundle (admin orders viewer, status flip actions, CSV
+export, dashboard pending banner, app_settings k/v with the storefront
+wired through) and accumulated test coverage to **452 vitest tests
+across 59 files**.
+
+- ✅ [P3-T00: Expand Phase 3 task files](tasks/phase-3-storefront/P3-T00-expand-phase-tasks.md)
+- ✅ [P3-T01: Public layout + nav + shared ProductCard](tasks/phase-3-storefront/P3-T01-public-layout-and-nav.md)
+- ✅ [P3-T02: Landing — hero](tasks/phase-3-storefront/P3-T02-landing-hero.md)
+- ✅ [P3-T03: Landing — caption strip](tasks/phase-3-storefront/P3-T03-landing-caption-strip.md)
+- ✅ [P3-T04: Landing — Atlas (category grid)](tasks/phase-3-storefront/P3-T04-landing-atlas-categories.md)
+- ✅ [P3-T05: Landing — weekly collection (is_featured)](tasks/phase-3-storefront/P3-T05-landing-weekly-collection.md)
+- ✅ [P3-T06: Landing — kits row (workshop-kits category)](tasks/phase-3-storefront/P3-T06-landing-kits-row.md)
+- ✅ [P3-T07: Landing — bulk enquiry (WhatsApp)](tasks/phase-3-storefront/P3-T07-landing-bulk-enquiry.md)
+- ✅ [P3-T08: Landing — visit section](tasks/phase-3-storefront/P3-T08-landing-visit-section.md)
+- ✅ [P3-T09: Public footer](tasks/phase-3-storefront/P3-T09-public-footer.md)
+- ✅ [P3-T10: Category page shell (/c/[slug])](tasks/phase-3-storefront/P3-T10-category-page-shell.md)
+- ✅ [P3-T11: Category filters sidebar](tasks/phase-3-storefront/P3-T11-category-filters-sidebar.md) — refreshed: availability dropped, sort + sub-category chips added
+- ✅ [P3-T12: Category cursor pagination](tasks/phase-3-storefront/P3-T12-category-pagination-cursor.md)
+- ✅ [P3-T13: Product detail page (/p/[slug], preview-token)](tasks/phase-3-storefront/P3-T13-product-detail-page.md)
+- ✅ [P3-T14: Product detail — gallery](tasks/phase-3-storefront/P3-T14-product-detail-gallery.md)
+- ✅ [P3-T15: Product detail — variants UI](tasks/phase-3-storefront/P3-T15-product-detail-variants-ui.md)
+- ✅ [P3-T16: Related products](tasks/phase-3-storefront/P3-T16-related-products.md)
+- ✅ [P3-T17: Product JSON-LD (SEO)](tasks/phase-3-storefront/P3-T17-product-jsonld-seo.md)
+- ✅ [P3-T18: Search page (FTS + search_logs)](tasks/phase-3-storefront/P3-T18-search-page-fts.md)
+- ✅ [P3-T19: Search — synonyms + trigram](tasks/phase-3-storefront/P3-T19-search-synonyms-and-trigram.md)
+- ✅ [P3-T21: Cart store port (from origin/main)](tasks/phase-3-storefront/P3-T21-cart-store-port.md)
+- ✅ [P3-T20: Cart drawer](tasks/phase-3-storefront/P3-T20-cart-drawer.md)
+- ✅ [P3-T24: SEO — sitemap, robots, metadata](tasks/phase-3-storefront/P3-T24-seo-sitemap-robots-metadata.md)
+- ✅ [P3-T25: Orders schema + payments ADR](tasks/phase-3-storefront/P3-T25-orders-schema-and-adr.md) — migrations 0015 / 0016 / 0017 / 0018 + [ADR-011](decisions/ADR-011-razorpay-payments.md)
+- 🚧 [P3-T26: Razorpay order creation (server)](tasks/phase-3-storefront/P3-T26-razorpay-order-create.md) — scaffolded; `createCheckoutOrder` action returns `{ razorpay: null }` until env vars arrive. Owner-blocked on `rzp_test_*` keys
+- 🚧 [P3-T27: Checkout page + Razorpay widget](tasks/phase-3-storefront/P3-T27-checkout-page.md) — `/checkout` page + form + `/checkout/pending` shipped; widget mount waits on keys
+- 🚧 [P3-T28: Payment verification + order confirmation](tasks/phase-3-storefront/P3-T28-payment-verification-and-confirmation.md) — admin "Mark paid/cancelled/refunded" actions ship now for the WhatsApp follow-up path; signature verify + webhook wait on Razorpay keys + webhook secret
+- ✅ [P3-T22: Mobile pass (360px)](tasks/phase-3-storefront/P3-T22-mobile-pass.md)
+- ✅ [P3-T23: Lighthouse pass (perf budget)](tasks/phase-3-storefront/P3-T23-lighthouse-pass.md) — Perf 84-85 / A11y 97-98 / BP 100 / SEO 100 on localhost-vs-local-Supabase; remaining LCP gap is local-seed-only
+- ✅ [P3-T29: E2E (Playwright) — admin critical flows](tasks/phase-3-storefront/P3-T29-e2e-playwright-admin-flows.md) — harness green, anon checkout journey + admin orders specs added
+
+### Phase 3.5 polish (post-spec, all shipped)
+
+- ✅ App settings k/v table + `/admin/settings` page (mig 0020) — shop name, WhatsApp number, Instagram URL, shipping flat rate; storefront footer/CTA/checkout read through `getStorefrontSettings()` cached with `app-settings` tag
+- ✅ Admin orders viewer at /admin/orders + detail page + search by order_number/email/name + status filter chips + CSV export
+- ✅ Order status flip actions (Mark paid / Cancel / Mark refunded) + best-effort stock decrement RPC (mig 0019) per ADR-011 §5
+- ✅ Pending-orders banner on /admin (saffron strip when work waits)
+- ✅ Header search Sheet (one-hop to /search?q=) + smarter empty states + skip-link + safe-area insets
+- ✅ Storefront image wrapper bypassing Vercel optimizer for third-party CDN sources (saves Hobby-plan quota; opt-in for LCP hero + first PDP image)
+- ✅ Test coverage from 25 files / 194 tests at session start → **59 files / 452 tests**
 
 ---
 
@@ -153,34 +171,54 @@ plus a previously-unowned SEO task (T24).
 
 ---
 
-## Phase 4 — AI features + polish   (aggressive 2 days · realistic 3–5 days)
+## Phase 4 — AI features + polish   ⏸️ **DEFERRED (2026-06-07)**
 
-- ⬜ [P4-T00: Expand Phase 4 task files](tasks/phase-4-ai-and-polish/P4-T00-expand-phase-tasks.md) — depends P3-T23
-- ⬜ [P4-T01: AI client + prompts scaffold](tasks/phase-4-ai-and-polish/P4-T01-ai-client-and-prompts-scaffold.md) — stub
-- ⬜ [P4-T02: AI category suggest](tasks/phase-4-ai-and-polish/P4-T02-ai-category-suggest.md) — stub
-- ⬜ [P4-T03: AI tag suggest](tasks/phase-4-ai-and-polish/P4-T03-ai-tag-suggest.md) — stub
-- ⬜ [P4-T04: AI alt text](tasks/phase-4-ai-and-polish/P4-T04-ai-alt-text.md) — stub
-- ⬜ [P4-T05: AI description draft](tasks/phase-4-ai-and-polish/P4-T05-ai-description-draft.md) — stub
-- ⬜ [P4-T06: AI duplicate detect](tasks/phase-4-ai-and-polish/P4-T06-ai-duplicate-detect.md) — stub
-- ⬜ [P4-T07: AI CSV cleanup helper](tasks/phase-4-ai-and-polish/P4-T07-ai-csv-cleanup-helper.md) — stub
-- ⬜ [P4-T08: AI generations review UI](tasks/phase-4-ai-and-polish/P4-T08-ai-generations-review-ui.md) — stub
-- ⬜ [P4-T09: Search synonym mining](tasks/phase-4-ai-and-polish/P4-T09-search-synonym-mining.md) — stub
-- ⬜ [P4-T10: Real-content swap (gated)](tasks/phase-4-ai-and-polish/P4-T10-real-content-swap.md) — stub, requires real-content gate cleared
-- ⬜ [P4-T11: Image rehost script](tasks/phase-4-ai-and-polish/P4-T11-image-rehost-script.md) — stub
-- ⬜ [P4-T12: Blur placeholder backfill](tasks/phase-4-ai-and-polish/P4-T12-blur-placeholder-backfill.md) — stub
+**Owner decision 2026-06-07:** all AI-touching tasks (T01-T09) are
+paused indefinitely — owner wants to revisit pricing with the client
+and potentially scope as a paid add-on after Phase 5 ships, or in a
+later month. Storefront ships without AI assists; admin still works
+manually for category/tag/alt-text/description entry as it does
+today.
+
+The non-AI tasks (T10 real-content swap, T11 image rehost, T12 blur
+backfill) are de-coupled and re-homed into Phase 5 launch readiness
+where they belong — they were grouped here originally because
+"polish" got bundled with "AI." See the new Phase 5 entries.
+
+The Phase 5 dependency arrow that used to point at P4-T12 (blur
+backfill) now points at P3-T29 directly.
+
+- ⏸️ [P4-T01: AI client + prompts scaffold](tasks/phase-4-ai-and-polish/P4-T01-ai-client-and-prompts-scaffold.md) — deferred · revisit post-launch
+- ⏸️ [P4-T02: AI category suggest](tasks/phase-4-ai-and-polish/P4-T02-ai-category-suggest.md) — deferred
+- ⏸️ [P4-T03: AI tag suggest](tasks/phase-4-ai-and-polish/P4-T03-ai-tag-suggest.md) — deferred
+- ⏸️ [P4-T04: AI alt text](tasks/phase-4-ai-and-polish/P4-T04-ai-alt-text.md) — deferred
+- ⏸️ [P4-T05: AI description draft](tasks/phase-4-ai-and-polish/P4-T05-ai-description-draft.md) — deferred
+- ⏸️ [P4-T06: AI duplicate detect](tasks/phase-4-ai-and-polish/P4-T06-ai-duplicate-detect.md) — deferred
+- ⏸️ [P4-T07: AI CSV cleanup helper](tasks/phase-4-ai-and-polish/P4-T07-ai-csv-cleanup-helper.md) — deferred
+- ⏸️ [P4-T08: AI generations review UI](tasks/phase-4-ai-and-polish/P4-T08-ai-generations-review-ui.md) — deferred
+- ⏸️ [P4-T09: Search synonym mining](tasks/phase-4-ai-and-polish/P4-T09-search-synonym-mining.md) — deferred · the seed `search_synonyms` table covers the launch baseline; future synonym additions are a manual admin task
+- **Moved to Phase 5:** P4-T10 (real-content swap), P4-T11 (image rehost), P4-T12 (blur placeholder backfill)
 
 ---
 
 ## Phase 5 — Launch readiness   (aggressive 1–2 days · realistic 2–3 days)
 
-- ⬜ [P5-T00: Expand Phase 5 task files](tasks/phase-5-launch/P5-T00-expand-phase-tasks.md) — depends P4-T12
+Dependency rewired: P5-T00 now depends on P3-T29 (was P4-T12).
+
+- ⬜ [P5-T00: Expand Phase 5 task files](tasks/phase-5-launch/P5-T00-expand-phase-tasks.md) — depends P3-T29
 - ⬜ [P5-T01: Legal pages stubs](tasks/phase-5-launch/P5-T01-legal-pages-stubs.md) — stub
 - ⬜ [P5-T02: Contact + About](tasks/phase-5-launch/P5-T02-contact-and-about.md) — stub
-- ⬜ [P5-T03: Sitemap + robots](tasks/phase-5-launch/P5-T03-sitemap-and-robots.md) — stub
+- ⬜ [P5-T03: Sitemap + robots](tasks/phase-5-launch/P5-T03-sitemap-and-robots.md) — stub · NB: routes + helpers already shipped in P3-T24; this task is now "verify against live + add to Google Search Console"
 - ⬜ [P5-T04: OG images](tasks/phase-5-launch/P5-T04-og-images.md) — stub
-- ⬜ [P5-T05: Analytics + Sentry](tasks/phase-5-launch/P5-T05-analytics-and-sentry.md) — stub
+- ⬜ [P5-T05: Analytics + Sentry](tasks/phase-5-launch/P5-T05-analytics-and-sentry.md) — stub · env vars already templated in `.env.example`
 - ⬜ [P5-T06: Broken-image cron](tasks/phase-5-launch/P5-T06-broken-image-cron.md) — stub
-- ⬜ [P5-T07: pg_dump backup GitHub Action](tasks/phase-5-launch/P5-T07-pg-dump-backup-action.md) — stub
-- ⬜ [P5-T08: RLS attack test (deploy gate)](tasks/phase-5-launch/P5-T08-rls-attack-test.md) — stub
+- ⬜ [P5-T07: pg_dump backup GitHub Action](tasks/phase-5-launch/P5-T07-pg-dump-backup-action.md) — stub · note: backup script + runbook already shipped (`web/scripts/backup-live.mjs` + `.github/workflows/backup.yml`); this task is now "verify schedule + restore drill"
+- ⬜ [P5-T08: RLS attack test (deploy gate)](tasks/phase-5-launch/P5-T08-rls-attack-test.md) — stub · partial coverage shipped via `__tests__/db/*-rls.test.ts` suite (orders, app_settings, search_logs); this task adds the launch-day probe script
 - ⬜ [P5-T09: Final QA checklist](tasks/phase-5-launch/P5-T09-final-qa-checklist.md) — stub
 - ⬜ [P5-T10: Go live](tasks/phase-5-launch/P5-T10-go-live.md) — stub
+
+### Carried over from Phase 4 (de-AI'd polish tasks)
+
+- ⬜ [P4-T10: Real-content swap (gated)](tasks/phase-4-ai-and-polish/P4-T10-real-content-swap.md) — requires real-content gate cleared (owner-curated catalog import)
+- ⬜ [P4-T11: Image rehost script](tasks/phase-4-ai-and-polish/P4-T11-image-rehost-script.md) — rehosts JustKraft seed images onto Supabase Storage; storefront image wrapper currently bypasses Vercel optimizer for cloudfront URLs as a workaround
+- ⬜ [P4-T12: Blur placeholder backfill](tasks/phase-4-ai-and-polish/P4-T12-blur-placeholder-backfill.md) — `product_images.blur_data_url` is wired through to `<Image placeholder="blur">` already; this task fills it in for the seed corpus

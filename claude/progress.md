@@ -1,14 +1,14 @@
 # Build progress
 
-Last updated: 2026-05-28
+Last updated: 2026-06-07
 
 ## Counts
 
-- ✅ Done: **74** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 23 — P3-T00 + T01 + T02–T09 landing + T10–T12 category + T13–T16 PDP + T17 JSON-LD + T18–T19 search + T20–T21 cart + T24 SEO)
-- 🟡 In progress: 3 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked**; P3-T29 E2E harness — green locally, CI job + bulk/trash specs remain)
-- 🚧 Blocked: 0 (the two in-progress P2 tasks await owner creds/smoke — see blockers.md)
-- ⏸️ Deferred: 1 (P0-T03 — cart store; pulled at P3-T21 directly from `origin/main`)
-- ⬜ Not started: 6 (Phase 3: T22 mobile pass, T23 lighthouse, T25–T28 payments)
+- ✅ Done: **97** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle)
+- 🟡 In progress: 2 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked** on creds/smoke)
+- 🚧 Blocked: 3 (P3-T26 server `orders.create` · P3-T27 Razorpay widget mount · P3-T28 verify/webhook — all owner-pending `rzp_test_*` keys; scaffolding shipped: orders RPC, `/checkout` page + form, admin Mark-paid/Cancel/Refunded actions for the WhatsApp follow-up path)
+- ⏸️ Deferred: **10** (1 from P0 + the 9 Phase 4 AI tasks — owner-paused 2026-06-07; revisit after Phase 5 or as a future paid add-on)
+- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T01–T10
 
 ## Phase 2 — admin panel complete (28/30)
 
@@ -16,13 +16,51 @@ Built under `web/src/app/(shell)/admin/**` + `web/src/lib/db/admin/*` (DI patter
 
 Migrations added in Phase 2: `0008` admin search indexes · `0009` products_status_counts RPC · `0010`/`0011` default-variant index (added then dropped redundant) · `0012` audit indexes · `0013` tag/attribute count RPCs. **Live schema now through 0013** (~11 enums · 20 tables · ~49 indexes · ~40 functions — run `node web/scripts/dump-live-schema.mjs` for exact).
 
-## Phase 3 — storefront in progress (10 done)
+## Phase 3 close-out (shipped 2026-06)
 
-- **P3-T00** done — all 30 stubs expanded; added the **Razorpay payments cluster (T25–T28)**, SEO (T24), and E2E (T29). Payments is a scope addition over `overview.md`.
-- **P3-T01** done — public `(storefront)` layout + sticky nav + shared `<ProductCard>`/`<ProductCardGrid>` + `createPublicClient` (cookie-less anon for cached reads) + `formatInr`. `/` confirmed `○ Static, Revalidate 5m`.
-- **P3-T02–T09 done — the editorial landing page.** Split hero · caption strip · Atlas category grid · weekly collection · workshop-kits row · bulk-enquiry WhatsApp strip · visit section · 4-col footer. New shared read helper `lib/db/storefront.ts` (`getProductCards` = listProducts + batched primary images → `ProductCardItem[]`; `getCategoryCovers`). WhatsApp/Instagram via `NEXT_PUBLIC_*` env. Sections hide gracefully when empty. All verified on the local stack: 239 vitest · 12 launch-blockers · **8 Playwright E2E** (incl. 2 new anon landing specs) green; `/` stays `○ Static, Revalidate 5m`.
-- **P3-T29** in_progress — Playwright E2E harness green locally (setup/admin/anon, local-Supabase-only). CI `e2e` job wired; bulk + trash specs remain.
-- **architecture/performance.md** written — two-system model + budgets + the `getClaims` admin-auth fix (`proxy.ts` now verifies JWT locally, no network).
+All 30 tasks landed except the 3 owner-blocked Razorpay-keyed ones
+(T26 / T27 widget mount / T28). On top of the spec, a P3.5 polish
+bundle shipped:
+
+- **App settings** (mig 0020) — k/v table, owner-editable shop name,
+  WhatsApp number, Instagram URL, shipping flat rate, anon-readable
+  via the public-allowlist policy. Storefront footer / bulk-enquiry
+  CTA / checkout shipping all read through `getStorefrontSettings()`
+  (`unstable_cache` + `app-settings` tag; admin save flushes it).
+- **Admin orders cluster** — /admin/orders viewer with search +
+  status chips + CSV export · /admin/orders/<id> detail · status
+  flip actions (Mark paid / Cancel / Mark refunded) + best-effort
+  stock decrement (mig 0019) per ADR-011 §5 · dashboard
+  pending-orders banner.
+- **Checkout flow** (T25 + T27 sans Razorpay widget) — `/checkout`
+  page with controlled form + cart summary + `createCheckoutOrder`
+  server action (price re-resolution + the `create_anon_order` RPC
+  in mig 0018) → `/checkout/pending` with WhatsApp follow-up CTA.
+- **Storefront polish** — header search Sheet · skip-link · 360px
+  mobile pass · safe-area insets · LCP image opt-in for the
+  hero/PDP first image · category filter refresh (drop availability,
+  add sort + sub-category chips).
+- **Test coverage** — from 25 files / 194 tests at the start of the
+  session → **59 files / 452 tests** at close-out. Plus 1 anon
+  Playwright spec (anon checkout) + 1 admin spec (orders Mark-paid)
+  on top of the existing E2E suite.
+
+Migrations through Phase 3 close-out: 0001-0014 (Phase 1+2) +
+**0015** orders schema + **0016** anon order_items RPC fix +
+**0017** order_number column default + **0018** create_anon_order
+RPC + **0019** decrement_product_stock + **0020** app_settings.
+Live schema now: 12 enums · 23 tables · 58 indexes · 46 functions.
+
+## Phase 4 — DEFERRED (2026-06-07)
+
+Owner paused the AI tasks (T01–T09) — to be revisited after Phase 5
+or in a later month as a potential paid add-on. Storefront ships
+without AI assists; admin handles category/tag/alt-text/description
+entry manually as it does today. Phase 4 task files stay parked
+with `status: deferred`; T10/T11/T12 (the de-AI'd polish trio) are
+re-homed into Phase 5. See [plans.md](plans.md) §"Phase 4" for the
+deferral note and [architecture/overview.md](architecture/overview.md)
+§"What's deliberately not in MVP" for the canonical reason.
 
 ## Phase 0 + 1 + 1.5 — complete
 
