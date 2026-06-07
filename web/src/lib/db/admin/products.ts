@@ -116,6 +116,12 @@ export interface ListProductsAdminOpts {
    * the "specific filter beats catch-all" pattern).
    */
   uncategorized?: boolean;
+  /**
+   * Narrow to products with at least one image in `disputed` or
+   * `removed` license_status. Feeds the dashboard's Broken-images
+   * widget link. Composes with status / category / tags AS AND.
+   */
+  imagesProblem?: boolean;
   /** OR-semantics: products matching ANY of these tag slugs. */
   tagSlugs?: string[];
   /** Single-value enum filters. */
@@ -207,6 +213,28 @@ async function buildSearchOrClause(
  * EXISTS-on-join filter we want in one hop. Cap is set high enough to
  * cover the largest plausible single-tag set in the catalog.
  */
+/**
+ * Distinct product ids that have at least one `product_images` row in
+ * a non-public license_status (disputed | removed) and not soft-deleted.
+ * Feeds the dashboard's Broken-images widget link. Bounded to 5_000
+ * rows — beyond that the storefront has bigger problems than this
+ * filter can summarise.
+ */
+async function candidateIdsForBrokenImages(supabase: SC): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("product_id")
+    .in("license_status", ["disputed", "removed"])
+    .is("deleted_at", null)
+    .limit(5_000);
+  if (error) {
+    throw new Error(`candidateIdsForBrokenImages: ${error.message}`);
+  }
+  return Array.from(
+    new Set((data ?? []).map((r) => r.product_id as string)),
+  );
+}
+
 async function candidateIdsForTags(
   supabase: SC,
   tagSlugs: string[],
@@ -236,16 +264,26 @@ export async function listProductsAdmin(
   //   - searchOrClause: server-side or() string (no candidate-id cap)
   //   - tagIds: candidate-id set from product_tags
   //   - categoryDescendantIds: id set from the 0007 recursive view
-  const [searchOrClause, tagIds, categoryDescendantIds] = await Promise.all([
-    opts.q ? buildSearchOrClause(supabase, opts.q) : Promise.resolve(null),
-    opts.tagSlugs && opts.tagSlugs.length > 0
-      ? candidateIdsForTags(supabase, opts.tagSlugs)
-      : Promise.resolve(null),
-    opts.categoryId ? getDescendantIds(supabase, opts.categoryId) : Promise.resolve(null),
-  ]);
+  const [searchOrClause, tagIds, categoryDescendantIds, brokenImageIds] =
+    await Promise.all([
+      opts.q ? buildSearchOrClause(supabase, opts.q) : Promise.resolve(null),
+      opts.tagSlugs && opts.tagSlugs.length > 0
+        ? candidateIdsForTags(supabase, opts.tagSlugs)
+        : Promise.resolve(null),
+      opts.categoryId
+        ? getDescendantIds(supabase, opts.categoryId)
+        : Promise.resolve(null),
+      opts.imagesProblem
+        ? candidateIdsForBrokenImages(supabase)
+        : Promise.resolve(null),
+    ]);
 
   // Tag filter narrowed to an empty set → no rows possible.
   if (tagIds && tagIds.length === 0) {
+    return { items: [], nextCursor: null };
+  }
+  // Broken-images filter requested but no rows have broken images.
+  if (brokenImageIds && brokenImageIds.length === 0) {
     return { items: [], nextCursor: null };
   }
 
@@ -285,8 +323,21 @@ export async function listProductsAdmin(
     // rows only — match the dashboard widget's "Uncategorised" link.
     q = q.is("category_id", null);
   }
-  if (tagIds) {
-    q = q.in("id", tagIds);
+  // Compose all candidate-id sets (tagIds + brokenImageIds) into a
+  // single `.in("id", …)` filter. PostgREST chains overwrite each
+  // other on the same column, so we intersect in JS and apply once.
+  let candidateIds: string[] | null = null;
+  if (tagIds && brokenImageIds) {
+    const broken = new Set(brokenImageIds);
+    candidateIds = tagIds.filter((id) => broken.has(id));
+    if (candidateIds.length === 0) return { items: [], nextCursor: null };
+  } else if (tagIds) {
+    candidateIds = tagIds;
+  } else if (brokenImageIds) {
+    candidateIds = brokenImageIds;
+  }
+  if (candidateIds) {
+    q = q.in("id", candidateIds);
   }
   if (searchOrClause) {
     q = q.or(searchOrClause);

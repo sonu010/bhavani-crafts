@@ -15,7 +15,7 @@ export function BrokenImagesWidget({ count }: { count: number }) {
         </div>
         {count > 0 ? (
           <Link
-            href="/admin/products?filter=broken-images"
+            href="/admin/products?status=all&images=problem"
             className="text-xs text-teal-800 underline-offset-2 hover:underline"
           >
             Review →

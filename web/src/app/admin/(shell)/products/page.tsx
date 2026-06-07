@@ -113,6 +113,7 @@ export default async function AdminProductsPage({
     stock?: string | string[];
     source?: string | string[];
     uncategorized?: string | string[];
+    images?: string | string[];
   }>;
 }) {
   const params = await searchParams;
@@ -132,6 +133,13 @@ export default async function AdminProductsPage({
     ? params.uncategorized[0]
     : params.uncategorized;
   const uncategorized = uncategorizedRaw !== undefined && uncategorizedRaw !== "0";
+  // ?images=problem → narrow to products with at least one
+  // disputed|removed image. Used by the dashboard's Broken-images
+  // widget link. Any other value is ignored.
+  const imagesParam = Array.isArray(params.images)
+    ? params.images[0]
+    : params.images;
+  const imagesProblem = imagesParam === "problem";
 
   const t = perfStart("/admin/products");
   // Gate before any service-role read. See lib/db/admin-context.ts —
@@ -149,6 +157,7 @@ export default async function AdminProductsPage({
       q,
       categoryId,
       uncategorized,
+      imagesProblem,
       tagSlugs,
       stock,
       source,
@@ -167,6 +176,7 @@ export default async function AdminProductsPage({
   if (stock) baseParams.stock = stock;
   if (source) baseParams.source = source;
   if (uncategorized) baseParams.uncategorized = "1";
+  if (imagesProblem) baseParams.images = "problem";
 
   // backHref captures the current filter state so the editor breadcrumb
   // returns the user to the same view. Status + sort stay in the URL
