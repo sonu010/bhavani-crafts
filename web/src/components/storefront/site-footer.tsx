@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { whatsappHref, hasWhatsapp } from "@/lib/storefront/whatsapp";
+import { getStorefrontSettings } from "@/lib/storefront/settings";
 import { NewsletterForm } from "@/app/(storefront)/_footer/newsletter-form";
 
 /**
@@ -9,10 +10,10 @@ import { NewsletterForm } from "@/app/(storefront)/_footer/newsletter-form";
  * layout so every public page gets it; admin pages never do.
  *
  * Policy routes are stubbed (full policy pages land later). The
- * Instagram link only shows when NEXT_PUBLIC_INSTAGRAM_URL is set.
+ * Instagram + WhatsApp links read from `app_settings` (owner-editable
+ * via /admin/settings) and fall back to env vars for fresh deploys.
  */
 
-const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "";
 const WHATSAPP_PREFILL = "Hi Bhavani Crafts — I have a question.";
 
 const POLICY_LINKS = [
@@ -21,11 +22,14 @@ const POLICY_LINKS = [
   { href: "/policies/privacy", label: "Privacy" },
 ];
 
-export function SiteFooter({
+export async function SiteFooter({
   categories,
 }: {
   categories: Array<{ slug: string; name: string }>;
 }) {
+  const { whatsappNumber, instagramUrl } = await getStorefrontSettings();
+  const showWhatsapp = hasWhatsapp(whatsappNumber);
+  const INSTAGRAM_URL = instagramUrl;
   return (
     <footer className="mt-16 border-t border-husk-200 bg-cream-50">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
@@ -92,10 +96,10 @@ export function SiteFooter({
             Contact
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {hasWhatsapp() ? (
+            {showWhatsapp ? (
               <li>
                 <a
-                  href={whatsappHref(WHATSAPP_PREFILL)}
+                  href={whatsappHref(whatsappNumber, WHATSAPP_PREFILL)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-bark-900 transition-colors hover:text-teal-800"

@@ -85,13 +85,19 @@ export async function resolveCartLines(
 
 /**
  * Compute the order totals from the resolved lines. Whole rupees
- * only; no fractional paise math at this layer. Shipping is a flat
- * rate constant for now (per overview.md "Out of MVP" — flat rate
- * until volume justifies a calculator).
+ * only; no fractional paise math at this layer.
+ *
+ * Shipping is a flat rate (per overview.md "Out of MVP" — flat rate
+ * until volume justifies a calculator). The default sits at ₹50 to
+ * match the historical baseline; the order-create action overrides
+ * with the owner-editable `app_settings.shipping_flat_inr` value.
  */
-const FLAT_SHIPPING_INR = 50;
+export const DEFAULT_FLAT_SHIPPING_INR = 50;
 
-export function computeTotals(lines: ResolvedLine[]): {
+export function computeTotals(
+  lines: ResolvedLine[],
+  shippingInr: number = DEFAULT_FLAT_SHIPPING_INR,
+): {
   subtotalInr: number;
   shippingInr: number;
   totalInr: number;
@@ -102,8 +108,8 @@ export function computeTotals(lines: ResolvedLine[]): {
   );
   return {
     subtotalInr,
-    shippingInr: FLAT_SHIPPING_INR,
-    totalInr: subtotalInr + FLAT_SHIPPING_INR,
+    shippingInr,
+    totalInr: subtotalInr + shippingInr,
   };
 }
 

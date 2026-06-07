@@ -11,6 +11,7 @@ import {
   createPendingOrder,
   resolveCartLines,
 } from "@/lib/db/checkout";
+import { getStorefrontSettings } from "@/lib/storefront/settings";
 
 /**
  * Order-create server action (P3-T26 scaffold, T27 form posts here).
@@ -76,8 +77,13 @@ export async function createCheckoutOrder(
     };
   }
 
-  // 3. Server-computed totals.
-  const { subtotalInr, shippingInr, totalInr } = computeTotals(resolved);
+  // 3. Server-computed totals. Shipping comes from the owner-editable
+  //    app_settings.shipping_flat_inr; falls back to the constant.
+  const { shippingFlatInr } = await getStorefrontSettings();
+  const { subtotalInr, shippingInr, totalInr } = computeTotals(
+    resolved,
+    shippingFlatInr,
+  );
 
   // 4. Insert the order + items.
   let created: { id: string; orderNumber: string };

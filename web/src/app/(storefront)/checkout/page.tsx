@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getStorefrontSettings } from "@/lib/storefront/settings";
 import { CheckoutClient } from "./checkout-client";
 
 /**
@@ -26,6 +27,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function CheckoutPage() {
-  return <CheckoutClient />;
+export default async function CheckoutPage() {
+  // Resolve shipping rate server-side from app_settings so the
+  // summary the customer sees in the right rail matches what the
+  // server action will actually charge. Mismatched values would
+  // surface as "your total changed at the last step" — the kind of
+  // thing customers abandon carts over.
+  const { shippingFlatInr } = await getStorefrontSettings();
+  return <CheckoutClient shippingFlatInr={shippingFlatInr} />;
 }

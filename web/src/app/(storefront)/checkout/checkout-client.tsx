@@ -31,8 +31,6 @@ import { createCheckoutOrder } from "./actions";
  * graduate to inline field errors when we have field-level Zod
  * messages plumbed through.
  */
-const FLAT_SHIPPING_INR = 50; // mirrors lib/db/checkout.ts
-
 function inr(n: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -71,7 +69,11 @@ const initialForm: FormState = {
   notes: "",
 };
 
-export function CheckoutClient() {
+export function CheckoutClient({
+  shippingFlatInr,
+}: {
+  shippingFlatInr: number;
+}) {
   const router = useRouter();
   const hydrated = useCartHasHydrated();
   const lines = useCartStore((s) => s.lines);
@@ -80,7 +82,7 @@ export function CheckoutClient() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
 
-  const total = subtotal + (lines.length > 0 ? FLAT_SHIPPING_INR : 0);
+  const total = subtotal + (lines.length > 0 ? shippingFlatInr : 0);
 
   function field<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -376,7 +378,7 @@ export function CheckoutClient() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-stone-600">Shipping</dt>
-                <dd className="font-mono tabular-nums text-bark-900">{inr(FLAT_SHIPPING_INR)}</dd>
+                <dd className="font-mono tabular-nums text-bark-900">{inr(shippingFlatInr)}</dd>
               </div>
               <div className="flex justify-between border-t border-husk-200 pt-2 text-base font-medium">
                 <dt className="text-bark-900">Total</dt>
