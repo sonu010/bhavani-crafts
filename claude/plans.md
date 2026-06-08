@@ -217,8 +217,8 @@ Dependency rewired: P5-T00 now depends on P3-T29 (was P4-T12).
 - ⬜ [P5-T09: Final QA checklist](tasks/phase-5-launch/P5-T09-final-qa-checklist.md) — stub
 - ⬜ [P5-T10: Go live](tasks/phase-5-launch/P5-T10-go-live.md) — stub
 
-### Carried over from Phase 4 (de-AI'd polish tasks)
+### Carried over from Phase 4 (de-AI'd polish tasks, now in `phase-5-launch/`)
 
-- ⬜ [P4-T10: Real-content swap (gated)](tasks/phase-4-ai-and-polish/P4-T10-real-content-swap.md) — requires real-content gate cleared (owner-curated catalog import)
-- ⬜ [P4-T11: Image rehost script](tasks/phase-4-ai-and-polish/P4-T11-image-rehost-script.md) — rehosts JustKraft seed images onto Supabase Storage; storefront image wrapper currently bypasses Vercel optimizer for cloudfront URLs as a workaround
-- ⬜ [P4-T12: Blur placeholder backfill](tasks/phase-4-ai-and-polish/P4-T12-blur-placeholder-backfill.md) — `product_images.blur_data_url` is wired through to `<Image placeholder="blur">` already; this task fills it in for the seed corpus
+- ⬜ [P4-T10: Real-content swap (gated)](tasks/phase-5-launch/P4-T10-real-content-swap.md) — owner-curated catalog replaces the JustKraft scrape; `flip-publish-all` + `flip-image-license` reverted before this task starts
+- ⬜ [P4-T11: Image rehost script](tasks/phase-5-launch/P4-T11-image-rehost-script.md) — rehosts JustKraft cloudfront images onto Supabase Storage; storefront image wrapper currently bypasses Vercel optimizer for cloudfront URLs as a workaround
+- ⬜ [P4-T12: Blur placeholder backfill](tasks/phase-5-launch/P4-T12-blur-placeholder-backfill.md) — `product_images.blur_data_url` is already wired through to `<Image placeholder="blur">`; this task fills it in for legacy rows
