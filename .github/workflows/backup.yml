@@ -64,10 +64,48 @@ jobs:
         working-directory: web
         run: pnpm backup:live
 
+      - name: Sanity-check row counts
+        if: steps.check-secrets.outputs.configured == 'true'
+        working-directory: web
+        # P5-T07: a successful exit from backup-live doesn't guarantee
+        # we got real data — auth blip → all 0-row dumps shouldn't
+        # silently land as a "backup." Read the freshest manifest and
+        # fail loudly if products + product_images both came back empty.
+        run: |
+          set -euo pipefail
+          MANIFEST=$(ls -1dt backups/*/manifest.json | head -n1)
+          echo "Inspecting $MANIFEST"
+          PRODUCTS=$(node -e "console.log(require('./${MANIFEST}').tables.products ?? 0)")
+          IMAGES=$(node -e "console.log(require('./${MANIFEST}').tables.product_images ?? 0)")
+          echo "products=$PRODUCTS  product_images=$IMAGES"
+          if [ "$PRODUCTS" -lt 100 ] || [ "$IMAGES" -lt 100 ]; then
+            echo "::error::Backup looks empty (products=$PRODUCTS, product_images=$IMAGES). Refusing to publish."
+            exit 1
+          fi
+
       - name: Upload snapshot artifact
         if: steps.check-secrets.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: catalog-backup-${{ github.run_id }}
           path: web/backups/
-          retention-days: 90
+          # Retention policy locked in P5-T07:
+          #   - Nightly artifacts kept for 30 days (default rolling).
+          #   - The action runs daily, so we always have ≥30 days of
+          #     point-in-time snapshots without manual housekeeping.
+          #   - Quarterly: download one + commit it to a private
+          #     archive bucket for the 1-year cold copy.
+          retention-days: 30
+
+      # GitHub emails the repo owner on workflow failure by default
+      # (Settings → Notifications → Actions → "Send notifications for
+      # failed workflows only on default branch" — keep that ON).
+      # No explicit Slack/webhook step here yet because the live ops
+      # are one person; failure email is enough until that changes.
+      - name: Failure breadcrumb
+        if: failure()
+        run: |
+          echo "::error::Nightly backup failed. Check the logs above and"
+          echo "::error::review claude/runbooks/backup-and-restore.md."
+          echo "::error::A missing/expired SUPABASE_SERVICE_ROLE_KEY is the"
+          echo "::error::most common cause; rotate via /admin > project."

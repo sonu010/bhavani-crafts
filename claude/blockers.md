@@ -33,6 +33,20 @@ These pause specific Phase 0 tasks. The rest of Phase 0 can proceed in parallel.
 - **Resend account** — only needed when admin invite emails are enabled (Phase 2 stretch). Email/password admin login does not require it.
 - **Custom domain** — only needed at P5-T10 (Go live). Vercel preview URL works for everything before.
 
+### Workflows not on default branch (logged 2026-06-09 — P5-T07)
+
+GitHub Actions schedules ONLY fire from the repository's default branch. `main` is currently the old prototype tree (no `.github/workflows/`); every workflow file (`ci.yml`, `backup.yml`, `rls-attack.yml`) lives on `rebuild-v2` and **none of the scheduled jobs have ever triggered automatically**. The nightly backup has not run.
+
+Mitigations:
+- The fresh manual snapshot at `web/backups/20260609-022330/` is the launch baseline (37,390 rows, 11 catalog tables — verified 2026-06-09).
+- Operator runs `pnpm backup:live` before any risky write op.
+- `workflow_dispatch` triggers work for ad-hoc runs on `rebuild-v2` (after the workflow file lands on main once).
+
+Cutover (part of P5-T10):
+1. Merge `rebuild-v2` → `main` (or flip the default branch to `rebuild-v2`).
+2. Confirm Actions tab shows next scheduled run green within 24 h.
+3. Confirm one nightly fires without manual intervention within 7 days.
+
 ## Resolved blockers
 
 - **Vercel Root Directory + env vars** (resolved 2026-05-15) — owner configured Root Directory → `web`, added 3 Supabase env vars, redeployed. Preview at `https://bhavani-crafts-<hash>-sonu010s-projects.vercel.app/` returns 200 on `/`, `{"ok":true}` on `/api/health`, all 6 security headers present, `/design` returns HTTP 404. Deployment protection disabled on preview to allow AI curls.

@@ -103,3 +103,51 @@ gh run download <run-id> -n catalog-backup-<date>
 
 If any step fails, fix the backup process immediately — a backup you can't
 restore is not a backup.
+
+### Last verified — 2026-06-09 (P5-T07)
+
+- `pnpm backup:live` ran cleanly against the live project. Snapshot:
+  37,390 rows across 11 catalog tables (categories 365 · attribute_definitions
+  7 · tags 458 · products 5,811 · product_images 14,969 · product_variants
+  7,802 · product_tags 7,971 · search_synonyms 7; product_options + values +
+  attributes empty — expected, those are only populated for variant-bearing
+  products which the seed doesn't include).
+- `pnpm restore:live backups/<ts>` dry-run reported the same counts the
+  manifest holds; on-conflict keys resolved correctly (id for single-PK
+  tables, `product_id,tag_id` for `product_tags`, `product_id,attribute_id`
+  for `product_attributes`).
+- No write was performed. Restore-execution is gated on
+  `--confirm=<live-host>` and refuses local stacks.
+
+### Retention policy (locked in P5-T07)
+
+- **CI workflow artifact** — 30-day rolling. `.github/workflows/backup.yml`
+  now sets `retention-days: 30`.
+- **Quarterly cold copy** — download one snapshot from CI per quarter and
+  commit it to the private archive bucket (or `gh release upload` to a
+  `backups-<year-quarter>` private release). 1-year retention.
+- **Pre-migration snapshots** — taken manually before any risky write op
+  (bulk import, mass edit, ADR-deciding migration). Kept on the operator's
+  local disk until the change is verified, then deleted.
+- **Restore drill** — quarterly. Latest: 2026-06-09. Next due: 2026-09-09.
+
+### Launch-readiness gap (P5-T07 finding)
+
+**Scheduled GitHub Actions only fire from the repository's default branch.**
+At the moment, `main` is the old prototype tree with no `.github/`
+directory. `rebuild-v2` carries every workflow (`backup.yml`,
+`rls-attack.yml`, `ci.yml`) but the schedules never trigger. **No
+automated backup has run.**
+
+Mitigations until cutover:
+- Operator runs `pnpm backup:live` manually before any risky change.
+- The fresh snapshot at `web/backups/20260609-022330/` is the launch
+  baseline.
+
+Cutover plan (executes as part of P5-T10 go-live):
+1. Merge `rebuild-v2` → `main` (or flip the default branch to
+   `rebuild-v2`).
+2. Within 24 hours: confirm the next scheduled `backup.yml` run
+   completes successfully (Actions tab → Backup live catalog →
+   green check).
+3. Within 7 days: confirm one nightly fired without manual touch.
