@@ -22,7 +22,8 @@
     "restore:live": "node scripts/restore-live.mjs",
     "clean:justkraft": "node ../scripts/clean-justkraft-inventory.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
-    "launch-blockers": "tsx scripts/launch-blockers.ts"
+    "launch-blockers": "tsx scripts/launch-blockers.ts",
+    "rls-attack": "tsx scripts/rls-attack.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

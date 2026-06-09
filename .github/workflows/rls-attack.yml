@@ -1,0 +1,91 @@
+name: RLS attack probe (anon-only)
+
+# P5-T08 launch-blocker. Runs `pnpm rls-attack --live` against the
+# production Supabase project to verify every public table's anon
+# posture: SELECT denials, INSERT denials, and the few intentional
+# allowances (search_logs, orders pending_payment). Exits non-zero on
+# any drift, blocking the workflow.
+#
+# This deliberately runs with ANON-only credentials. Service-role is
+# never wired in here — that's the whole point of the test.
+
+on:
+  schedule:
+    # Weekly Monday 03:00 UTC — drift check.
+    - cron: "0 3 * * 1"
+  workflow_dispatch: {} # manual trigger before any RLS migration ships
+  push:
+    branches: [main]
+    paths:
+      # Run on any RLS-touching migration.
+      - "web/supabase/migrations/**.sql"
+      - "web/scripts/rls-attack.ts"
+      - ".github/workflows/rls-attack.yml"
+
+jobs:
+  rls-attack:
+    name: anon posture sweep (live)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check anon secrets configured
+        id: check
+        env:
+          URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$ANON" ]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_URL/ANON_KEY missing. Skipping rls-attack."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        if: steps.check.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Run rls-attack against live (anon-only)
+        if: steps.check.outputs.configured == 'true'
+        working-directory: web
+        env:
+          # Pass anon credentials explicitly via env so the script
+          # doesn't fall back to .env.local (which would not exist
+          # in CI anyway). Service-role is INTENTIONALLY NOT WIRED
+          # IN — the script self-refuses if it appears in env.
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: pnpm rls-attack
+
+      - name: Cleanup test fixture order via purge-test-fixtures
+        if: steps.check.outputs.configured == 'true' && success()
+        working-directory: web
+        env:
+          # Service-role needed here, NOT for the probe itself but to
+          # clean up the one pending-payment order the probe inserted
+          # (anon can't SELECT it back to delete by id).
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # purge-test-fixtures.mjs reads .env.local; write a minimal
+          # one with just the keys it needs.
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          EOF
+          node scripts/purge-test-fixtures.mjs --apply

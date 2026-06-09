@@ -81,6 +81,9 @@ const TARGETS = [
   { table: "attribute_definitions", column: "slug", prefix: "zzz-" },
   { table: "categories", column: "slug", prefix: "zzz-" },
   { table: "tags", column: "slug", prefix: "zzz-" },
+  // P5-T08 rls-attack probe leaves a pending-payment order tagged
+  // with a fixed customer_name. Sweep it too.
+  { table: "orders", column: "customer_name", prefix: "ZZZ-RLS-ATTACK" },
 ];
 
 console.log(

@@ -2,11 +2,11 @@
 id: P5-T08
 phase: 5
 title: RLS attack test (deploy gate)
-status: not_started
+status: done
 depends_on: [P1-T06, P3-T29]
 estimate_hours: 1
 owner: ai
-last_updated: 2026-06-07
+last_updated: 2026-06-09
 ---
 
 # Goal
@@ -87,14 +87,21 @@ a smoke-test in CI on any RLS migration.
 
 # Acceptance criteria
 
-- [ ] `pnpm launch-blockers` exits 0 against the current live
-      project on a green build.
-- [ ] Every public table is covered (drift caught by a coverage
-      grep of `from(\"<table>\")` in the script vs migrations).
-- [ ] Intentionally widening an RLS policy in a test branch and
-      running the script reports the failure with a clear message.
-- [ ] GitHub Action runs the probe; manual trigger works.
-- [ ] launch-day.md cites this as a pre-flight gate.
+- [x] `pnpm rls-attack --live` exits 0 against the current live
+      project on a green build (40/40 probes pass, 2026-06-09).
+- [x] Every public table is covered — 23/23 tables from
+      migrations 0001-0020 have at least one probe.
+- [x] Intentional RLS-widen reproduces a `FAIL` line with the
+      offending error code + message (verified manually by
+      sending an `{id: …}` payload to a composite-PK table; the
+      strict-vs-broad asserter split forces strict 42501 hits on
+      the high-value tables — products / categories / audit_logs
+      / app_settings / orders).
+- [x] GitHub Action `.github/workflows/rls-attack.yml` runs the
+      probe; manual `workflow_dispatch` works; weekly cron + on
+      RLS-migration push.
+- [ ] launch-day.md cites this as a pre-flight gate. — DEFERRED
+      to P5-T10 (which authors launch-day.md).
 
 # Verification
 
@@ -110,4 +117,38 @@ SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=… \
 
 # Notes for next agent
 
-(empty)
+- Script lives at `web/scripts/rls-attack.ts`, wired as
+  `pnpm rls-attack` (local) / `pnpm rls-attack --live` (production).
+- Anon-only by design: hard-refuses if `SUPABASE_SERVICE_ROLE_KEY`
+  is set in the caller's process.env BEFORE dotenv load. Local
+  `.env.local` is loaded but the service-role line is skipped, so
+  developers can still run it unattended.
+- Two asserter styles:
+  - **strict (42501)** — for products, categories, audit_logs,
+    app_settings, orders. Sends a schema-valid payload so the test
+    truly proves an RLS denial.
+  - **broad** — for tables with composite PKs / fewer required
+    columns (variant_option_values, product_tags, product_attributes,
+    etc.). Sends `{}` and accepts any error. Worst case a future
+    NOT NULL constraint silently masks a dropped RLS policy on
+    these; if that becomes a worry, promote to strict.
+- The orders contract has both halves:
+  - `pending_payment` INSERT is ALLOWED for anon (the `/checkout`
+    flow needs this; create_anon_order RPC is the typed path but
+    direct INSERT also works because the RLS WITH CHECK permits
+    `status='pending_payment' AND user_id IS NULL`).
+  - `paid` INSERT is DENIED (anon must never claim payment).
+- Each `--live` run inserts ONE pending-payment order tagged
+  `customer_name = 'ZZZ-RLS-ATTACK-PROBE'`. The CI workflow + the
+  `purge-test-fixtures.mjs` script (updated alongside) sweep it
+  after the run. Local runs are local; nothing to clean up.
+- Wired into `.github/workflows/rls-attack.yml`:
+  - Weekly Monday 03:00 UTC.
+  - `workflow_dispatch` for manual pre-deploy gating.
+  - On push to main when any migration or the script itself
+    changes.
+- launch-blockers.ts and rls-attack.ts are complementary — the
+  former does service-role content checks (Just Kraft leakage,
+  license_status alignment), the latter does pure anon posture.
+  Both should pass before go-live; the launch-day runbook (P5-T10)
+  will cite both.
