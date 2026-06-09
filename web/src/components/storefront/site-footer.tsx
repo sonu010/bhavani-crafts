@@ -9,9 +9,9 @@ import { NewsletterForm } from "@/app/(storefront)/_footer/newsletter-form";
  * Collapses to a single stack on mobile. Rendered inside the storefront
  * layout so every public page gets it; admin pages never do.
  *
- * Policy routes are stubbed (full policy pages land later). The
- * Instagram + WhatsApp links read from `app_settings` (owner-editable
- * via /admin/settings) and fall back to env vars for fresh deploys.
+ * Policy routes resolve to real content (P5-T01). The Instagram +
+ * WhatsApp links read from `app_settings` (owner-editable via
+ * /admin/settings) and fall back to env vars for fresh deploys.
  */
 
 const WHATSAPP_PREFILL = "Hi Bhavani Crafts — I have a question.";
@@ -20,6 +20,7 @@ const POLICY_LINKS = [
   { href: "/policies/shipping", label: "Shipping" },
   { href: "/policies/returns", label: "Returns" },
   { href: "/policies/privacy", label: "Privacy" },
+  { href: "/policies/terms", label: "Terms" },
 ];
 
 export async function SiteFooter({

@@ -28,6 +28,11 @@ const STATIC_ROUTES: Array<{
 }> = [
   { path: "/", changeFrequency: "daily", priority: 1.0 },
   { path: "/search", changeFrequency: "weekly", priority: 0.5 },
+  // Legal pages — kept crawlable for Razorpay due-diligence (P5-T01).
+  { path: "/policies/privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/policies/terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/policies/shipping", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/policies/returns", changeFrequency: "yearly", priority: 0.3 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

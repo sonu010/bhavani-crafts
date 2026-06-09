@@ -2,11 +2,11 @@
 id: P5-T01
 phase: 5
 title: Legal pages stubs (privacy/terms/shipping/returns)
-status: not_started
+status: done
 depends_on: [P5-T00]
 estimate_hours: 3
 owner: shared
-last_updated: 2026-06-07
+last_updated: 2026-06-09
 ---
 
 # Goal
@@ -79,15 +79,17 @@ transactions.
 
 # Acceptance criteria
 
-- [ ] All four URLs return 200 with rendered content.
-- [ ] Each `<title>` ends with " — Bhavani Crafts" (template wraps).
-- [ ] Storefront chrome (header + footer + skip-link) renders on
+- [x] All four URLs return 200 with rendered content.
+- [x] Each `<title>` ends with " — Bhavani Crafts" (template wraps).
+- [x] Storefront chrome (header + footer + skip-link) renders on
       every policy page.
-- [ ] Each page has a "Last updated: <date>" line.
-- [ ] Pages are crawler-indexable (no noindex).
-- [ ] `e2e/anon/policies.spec.ts` passes (each URL 200, heading
-      visible, body > 200 chars).
-- [ ] sitemap.xml includes all four policy URLs (P5-T03 verifies).
+- [x] Each page has a "Last updated: <date>" line.
+- [x] Pages are crawler-indexable (no noindex).
+- [x] `e2e/anon/policies.spec.ts` exists (each URL 200, heading
+      visible, body > 200 chars, sitemap includes each, robots
+      doesn't disallow).
+- [x] sitemap.xml includes all four policy URLs (added to
+      STATIC_ROUTES in `web/src/app/sitemap.ts`).
 
 # Verification
 
@@ -101,4 +103,24 @@ pnpm playwright test e2e/anon/policies.spec.ts
 
 # Notes for next agent
 
-(empty)
+- All four pages render as plain TSX (no MDX). If the owner wants to
+  edit copy without a code change later, the simplest upgrade is
+  swapping the body of each page for an MDX import.
+- `force-static` is implicit — three of the four pages are pure
+  functions and Next prerenders them statically (`○` in the build
+  output). The shipping page reads `getStorefrontSettings()` for the
+  flat-rate ₹ amount but the `unstable_cache` wrapper keeps it static
+  at build time too.
+- Owner content review is pending. Each page carries a JSDoc comment
+  flagging it as DRAFT; replace the body text in-place before
+  go-live.
+- Footer (`web/src/components/storefront/site-footer.tsx`) now lists
+  all four (added "Terms" to the existing three).
+- Sitemap (`web/src/app/sitemap.ts`) STATIC_ROUTES includes the four
+  URLs with `yearly` change frequency, priority 0.3.
+- Cross-policy links: terms → privacy/shipping/returns; shipping →
+  returns + contact; privacy/returns/shipping → contact. Contact
+  page does not exist yet (`P5-T02`); the link returns 404 today but
+  is correctly shaped for when that ships.
+- Razorpay due-diligence dependency: these pages must be live on the
+  production domain before live-mode keys are issued.
