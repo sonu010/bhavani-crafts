@@ -4,11 +4,11 @@ Last updated: 2026-06-09
 
 ## Counts
 
-- ✅ Done: **99** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 3/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T08 RLS attack probe)
+- ✅ Done: **100** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 4/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T02 contact/about + P5-T08 RLS attack probe)
 - 🟡 In progress: 2 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked** on creds/smoke)
 - 🚧 Blocked: 3 (P3-T26 server `orders.create` · P3-T27 Razorpay widget mount · P3-T28 verify/webhook — all owner-pending `rzp_test_*` keys; scaffolding shipped: orders RPC, `/checkout` page + form, admin Mark-paid/Cancel/Refunded actions for the WhatsApp follow-up path)
 - ⏸️ Deferred: **10** (1 from P0 + the 9 Phase 4 AI tasks — owner-paused 2026-06-07; revisit after Phase 5 or as a future paid add-on)
-- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T02–T07, T09, T10
+- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T03–T07, T09, T10
 
 ## Phase 2 — admin panel complete (28/30)
 
@@ -55,6 +55,19 @@ Live schema now: 12 enums · 23 tables · 58 indexes · 46 functions.
 
 P5-T00 (task-spec expansion) + P5-T01 (legal pages) + P5-T08 (RLS
 attack probe) shipped 2026-06-09.
+
+- **P5-T02 — Contact + About pages** — `/about` (brand story, 3
+  paragraphs, placeholder studio photo) + `/contact` (WhatsApp +
+  email + address + hours + Google Maps deep-link). Both
+  prerender as `○` static. Contact reuses the existing
+  `CopyAddress` client + `whatsappHref()` helper + reads
+  WhatsApp/Instagram from `getStorefrontSettings()`. Email is a
+  hardcoded DRAFT placeholder (promotion to `app_settings`
+  documented as a follow-up). Footer wires both: "Our story →"
+  in the brand column, "Contact us" in the contact column.
+  Sitemap STATIC_ROUTES extended. E2E spec
+  `web/e2e/anon/about-contact.spec.ts` covers render + canonical
+  + sitemap + footer + back-link.
 
 - **P5-T08 — RLS attack probe** — `pnpm rls-attack` (local) / `pnpm
   rls-attack --live` (production). Anon-only sweep across every

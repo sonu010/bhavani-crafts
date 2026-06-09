@@ -28,6 +28,9 @@ const STATIC_ROUTES: Array<{
 }> = [
   { path: "/", changeFrequency: "daily", priority: 1.0 },
   { path: "/search", changeFrequency: "weekly", priority: 0.5 },
+  // Editorial pages (P5-T02).
+  { path: "/about", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/contact", changeFrequency: "monthly", priority: 0.4 },
   // Legal pages — kept crawlable for Razorpay due-diligence (P5-T01).
   { path: "/policies/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/policies/terms", changeFrequency: "yearly", priority: 0.3 },

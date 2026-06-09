@@ -42,6 +42,14 @@ export async function SiteFooter({
           <p className="mt-2 text-sm leading-relaxed text-stone-500">
             A craft-supply studio in Hyderabad.
           </p>
+          <p className="mt-2 text-sm">
+            <Link
+              href="/about"
+              className="text-bark-900 underline-offset-2 transition-colors hover:text-teal-800 hover:underline"
+            >
+              Our story →
+            </Link>
+          </p>
           <NewsletterForm />
         </div>
 
@@ -97,6 +105,14 @@ export async function SiteFooter({
             Contact
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
+            <li>
+              <Link
+                href="/contact"
+                className="text-bark-900 transition-colors hover:text-teal-800"
+              >
+                Contact us
+              </Link>
+            </li>
             {showWhatsapp ? (
               <li>
                 <a

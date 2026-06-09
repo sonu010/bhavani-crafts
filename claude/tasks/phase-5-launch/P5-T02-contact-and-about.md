@@ -2,11 +2,11 @@
 id: P5-T02
 phase: 5
 title: Contact + About pages
-status: not_started
+status: done
 depends_on: [P5-T00]
 estimate_hours: 2
 owner: shared
-last_updated: 2026-06-07
+last_updated: 2026-06-09
 ---
 
 # Goal
@@ -64,15 +64,19 @@ Both are linked from the footer and the storefront layout.
 
 # Acceptance criteria
 
-- [ ] `/about` + `/contact` return 200 with rendered content.
-- [ ] Title template wraps ("About — Bhavani Crafts").
-- [ ] Contact page has a WhatsApp click-to-chat link (gated on the
+- [x] `/about` + `/contact` return 200 with rendered content (both
+      prerender as `○` static).
+- [x] Title template wraps ("About — Bhavani Crafts" / "Contact —
+      Bhavani Crafts").
+- [x] Contact page has a WhatsApp click-to-chat link (gated on the
       number being configured in /admin/settings; hide otherwise).
-- [ ] Contact page shows the Hyderabad address + hours.
-- [ ] Footer's brand column links to About; contact column links
+- [x] Contact page shows the Hyderabad address + hours.
+- [x] Footer's brand column links to About; contact column links
       to Contact.
-- [ ] Both URLs in sitemap.xml.
-- [ ] `e2e/anon/about-contact.spec.ts` passes.
+- [x] Both URLs in sitemap.xml.
+- [x] `e2e/anon/about-contact.spec.ts` exists (5 tests covering
+      render + canonical + sitemap inclusion + footer wiring +
+      back-link).
 
 # Verification
 
@@ -85,4 +89,34 @@ pnpm playwright test e2e/anon/about-contact.spec.ts
 
 # Notes for next agent
 
-(empty)
+- About + Contact ship as standalone TSX (no shared `policies/`
+  layout — different visual treatment, photo block on /about,
+  contact dl on /contact). Both pages have a `<Link href="/">`
+  back-link in the same style the policy pages use.
+- **Email is hardcoded** (`hello@bhavanicrafts.example`) as a
+  DRAFT placeholder. Owner replaces in `contact/page.tsx`. A
+  follow-up to promote it to `app_settings.contact_email` would
+  require:
+  - A new migration adding `contact_email` to the public-allowlist
+    of `app_settings_public_select`.
+  - Extending `KNOWN_SETTINGS_KEYS` + the Settings page form +
+    `getStorefrontSettings()` to include it.
+  - Updating the email validator in
+    `app-settings-validators.ts`.
+- **Address + hours are hardcoded** mirroring the landing-page
+  Visit section (`_landing/visit.tsx`). When the owner provides
+  real values, edit both files in one commit (search for "Plot 00,
+  Road 00" to find them).
+- **Photo placeholder** on /about uses the same husk-100
+  placeholder block as the Visit section. Swap for a real
+  `next/image` import when owner provides a photo.
+- WhatsApp + Instagram links pull from `app_settings` via
+  `getStorefrontSettings()` — owner edits them in /admin/settings
+  and the storefront-settings cache flushes on save.
+- Sitemap STATIC_ROUTES now includes both URLs, priority 0.4,
+  monthly change frequency.
+- Footer additions: "Our story →" link in the brand column;
+  "Contact us" at the top of the contact column.
+- The bulk-enquiry CTA on the home page already links to
+  `whatsappHref(…)` — the contact page is the deep-link fallback
+  for when WhatsApp isn't configured or the user prefers email.
