@@ -4,11 +4,11 @@ Last updated: 2026-06-09
 
 ## Counts
 
-- ✅ Done: **103** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 7/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T02 contact/about + P5-T04 OG images + P5-T06 broken-image cron + P5-T07 backup verify + P5-T08 RLS attack probe)
+- ✅ Done: **104** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 8/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T02 contact/about + P5-T04 OG images + P5-T06 broken-image cron + P5-T07 backup verify + P5-T08 RLS attack probe + P5-T09 launch-day runbook)
 - 🟡 In progress: 2 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked** on creds/smoke)
 - 🚧 Blocked: 3 (P3-T26 server `orders.create` · P3-T27 Razorpay widget mount · P3-T28 verify/webhook — all owner-pending `rzp_test_*` keys; scaffolding shipped: orders RPC, `/checkout` page + form, admin Mark-paid/Cancel/Refunded actions for the WhatsApp follow-up path)
 - ⏸️ Deferred: **10** (1 from P0 + the 9 Phase 4 AI tasks — owner-paused 2026-06-07; revisit after Phase 5 or as a future paid add-on)
-- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T03, T05, T09, T10
+- ⬜ Not started: 2 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost; blur backfill in progress) + Phase 5 launch-readiness T03, T05, T10
 
 ## Phase 2 — admin panel complete (28/30)
 
@@ -55,6 +55,15 @@ Live schema now: 12 enums · 23 tables · 58 indexes · 46 functions.
 
 P5-T00 (task-spec expansion) + P5-T01 (legal pages) + P5-T08 (RLS
 attack probe) shipped 2026-06-09.
+
+- **P5-T09 — launch-day runbook** —
+  `claude/runbooks/launch-day.md` is the "we ship when every box is
+  ticked, not before" gate. 10 sections (cutover prereqs → DNS) +
+  day-after + week-after checklists + sign-off block. Each section
+  is one-liner items with the command or URL to run. Leads with
+  the workflows-on-non-default-branch cutover so the operator
+  flips the default to `rebuild-v2` FIRST and the nightly schedules
+  start firing.
 
 - **P5-T06 — broken-image nightly cron** —
   `pnpm sweep-broken-images` HEADs every non-removed/non-disputed

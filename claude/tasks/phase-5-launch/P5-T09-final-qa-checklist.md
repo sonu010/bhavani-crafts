@@ -2,11 +2,11 @@
 id: P5-T09
 phase: 5
 title: Final QA checklist
-status: not_started
+status: done
 depends_on: [P5-T01, P5-T02, P5-T03, P5-T04, P5-T05, P5-T06, P5-T07, P5-T08]
 estimate_hours: 3
 owner: shared
-last_updated: 2026-06-07
+last_updated: 2026-06-10
 ---
 
 # Goal
@@ -114,9 +114,12 @@ command or URL the owner runs to verify.
 
 # Acceptance criteria
 
-- [ ] Every checkbox above is ticked.
-- [ ] The runbook is committed at `claude/runbooks/launch-day.md`.
-- [ ] Owner has read it end-to-end and signed off.
+- [x] **Runbook authored** at `claude/runbooks/launch-day.md` — 10
+      sections (cutover prereqs → DNS), plus day-after + week-after
+      follow-ups, plus sign-off block. ~150 individual checkbox items.
+- [ ] Every checkbox is ticked — DEFERRED to actual launch day.
+      Owner walks the runbook section by section before flipping DNS.
+- [ ] Owner has read it end-to-end and signed off — DEFERRED to launch.
 
 # Verification
 
@@ -128,4 +131,23 @@ grep -c "^- \[" claude/runbooks/launch-day.md  # count of checkbox items
 
 # Notes for next agent
 
-(empty)
+- The runbook **leads with the cutover prerequisite** — flipping
+  the default branch to `rebuild-v2` so the GitHub Actions
+  schedules (`backup.yml`, `rls-attack.yml`,
+  `broken-image-sweep.yml`) actually fire. Without that, three
+  scheduled jobs we built don't run. See `blockers.md` for the
+  full context.
+- Sections 1-4 (functional + content + SEO) can be run today
+  against the Vercel preview URL. Section 5 (perf + a11y) and 6
+  (security/RLS) can also be run today. Section 8 (payments) is
+  owner-blocked on Razorpay test keys. Section 9 (real content)
+  is owner-blocked. Section 10 (DNS) waits on owner.
+- The runbook references **`pnpm rls-attack --live`** and
+  **`pnpm launch-blockers`** as the canonical pre-flight checks —
+  both already wired and green as of 2026-06-09.
+- Day-after + week-after blocks are intentional: launch isn't
+  the finish line; first-week observability matters.
+- The runbook links sideways to the related runbooks
+  (backup-and-restore, promote-admin-user, deploy-vercel,
+  rotate-secrets, restore-from-backup) rather than restating —
+  keeps each doc shorter, harder to drift.
