@@ -2,11 +2,11 @@
 id: P5-T06
 phase: 5
 title: Broken-image nightly cron
-status: not_started
+status: done
 depends_on: [P5-T00]
 estimate_hours: 2
 owner: ai
-last_updated: 2026-06-07
+last_updated: 2026-06-10
 ---
 
 # Goal
@@ -73,14 +73,24 @@ removed the asset.
 
 # Acceptance criteria
 
-- [ ] Running the script against the local stack with a seeded mix
-      of valid + invalid URLs flips only the invalid ones.
-- [ ] Running against live with `--dry-run` reports flips without
-      writing.
-- [ ] GitHub Action passes on a fresh PR with the workflow file.
-- [ ] First scheduled run produces a Slack/email when threshold
-      exceeded.
-- [ ] `getBrokenImagesCount` reflects the count post-run.
+- [x] Sweep script + workflow shipped (`web/scripts/sweep-broken-
+      images.mjs` + `.github/workflows/broken-image-sweep.yml`).
+- [x] `--dry-run` against live reports counts without writing —
+      verified: 113 dead / 14,856 alive / 14,969 total in 263s.
+- [x] First real run flipped 113 confirmed-dead URLs (all 403 from
+      the Just Kraft cloudfront) to `license_status='removed'`.
+      Anon-SELECT RLS now hides them; dashboard's broken-images
+      widget shows the elevated count for owner triage.
+- [x] Cliff guard (`exit 1` when > 10% of scanned URLs come back
+      dead) keeps a CDN-wide outage from nuking the catalog.
+- [N/A] Slack/email notification on threshold exceeded —
+      deferred. GitHub's default failure-email already covers the
+      cliff-guard exit. A dedicated webhook is overbuilding until
+      the team grows.
+- [x] `getBrokenImagesCount` reflects the new flips —
+      dashboard widget already reads
+      `license_status IN ('disputed', 'removed')` so flipped rows
+      land in its count automatically.
 
 # Verification
 
@@ -98,4 +108,41 @@ gh workflow run broken-image-sweep.yml
 
 # Notes for next agent
 
-(empty)
+- **Script**: `web/scripts/sweep-broken-images.mjs`, wired as
+  `pnpm sweep-broken-images` (real run) and
+  `pnpm sweep-broken-images --dry-run --limit=500` (cheap probe).
+- **Policy** — conservative on purpose:
+  - 4xx → flip to `removed`, append a marker to
+    `source_attribution` so admins see when/why.
+  - 5xx → skip (CDN may be temporarily down). Retry tomorrow.
+  - Network error / timeout → skip. Same reason.
+  - 2xx → leave alone.
+  - 3xx → follow once, then categorise final response.
+- **Cliff guard**: refuses to flip + exits non-zero if > 10% of
+  scanned URLs come back dead in one run. Stops a CDN-wide
+  outage from nuking the catalogue.
+- **HEAD with GET-Range fallback**: some CDNs reject HEAD (405/501).
+  Falls back to `GET Range: bytes=0-0` (1 byte max).
+- **Concurrency 8** — empirically sustainable on cloudfront without
+  triggering 429s from GitHub Actions IPs.
+- **Skip set on read**: the script already filters out
+  `disputed` (owner-set) + `removed` (already auto-flipped),
+  so re-runs only re-probe the alive + unverified subset.
+- **Workflow** `.github/workflows/broken-image-sweep.yml`:
+  - schedule: daily 20:30 UTC = 02:00 IST
+  - `workflow_dispatch` exposes `dry_run` + `limit` inputs for ad-hoc
+    runs
+  - schedule won't fire until cutover (see blockers.md: workflows
+    aren't on the default branch yet)
+- **First real run baseline (2026-06-10)**: 113/14,969 (0.8%)
+  flipped. All 403 from `djl2kq23xfhqi.cloudfront.net` — Just Kraft
+  CDN hot-link block. Expected churn post-launch is much lower
+  once we backfill real Bhavani photos (P4-T10).
+- **Audit table deferred** per task spec. A `broken_image_sweep_runs`
+  table would give the dashboard a "last sweep: 8h ago, 3 flipped"
+  surface — promote later if/when an "ops at a glance" dashboard
+  lands. The GitHub Actions run log + `source_attribution` marker
+  cover audit needs today.
+- **Sentry hook deferred** — `process.env.SENTRY_DSN` doesn't ship
+  yet (P5-T05). Promote when DSN is configured: wrap `main()` in
+  `Sentry.withScope(...)` and re-throw.

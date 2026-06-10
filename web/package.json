@@ -23,7 +23,8 @@
     "clean:justkraft": "node ../scripts/clean-justkraft-inventory.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
     "launch-blockers": "tsx scripts/launch-blockers.ts",
-    "rls-attack": "tsx scripts/rls-attack.ts"
+    "rls-attack": "tsx scripts/rls-attack.ts",
+    "sweep-broken-images": "node scripts/sweep-broken-images.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

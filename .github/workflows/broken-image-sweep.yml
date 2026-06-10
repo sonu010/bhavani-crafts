@@ -1,0 +1,95 @@
+name: Broken-image sweep
+
+# P5-T06. Nightly catalog hygiene: HEAD every product_images URL,
+# flip license_status to 'removed' for confirmed-dead URLs (HTTP 4xx).
+# The dashboard's Broken-images widget then reflects the cleaned-up
+# count + the new flips show up under /admin/products?images=problem.
+#
+# Conservative policy: 4xx only. Network errors and 5xx skip — they're
+# usually transient. A cliff-guard refuses to flip if > 10% of probed
+# URLs come back dead in a single run (something's wrong with the CDN,
+# not the catalog).
+
+on:
+  schedule:
+    # Daily 20:30 UTC = 02:00 IST. Picks a quiet window for cloudfront.
+    - cron: "30 20 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Probe + report only, do not flip"
+        type: boolean
+        default: false
+      limit:
+        description: "Cap rows scanned (blank = unlimited)"
+        type: string
+        default: ""
+
+jobs:
+  sweep:
+    name: probe + flip dead URLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets configured
+        id: check
+        env:
+          URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SRV: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SRV" ]; then
+            echo "::warning::Supabase secrets missing. Skipping sweep."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        if: steps.check.outputs.configured == 'true'
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.local (service-role; LIVE)
+        if: steps.check.outputs.configured == 'true'
+        working-directory: web
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EOF
+
+      - name: Sweep
+        if: steps.check.outputs.configured == 'true'
+        working-directory: web
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ -n "${{ inputs.limit }}" ]; then
+            ARGS="$ARGS --limit=${{ inputs.limit }}"
+          fi
+          echo "Running: pnpm sweep-broken-images $ARGS"
+          pnpm sweep-broken-images $ARGS
+
+      - name: Failure breadcrumb
+        if: failure()
+        run: |
+          echo "::error::Broken-image sweep failed or hit the cliff guard."
+          echo "::error::Re-run with workflow_dispatch + dry_run: true to inspect"
+          echo "::error::what would have flipped without committing."

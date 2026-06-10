@@ -4,11 +4,11 @@ Last updated: 2026-06-09
 
 ## Counts
 
-- ✅ Done: **102** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 6/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T02 contact/about + P5-T04 OG images + P5-T07 backup verify + P5-T08 RLS attack probe)
+- ✅ Done: **103** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 7/10 — P5-T00 task-spec expansion + P5-T01 legal pages + P5-T02 contact/about + P5-T04 OG images + P5-T06 broken-image cron + P5-T07 backup verify + P5-T08 RLS attack probe)
 - 🟡 In progress: 2 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked** on creds/smoke)
 - 🚧 Blocked: 3 (P3-T26 server `orders.create` · P3-T27 Razorpay widget mount · P3-T28 verify/webhook — all owner-pending `rzp_test_*` keys; scaffolding shipped: orders RPC, `/checkout` page + form, admin Mark-paid/Cancel/Refunded actions for the WhatsApp follow-up path)
 - ⏸️ Deferred: **10** (1 from P0 + the 9 Phase 4 AI tasks — owner-paused 2026-06-07; revisit after Phase 5 or as a future paid add-on)
-- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T03, T05, T06, T09, T10
+- ⬜ Not started: 3 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost, blur backfill) + Phase 5 launch-readiness T03, T05, T09, T10
 
 ## Phase 2 — admin panel complete (28/30)
 
@@ -55,6 +55,18 @@ Live schema now: 12 enums · 23 tables · 58 indexes · 46 functions.
 
 P5-T00 (task-spec expansion) + P5-T01 (legal pages) + P5-T08 (RLS
 attack probe) shipped 2026-06-09.
+
+- **P5-T06 — broken-image nightly cron** —
+  `pnpm sweep-broken-images` HEADs every non-removed/non-disputed
+  `product_images.url`, flips `license_status` to `removed` on
+  HTTP 4xx (Just Kraft CDN hot-link blocks etc.). Conservative
+  policy: 5xx + timeouts + network errors all skip (transient).
+  10% cliff guard refuses to flip on a CDN-wide outage. HEAD with
+  GET-Range fallback for CDNs that reject HEAD. First live run
+  (2026-06-10): 113 of 14,969 (0.8%) flipped in 263s. CI workflow
+  `.github/workflows/broken-image-sweep.yml` runs nightly 20:30
+  UTC (= 02:00 IST) + `workflow_dispatch` exposes dry-run/limit
+  inputs.
 
 - **P5-T04 — OG images per route family** — three dynamic OG
   handlers via Next 16's `opengraph-image.tsx` file convention:
