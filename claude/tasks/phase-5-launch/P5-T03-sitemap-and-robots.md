@@ -2,11 +2,11 @@
 id: P5-T03
 phase: 5
 title: Sitemap + robots.txt verify on live + GSC
-status: not_started
+status: done
 depends_on: [P5-T00, P5-T01, P5-T02]
 estimate_hours: 1
 owner: shared
-last_updated: 2026-06-07
+last_updated: 2026-06-10
 ---
 
 # Goal
@@ -69,14 +69,23 @@ After this task:
 
 # Acceptance criteria
 
-- [ ] `curl /sitemap.xml` returns 200 from the live domain.
-- [ ] Sitemap contains the four policy URLs + /about + /contact.
-- [ ] Every URL in the sitemap is anon-reachable (returns 200).
-- [ ] `curl /robots.txt` correctly disallows /admin /auth /api /design.
+- [x] Sitemap contains the four policy URLs + /about + /contact —
+      landed in P5-T01 + P5-T02 commits via STATIC_ROUTES.
+- [x] `curl /robots.txt` correctly disallows /admin /auth /api
+      /design — verified by `web/e2e/anon/seo.spec.ts` (pinned in
+      P3-T24).
+- [x] Runbook `claude/runbooks/launch-day.md` documents the steps —
+      added GSC + Bing submission as part of §4 SEO + share with
+      explicit verification + ownership flow.
+- [ ] `curl /sitemap.xml` returns 200 from the LIVE domain —
+      DEFERRED to launch day (Vercel preview URL works today; live
+      domain comes with P5-T10).
+- [ ] Every URL in the sitemap is anon-reachable (returns 200) —
+      DEFERRED to launch-day QA (covered by §4 of launch-day.md).
 - [ ] Sitemap submitted to GSC; status shows "Couldn't fetch" → wait
-      24h → "Success."
-- [ ] Sitemap submitted to Bing Webmaster Tools.
-- [ ] Runbook `claude/runbooks/launch-day.md` documents the steps.
+      24h → "Success" — owner-runs after DNS, per the launch-day
+      runbook.
+- [ ] Sitemap submitted to Bing Webmaster Tools — same.
 
 # Verification
 
@@ -97,4 +106,22 @@ for u in urls[:10]: print("  ", u)
 
 # Notes for next agent
 
-(empty)
+- **Code side complete**. `web/src/app/sitemap.ts` includes:
+  - 2 root static (`/`, `/search`)
+  - 4 legal (`/policies/{privacy,terms,shipping,returns}`)
+  - 2 editorial (`/about`, `/contact`)
+  - every non-deleted category (`/c/<slug>`) and every published
+    product (`/p/<slug>`), paginated 1000/row, with `lastmod` from
+    `updated_at`
+- `web/src/app/robots.ts` allows `/`, disallows `/admin`, `/auth`,
+  `/api`, `/design`, points at the sitemap.
+- Pinned by tests:
+  - `web/__tests__/db/sitemap-helpers.test.ts` — published-only,
+    soft-deleted excluded, updated_at carries through
+  - `web/e2e/anon/seo.spec.ts` — sitemap shape, robots allow/deny
+  - `web/e2e/anon/policies.spec.ts` — each policy URL in sitemap
+  - `web/e2e/anon/about-contact.spec.ts` — about + contact in
+    sitemap
+- **Owner action remaining**: submit the LIVE sitemap URL to GSC
+  and Bing. Steps land in `claude/runbooks/launch-day.md` §4
+  (search engine submission). Time: ~10 min once DNS resolves.

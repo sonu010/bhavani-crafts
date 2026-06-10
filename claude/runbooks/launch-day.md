@@ -130,6 +130,23 @@ Run these against the live preview URL before DNS flip.
 - [ ] Title template wraps every page: `Bhavani Crafts —…` on `/`,
       `<X> — Bhavani Crafts` elsewhere.
 
+### Search engine submission (P5-T03)
+
+- [ ] **Google Search Console** (https://search.google.com/search-console):
+  1. Add the live domain as a property.
+  2. Verify ownership via the TXT record method (owner adds the
+     record at the DNS host; takes 5-10 min to propagate).
+  3. Sitemaps → submit `https://<live>/sitemap.xml`.
+  4. URL inspection: spot-check 2-3 published PDP URLs to confirm
+     they're "URL is on Google" or "URL can be indexed."
+- [ ] **Bing Webmaster Tools** (https://www.bing.com/webmasters):
+  1. Add the live domain. Verification can import from GSC in one
+     click.
+  2. Sitemaps → submit `https://<live>/sitemap.xml`.
+- [ ] **One week later**: revisit GSC → Coverage tab. Confirm count
+      of "Valid" pages roughly matches the sitemap (it'll trail by
+      a few days as Google crawls).
+
 ## Section 5 — Performance + accessibility
 
 - [ ] **Lighthouse mobile** on `/`, `/c/<slug>`, `/p/<slug>` (incognito):
