@@ -1,4 +1,5 @@
 import "server-only";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * ISR-resilience wrapper for cacheable storefront reads.
@@ -18,6 +19,10 @@ import "server-only";
  *
  * Wrap AROUND the `unstable_cache(...)` call, not inside it, so a failed
  * read is never cached — the next request retries and caches real data.
+ *
+ * Sentry capture (P5-T05): we still swallow + render the fallback, but
+ * the failure pings the operator so a flaky upstream doesn't quietly
+ * keep us serving empty shells. Sentry no-ops cleanly when DSN unset.
  */
 export async function readOrEmpty<T>(
   label: string,
@@ -31,6 +36,10 @@ export async function readOrEmpty<T>(
       `[storefront] read "${label}" failed; rendering fallback (will recover on revalidate):`,
       err instanceof Error ? err.message : err,
     );
+    Sentry.captureException(err, {
+      tags: { source: "storefront-safe-read", key: label },
+      level: "warning",
+    });
     return fallback;
   }
 }

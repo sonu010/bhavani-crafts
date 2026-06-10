@@ -24,7 +24,8 @@
     "validate:migrations": "node scripts/validate-migrations.mjs",
     "launch-blockers": "tsx scripts/launch-blockers.ts",
     "rls-attack": "tsx scripts/rls-attack.ts",
-    "sweep-broken-images": "node scripts/sweep-broken-images.mjs"
+    "sweep-broken-images": "node scripts/sweep-broken-images.mjs",
+    "backfill-image-blurs": "node scripts/backfill-image-blurs.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -32,8 +33,10 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
+    "@sentry/nextjs": "^10.57.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

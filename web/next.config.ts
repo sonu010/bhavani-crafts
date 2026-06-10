@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * Security headers + image hosts.
@@ -110,4 +111,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry wrapper (P5-T05). No-ops cleanly when no Sentry env vars are
+ * set, so dev + CI builds without SENTRY_DSN keep working unchanged.
+ * When the owner provisions Sentry, three env vars enable the pipeline:
+ *   - SENTRY_DSN              (server + edge events)
+ *   - NEXT_PUBLIC_SENTRY_DSN  (browser events)
+ *   - SENTRY_AUTH_TOKEN       (source-map upload at build)
+ * Plus org/project come from the project's Vercel integration or fall
+ * back to env. `tunnelRoute` routes Sentry requests through Next so
+ * ad-blockers blocking sentry.io domains don't blackhole telemetry.
+ */
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  tunnelRoute: "/monitoring",
+  // Don't try to upload source-maps without an auth token — avoids
+  // noisy warnings on CI/dev builds before the owner has set
+  // SENTRY_AUTH_TOKEN in Vercel.
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

@@ -18,11 +18,40 @@ What we measure, where it goes, who looks at it.
 
 ## Sentry setup
 
-- Wrap the Next.js app with `@sentry/nextjs` (instrumentation hook for App Router).
-- Server-side: capture every `throw` in server actions and route handlers. Use `Sentry.withScope` to attach `user.id` (from profile), `request.id`, and `entity.id` where relevant.
-- Client-side: 100% error sample, 10% transaction sample. Filter out: hydration mismatches in dev, network errors caused by user navigating away (`AbortError`).
-- Source maps uploaded on every prod deploy via Vercel integration.
-- Release tag = git SHA. Lets us correlate errors to commits.
+Wired in P5-T05; no-ops cleanly when DSN env vars are unset, so the SDK can ship before the owner has provisioned the Sentry project.
+
+Files:
+
+| File | Runtime | Purpose |
+|---|---|---|
+| `web/sentry.server.config.ts` | nodejs | Server actions, RSC, route handlers. PII scrub on `extra.order` and `request.cookies`. |
+| `web/sentry.edge.config.ts` | edge | Middleware (`proxy.ts`) + edge route handlers. |
+| `web/sentry.client.config.ts` | browser | React client components. `ignoreErrors` filters AbortError + ResizeObserver noise. |
+| `web/instrumentation.ts` | both | Dispatches to the right config per `NEXT_RUNTIME`. Exports `onRequestError = Sentry.captureRequestError`. |
+| `web/next.config.ts` | build | `withSentryConfig` wrap. `tunnelRoute: "/monitoring"` defeats ad-blockers blocking sentry.io. Source-map upload gated on `SENTRY_AUTH_TOKEN`. |
+
+Env vars (all four optional, all read from `.env.local` / Vercel):
+
+- `SENTRY_DSN` — server + edge runtime
+- `NEXT_PUBLIC_SENTRY_DSN` — browser
+- `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT` — source-map upload at build (Vercel only)
+
+Sampling:
+
+- `sampleRate: 1.0` for errors (capture every throw).
+- `tracesSampleRate: 0.1` for performance traces; drop to 0.01 once volume picks up.
+- Session Replay off (`replaysOnErrorSampleRate: 0.0`) — too costly + privacy.
+
+PII scrub:
+
+- `extra.order` redacts customer_name / customer_email / customer_phone / shipping_address / name / email / phone to `<scrubbed>`.
+- `request.cookies` redacts entirely (carries the Supabase auth session token).
+- Add new scrub keys to the `beforeSend` list whenever a new PII surface lands.
+
+Storefront wiring:
+
+- `web/src/lib/storefront/safe-read.ts` calls `Sentry.captureException` inside its catch, tagged `source: "storefront-safe-read"` + `key: <label>`. The fallback still renders (customers see no broken page); the owner gets the alert.
+- Release tag = `VERCEL_GIT_COMMIT_SHA`. Lets us correlate errors to commits.
 
 ## Vercel Speed Insights
 

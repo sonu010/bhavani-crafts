@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { siteUrl } from "@/lib/storefront/site-url";
 import "./globals.css";
 
@@ -94,6 +95,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        {/* Vercel Analytics — cookieless page-view tracking. Free with
+            the Vercel deploy; sends nothing in local dev. CSP already
+            allows the script source (next.config.ts). */}
+        <Analytics />
       </body>
     </html>
   );
