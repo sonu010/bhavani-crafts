@@ -54,18 +54,18 @@ export async function generateMetadata({
   if (!category) return { title: "Category not found" };
   const description = category.description ?? `Shop ${category.name} at Bhavani Crafts.`;
   const canonical = `/c/${category.slug}`;
-  const ogImage = category.image_url ?? undefined;
   return {
     // Root metadata sets the "— Bhavani Crafts" suffix via title.template.
     title: category.name,
     description,
     alternates: { canonical },
     openGraph: {
+      // Per-category og:image is auto-injected by the colocated
+      // `opengraph-image.tsx` file convention (P5-T04).
       type: "website",
       title: category.name,
       description,
       url: canonical,
-      images: ogImage ? [{ url: ogImage, alt: category.name }] : undefined,
     },
   };
 }

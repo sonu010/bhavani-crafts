@@ -101,7 +101,7 @@ export default async function ShippingPage() {
       <h2>Tracking</h2>
       <p>
         You’ll receive a tracking link by WhatsApp + email within 2
-        business days of dispatch. If you don’t, message us â we may
+        business days of dispatch. If you don’t, message us — we may
         have an old contact number on file.
       </p>
 

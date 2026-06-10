@@ -56,7 +56,6 @@ export async function generateMetadata({
   if (!view) return { title: "Product not found" };
   const p = view.product;
   const description = p.short_description ?? `Shop ${p.name} at Bhavani Crafts.`;
-  const ogImage = p.images[0]?.url;
   const canonical = `/p/${p.slug}`;
   return {
     // Root metadata sets the "— Bhavani Crafts" suffix via title.template,
@@ -65,17 +64,18 @@ export async function generateMetadata({
     description,
     alternates: { canonical },
     openGraph: {
+      // Per-PDP og:image is auto-injected by the colocated
+      // `opengraph-image.tsx` file convention (P5-T04). We only need
+      // to provide title/description/url here.
       type: "website",
       title: p.name,
       description,
       url: canonical,
-      images: ogImage ? [{ url: ogImage, alt: p.name }] : undefined,
     },
     twitter: {
-      card: ogImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: p.name,
       description,
-      images: ogImage ? [ogImage] : undefined,
     },
     // Preview renders MUST NOT be indexed even if a crawler somehow finds
     // the URL (the token is unguessable in practice, but defense in depth).
