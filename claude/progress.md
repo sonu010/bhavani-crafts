@@ -4,11 +4,11 @@ Last updated: 2026-06-09
 
 ## Counts
 
-- ✅ Done: **105** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 9/10 — P5-T00 + P5-T01 + P5-T02 + P5-T03 sitemap-GSC docs + P5-T04 + P5-T06 + P5-T07 + P5-T08 + P5-T09)
+- ✅ Done: **107** (Phase 0: 11/11 · Phase 1: 11/11 · Phase 1.5 CI · Phase 2: 28/30 · Phase 3: 27/30 + P3.5 polish bundle · Phase 5: 11/13 — all 10 P5 tasks except T10 go-live + P4-T12 blur backfill; P5-T05 Sentry scaffolded sans DSN, T10 is operator cutover)
 - 🟡 In progress: 2 (P2-T01 auth hardening · P2-T03 promote-owner — both **owner-blocked** on creds/smoke)
 - 🚧 Blocked: 3 (P3-T26 server `orders.create` · P3-T27 Razorpay widget mount · P3-T28 verify/webhook — all owner-pending `rzp_test_*` keys; scaffolding shipped: orders RPC, `/checkout` page + form, admin Mark-paid/Cancel/Refunded actions for the WhatsApp follow-up path)
 - ⏸️ Deferred: **10** (1 from P0 + the 9 Phase 4 AI tasks — owner-paused 2026-06-07; revisit after Phase 5 or as a future paid add-on)
-- ⬜ Not started: 2 de-AI'd polish tasks re-homed into Phase 5 (real-content swap, image rehost; blur backfill in progress) + Phase 5 launch-readiness T05 (Sentry, owner-blocked) + T10 (go-live cutover)
+- ⬜ Not started: 2 de-AI'd polish tasks re-homed into Phase 5 (real-content swap P4-T10, image rehost P4-T11 — both owner-blocked on content) + Phase 5 P5-T10 go-live (operator cutover)
 
 ## Phase 2 — admin panel complete (28/30)
 
@@ -55,6 +55,27 @@ Live schema now: 12 enums · 23 tables · 58 indexes · 46 functions.
 
 P5-T00 (task-spec expansion) + P5-T01 (legal pages) + P5-T08 (RLS
 attack probe) shipped 2026-06-09.
+
+- **P5-T05 — Sentry + Vercel Analytics scaffolding** — SDK wired
+  across server / edge / browser runtimes via
+  `instrumentation.ts` + 3 sentry config files. No-ops cleanly when
+  DSN env vars unset (owner-pending). PII scrub on `extra.order` +
+  `request.cookies`. `safe-read.ts` calls
+  `Sentry.captureException` inside its catch with `source:
+  "storefront-safe-read"` tag. Vercel Analytics `<Analytics />`
+  mounted in root layout (cookieless, no PII). Source-map upload
+  gated on `SENTRY_AUTH_TOKEN`. CSP was already prepped
+  (`*.ingest.sentry.io` in connect-src, `va.vercel-scripts.com` in
+  script-src). architecture/observability.md updated.
+
+- **P4-T12 — Blur placeholder backfill** — `pnpm backfill-image-blurs`
+  generates an 8×8 webp LQIP for every non-deleted, non-removed,
+  non-disputed `product_images` row. First full run (2026-06-10):
+  14,801 / 14,806 written, 5 skipped (network errors), 18 min,
+  concurrency 4. Storefront's `ProductCard` + PDP gallery already
+  switch `placeholder="blur"` when `blurDataUrl` is non-null, so
+  every cached page now fades in from a ~200-byte data-URL blur
+  instead of flashing husk-100.
 
 - **P5-T09 — launch-day runbook** —
   `claude/runbooks/launch-day.md` is the "we ship when every box is
